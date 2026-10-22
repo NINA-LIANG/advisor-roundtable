@@ -1,4 +1,4 @@
-"""把知識庫與台股資料嵌入網頁模板，產生單一檔案的 web/index.html、web/sim.html 與 web/rates.html。
+"""把知識庫與台股資料嵌入網頁模板，產生單一檔案的 web/index.html、web/sim.html、web/rates.html 與 web/news.html。
 
 用法：python scripts/fetch_twse.py && python scripts/fetch_rates.py && python scripts/build_site.py
       python scripts/build_site.py --bare OUTDIR   產生不含 <html>/<head> 外殼的版本（給 Claude Artifact 發佈）
@@ -15,6 +15,7 @@ ARTIFACT_URLS = {
     "https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT": "index.html",
     "https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb": "sim.html",
     "https://claude.ai/artifact/Bmc4PG8mYgvAV9iEik8PDz": "rates.html",
+    "https://claude.ai/artifact/DMkJkY1CJP7BVhm61qV4Fx": "news.html",
 }
 SHELL = ('<!doctype html>\n<html lang="zh-Hant">\n<head>\n<meta charset="utf-8">\n'
          '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n</head>\n<body>\n{}\n</body>\n</html>\n')
@@ -40,7 +41,9 @@ def pages():
            .replace("/*TW*/", tw).replace("/*PROFILES*/", profiles))
     rates = read(WEB / "rates.template.html").replace("/*RATES*/", json.dumps(
         json.loads(read(ROOT / "data" / "rates.json")), ensure_ascii=False, separators=(",", ":")))
-    return {"index.html": index, "sim.html": sim, "rates.html": rates}
+    news = read(WEB / "news.template.html").replace("/*NEWS*/", json.dumps(
+        json.loads(read(ROOT / "data" / "popular.json")), ensure_ascii=False, separators=(",", ":")))
+    return {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news}
 
 
 def main():
