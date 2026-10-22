@@ -31,6 +31,9 @@ jobs:
       - name: 抓上市櫃全部股票與 ETF 清單
         run: python scripts/fetch_universe.py
         continue-on-error: true
+      - name: 抓除權息預告、填息與殖利率
+        run: python scripts/fetch_dividends.py
+        continue-on-error: true
       - name: 抓 ETF 持股明細（每週一次，約 6 分鐘）
         run: python scripts/fetch_etf_holdings.py
         continue-on-error: true
@@ -40,7 +43,7 @@ jobs:
         run: |
           git config user.name "daily-update-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/tw.json data/rates.json data/universe.json data/etf_holdings.json web/index.html web/sim.html web/rates.html web/news.html web/learn.html web/market.html
+          git add data/tw.json data/rates.json data/universe.json data/etf_holdings.json data/dividends.json web/index.html web/sim.html web/rates.html web/news.html web/learn.html web/market.html web/dividend.html
           git diff --cached --quiet || git commit -m "data: $(date -u +%F) 證交所收盤與銀行牌告利率"
           git push
       - uses: actions/configure-pages@v5

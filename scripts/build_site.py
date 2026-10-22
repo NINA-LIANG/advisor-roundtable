@@ -18,6 +18,7 @@ ARTIFACT_URLS = {
     "https://claude.ai/artifact/DMkJkY1CJP7BVhm61qV4Fx": "news.html",
     "https://claude.ai/artifact/RK74vfRrALWhutPXahWRtu": "learn.html",
     "https://claude.ai/artifact/Aj4eFHk9RZrjkuUmr7kRXb": "market.html",
+    "https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw": "dividend.html",
 }
 SHELL = ('<!doctype html>\n<html lang="zh-Hant">\n<head>\n<meta charset="utf-8">\n'
          '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n</head>\n<body>\n{}\n</body>\n</html>\n')
@@ -52,8 +53,14 @@ def pages():
     compact = lambda name: json.dumps(json.loads(read(ROOT / "data" / name)), ensure_ascii=False, separators=(",", ":"))
     market = (read(WEB / "market.template.html").replace("/*UNIVERSE*/", compact("universe.json"))
               .replace("/*HOLDINGS*/", compact("etf_holdings.json")))
+    # 除權息頁只需要每檔的收盤、產業／類型、股或 ETF、市場
+    uni = json.loads(read(ROOT / "data" / "universe.json"))
+    px = {r[0]: [r[4], r[3], "s", r[2]] for r in uni["stock"]}
+    px.update({r[0]: [r[4], r[3], "e", r[2]] for r in uni["etf"]})
+    dividend = (read(WEB / "dividend.template.html").replace("/*DIVIDENDS*/", compact("dividends.json"))
+                .replace("/*PX*/", json.dumps(px, ensure_ascii=False, separators=(",", ":"))))
     return {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
-            "market.html": market}
+            "market.html": market, "dividend.html": dividend}
 
 
 def main():
