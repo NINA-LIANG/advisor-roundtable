@@ -1,0 +1,218 @@
+<title>投資入門教室</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: 理專圓桌的姊妹頁，像一本手帳。十條心法 → 複利試算 → 新手六步 → 名詞小抄 → 交易成本 → 常見迷思。只做淺色主題，與其他頁一致。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
+  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f3fbee 60%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h2{font-size:22px}
+h3{font-size:17px}
+p{margin:0}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px;min-width:0;display:flex;flex-direction:column;gap:14px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+.muted{color:var(--ink-soft)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-soft)}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+header h1{font-size:clamp(28px,5vw,42px)}
+header p{margin-top:4px;color:var(--ink-soft)}
+.links{display:flex;gap:14px;flex-wrap:wrap}
+.links a{color:var(--sky-deep);font-weight:700}
+a{color:var(--sky-deep)}
+
+.prin{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.pc{border:2px solid var(--line);border-radius:20px;padding:14px 16px;background:#fff9f4;display:flex;flex-direction:column;gap:6px;position:relative}
+.pc .no{position:absolute;top:-10px;left:14px;background:var(--tape);border-radius:999px;padding:0 10px;font-family:var(--f-mono);font-size:13px}
+.pc h3{margin-top:6px}
+.pc .say{font-size:13.5px;background:#fff;border-radius:14px;padding:6px 10px;border:1.5px dashed var(--line)}
+
+.calc{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:20px}
+@media (max-width:820px){.calc{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px}
+.field span{font-size:13px;font-weight:700}
+.field input[type=number]{background:#fff9f4;border:2px solid var(--line);border-radius:14px;padding:7px 12px;width:100%}
+.field input[type=range]{width:100%;accent-color:var(--matcha-deep)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:2px solid var(--line);border-radius:22px;overflow:hidden}
+.stats>div{padding:10px 14px;background:#f5fbf0;border-right:2px dashed var(--line);min-width:0}
+.stats>div:last-child{border-right:none}
+.stats b{display:block;font-family:var(--f-mono);font-weight:500;font-size:clamp(18px,2.6vw,26px);line-height:1.3}
+.stats small{font-size:13px;color:var(--ink-soft)}
+@media (max-width:560px){.stats{grid-template-columns:1fr}.stats>div{border-right:none;border-bottom:2px dashed var(--line)}.stats>div:last-child{border-bottom:none}}
+svg.chart{width:100%;height:auto;display:block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.tip{background:#f5faff;border-radius:16px;padding:8px 12px;font-size:14px}
+
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;counter-reset:s}
+.steps li{counter-increment:s;border:2px solid var(--line);border-radius:20px;padding:12px 14px 12px 52px;position:relative;background:#fffdfa}
+.steps li::before{content:counter(s);position:absolute;left:12px;top:12px;width:30px;height:30px;border-radius:50%;background:var(--apricot);display:grid;place-items:center;font-family:var(--f-mono)}
+.steps a{font-size:13.5px;font-weight:700}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:4px 13px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--matcha);border-color:var(--matcha-deep);font-weight:700}
+.search{background:#fff9f4;border:2px solid var(--line);border-radius:999px;padding:5px 14px;min-width:0;flex:1 1 180px;max-width:280px}
+.terms{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.term{border-radius:18px;padding:10px 14px;background:#fff9f4;border:2px solid var(--line)}
+.term b{font-family:var(--f-display);font-weight:400;font-size:17px}
+.term .g{font-size:12px;border-radius:999px;padding:0 8px;margin-left:6px;background:var(--lilac)}
+.term p{font-size:14px;margin-top:4px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:2px dashed var(--line);vertical-align:top}
+th{font-size:13px;color:var(--ink-soft);font-weight:700}
+td.v{font-family:var(--f-mono);white-space:nowrap}
+@media (max-width:640px){table,tbody,tr,td{display:block}thead{display:none}tr{padding:8px 0;border-bottom:2px dashed var(--line)}td{border:none;padding:2px 4px}td.v{white-space:normal}}
+
+details.myth{border:2px solid var(--line);border-radius:18px;background:#fff9f4;padding:10px 14px}
+details.myth summary{cursor:pointer;font-weight:700}
+details.myth p{margin-top:6px;font-size:14.5px}
+.foot{font-size:13px;color:var(--ink-soft);text-align:center}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">理專圓桌・姊妹頁</div>
+      <h1>投資入門教室 🌱</h1>
+      <p>十條心法、一台複利計算機、一份名詞小抄。六位理專流派不同，下面這些是他們都同意的基本功。</p>
+    </div>
+    <nav class="links">
+      <a href="https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT" target="_blank" rel="noopener">← 理專圓桌</a>
+      <a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb" target="_blank" rel="noopener">百萬模擬倉</a>
+      <a href="https://claude.ai/artifact/Bmc4PG8mYgvAV9iEik8PDz" target="_blank" rel="noopener">存款利率</a>
+      <a href="https://claude.ai/artifact/DMkJkY1CJP7BVhm61qV4Fx" target="_blank" rel="noopener">人氣小報</a>
+    </nav>
+  </header>
+
+  <section class="box" aria-labelledby="h-prin">
+    <h2 id="h-prin">十條投資心法</h2>
+    <div class="prin" id="prin"></div>
+  </section>
+
+  <section class="box" aria-labelledby="h-calc">
+    <h2 id="h-calc">複利計算機：時間和費用有多重要</h2>
+    <div class="calc">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <label class="field"><span>每月投入（元）</span><input type="number" id="c-m" value="5000" min="0" step="500" inputmode="numeric"></label>
+        <label class="field"><span>一開始先投入（元）</span><input type="number" id="c-p" value="0" min="0" step="10000" inputmode="numeric"></label>
+        <label class="field"><span>投資年數：<b class="mono" id="c-yv"></b> 年</span><input type="range" id="c-y" min="1" max="40" value="30"></label>
+        <label class="field"><span>假設年報酬：<b class="mono" id="c-rv"></b>%</span><input type="range" id="c-r" min="0" max="12" step="0.5" value="6"></label>
+        <label class="field"><span>每年費用：<b class="mono" id="c-fv"></b>%</span><input type="range" id="c-f" min="0" max="3" step="0.05" value="1"></label>
+        <p class="muted" style="font-size:13px">報酬率只是假設，實際市場每年忽高忽低，可能虧損。</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+        <div class="stats">
+          <div><small>扣費前的最終金額</small><b id="s-g"></b></div>
+          <div><small>你投入的本金</small><b id="s-p"></b></div>
+          <div><small>被費用吃掉的</small><b id="s-f" style="color:var(--pink-deep)"></b></div>
+        </div>
+        <svg class="chart" id="chart" viewBox="0 0 600 260" role="img" aria-label="資產成長曲線"></svg>
+        <div class="legend"><span><i style="background:var(--matcha-deep)"></i>不扣費用</span><span><i style="background:var(--pink-deep)"></i>扣掉每年費用</span><span><i style="background:var(--ink-soft)"></i>本金</span></div>
+        <p class="tip" id="tip72"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="box" aria-labelledby="h-steps">
+    <h2 id="h-steps">新手六步：照順序來</h2>
+    <ol class="steps" id="steps"></ol>
+  </section>
+
+  <section class="box" aria-labelledby="h-terms">
+    <h2 id="h-terms">名詞小抄</h2>
+    <div class="chips" id="tg"><input class="search" id="tq" type="search" placeholder="搜尋名詞，例如：殖利率" aria-label="搜尋名詞"></div>
+    <div class="terms" id="terms"></div>
+  </section>
+
+  <section class="box" aria-labelledby="h-cost">
+    <h2 id="h-cost">在台灣買賣股票，要付哪些錢</h2>
+    <table><thead><tr><th>項目</th><th>怎麼算</th><th>說明</th></tr></thead><tbody id="costs"></tbody></table>
+    <p class="tip" id="costex"></p>
+    <p class="muted" style="font-size:13px">稅費依 <span id="asof"></span> 的規定整理，實際以財政部、證交所、健保署公告與你的券商為準。</p>
+  </section>
+
+  <section class="box" aria-labelledby="h-myth">
+    <h2 id="h-myth">常見迷思</h2>
+    <div id="myths" style="display:flex;flex-direction:column;gap:8px"></div>
+  </section>
+
+  <p class="foot">本頁是一般性的投資知識整理，非投資建議。理專都是虛構角色。</p>
+</div>
+
+<script>
+const L=/*LEARN*/;
+const ADV={tech:["📈","陳怡君","var(--sky)"],macro:["🌏","林思遠","var(--matcha)"],value:["📒","王建明","var(--apricot)"],mom:["🚀","周以恆","var(--pink)"],quant:["🎲","張雅雯","var(--lilac)"],div:["🍵","劉淑芬","#ffe0c4"]};
+const LINKS={rates:["https://claude.ai/artifact/Bmc4PG8mYgvAV9iEik8PDz","去看存款利率比較 →"],news:["https://claude.ai/artifact/DMkJkY1CJP7BVhm61qV4Fx","看看大家都買什麼 →"],sim:["https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb","到百萬模擬倉練習 →"]};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money=v=>v>=1e8?(v/1e8).toFixed(2)+" 億":v>=1e4?Math.round(v/1e4).toLocaleString()+" 萬":Math.round(v).toLocaleString()+" 元";
+
+$("prin").innerHTML=L.principles.map(p=>{const a=ADV[p.who];return `<article class="pc" style="--tape:${a[2]}"><span class="no">${String(p.n).padStart(2,"0")}</span><h3>${esc(p.t)}</h3><p>${esc(p.d)}</p><p class="say">${a[0]} <b>${a[1]}</b>：${esc(p.say)}</p></article>`}).join("");
+
+$("steps").innerHTML=L.steps.map(s=>`<li><h3>${esc(s.t)}</h3><p>${esc(s.d)}</p>${s.link?`<a href="${LINKS[s.link][0]}" target="_blank" rel="noopener">${LINKS[s.link][1]}</a>`:""}</li>`).join("");
+
+// 複利：月複利，費用按月從資產扣
+function grow(P,M,yrs,r,f){
+  const g=[],n=[],b=[];let A=P,B=P,inv=P;
+  const rm=r/100/12, fm=(r-f)/100/12;
+  g.push(A);n.push(B);b.push(inv);
+  for(let i=1;i<=yrs*12;i++){A=A*(1+rm)+M;B=B*(1+fm)+M;inv+=M;if(i%12===0){g.push(A);n.push(B);b.push(inv)}}
+  return {g,n,b};
+}
+function line(arr,max,col,w){
+  const X=i=>40+i*(550/(arr.length-1)),Y=v=>230-v/max*210;
+  return `<polyline fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" points="${arr.map((v,i)=>X(i).toFixed(1)+","+Y(v).toFixed(1)).join(" ")}"/>`;
+}
+function calc(){
+  const M=Math.max(0,+$("c-m").value||0),P=Math.max(0,+$("c-p").value||0),y=+$("c-y").value,r=+$("c-r").value,f=+$("c-f").value;
+  $("c-yv").textContent=y;$("c-rv").textContent=r;$("c-fv").textContent=f.toFixed(2);
+  const {g,n,b}=grow(P,M,y,r,f),G=g.at(-1),N=n.at(-1),B=b.at(-1);
+  $("s-g").textContent=money(G);$("s-p").textContent=money(B);
+  $("s-f").textContent=money(Math.max(0,G-N))+(G>0?`（${Math.round((G-N)/G*100)}%）`:"");
+  const max=Math.max(G,1);
+  let ax="";for(let k=0;k<=4;k++){const v=max*k/4,yy=230-k/4*210;ax+=`<line x1="40" x2="590" y1="${yy}" y2="${yy}" stroke="#f1e2d6" stroke-dasharray="3 4"/><text x="34" y="${yy+4}" text-anchor="end" font-size="11" fill="#8a7566">${k?money(v).replace(" ",""):"0"}</text>`}
+  const ticks=[0,Math.round(y/2),y].map(t=>`<text x="${40+t*(550/y)}" y="252" text-anchor="middle" font-size="11" fill="#8a7566">第 ${t} 年</text>`).join("");
+  $("chart").innerHTML=ax+ticks+line(b,max,"#8a7566",2)+line(n,max,"#d9708a",3)+line(g,max,"#5f9147",3);
+  $("tip72").innerHTML=r>0?`📏 <b>72 法則</b>：72 ÷ 年報酬 ${r}% ≈ <b class="mono">${(72/r).toFixed(1)}</b> 年，錢會翻一倍。扣掉 ${f.toFixed(2)}% 費用後，要 <b class="mono">${r-f>0?(72/(r-f)).toFixed(1):"∞"}</b> 年。`:"📏 年報酬 0% 時，錢不會長大，還會被通膨慢慢吃掉。";
+}
+["c-m","c-p","c-y","c-r","c-f"].forEach(id=>$(id).addEventListener("input",calc));calc();
+
+// 名詞
+const GROUPS=["全部",...new Set(L.terms.map(t=>t.g))];let grp="全部";
+$("tg").insertAdjacentHTML("afterbegin",GROUPS.map(g=>`<button class="chip" data-g="${g}" aria-pressed="${g===grp}">${g}</button>`).join(""));
+$("tg").addEventListener("click",e=>{const b=e.target.closest("[data-g]");if(!b)return;grp=b.dataset.g;$("tg").querySelectorAll("[data-g]").forEach(x=>x.setAttribute("aria-pressed",x===b));terms()});
+$("tq").addEventListener("input",terms);
+function terms(){
+  const q=$("tq").value.trim().toLowerCase();
+  const list=L.terms.filter(t=>(grp==="全部"||t.g===grp)&&(!q||(t.k+t.d).toLowerCase().includes(q)));
+  $("terms").innerHTML=list.length?list.map(t=>`<div class="term"><b>${esc(t.k)}</b><span class="g">${esc(t.g)}</span><p>${esc(t.d)}</p></div>`).join(""):`<p class="muted">找不到「${esc(q)}」，換個關鍵字試試。</p>`;
+}
+terms();
+
+$("costs").innerHTML=L.costs.map(c=>`<tr><td><b>${esc(c.k)}</b></td><td class="v">${esc(c.v)}</td><td>${esc(c.d)}</td></tr>`).join("");
+// 舉例：買賣一次 10 萬元的股票和 ETF（手續費以 6 折、低消 20 元估）
+(()=>{const amt=100000,fee=Math.max(20,Math.round(amt*0.001425*0.6));const st=fee*2+amt*0.003,et=fee*2+amt*0.001;
+$("costex").innerHTML=`🧮 舉例：買進再賣出 10 萬元，手續費以 6 折估，一來一回大約要付股票 <b class="mono">${Math.round(st).toLocaleString()}</b> 元（${(st/amt*100).toFixed(2)}%）、ETF <b class="mono">${Math.round(et).toLocaleString()}</b> 元（${(et/amt*100).toFixed(2)}%）。買賣越頻繁，成本越高。`})();
+$("asof").textContent=L.asof;
+
+$("myths").innerHTML=L.myths.map(m=>`<details class="myth"><summary>${esc(m.q)}</summary><p>${esc(m.a)}</p></details>`).join("");
+</script>
