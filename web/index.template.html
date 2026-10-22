@@ -104,6 +104,7 @@ ul.why li{margin:2px 0}
 details.kb{font-size:13px;background:#f4f9ef;border-radius:18px;padding:8px 13px}
 details.kb summary{cursor:pointer;color:var(--matcha-deep);font-weight:700}
 .kb-item{margin-top:8px}
+.book{background:#f3eefc;border-radius:16px;padding:8px 12px;margin-top:10px;font-size:13.5px}
 .kb-item p{margin:2px 0}
 .kb-src{font-size:12px;color:var(--ink-soft)}
 .kb-src a,.lib a{color:var(--sky-deep)}
@@ -312,6 +313,19 @@ footer{font-size:12px;color:var(--ink-soft);max-width:80ch;margin:0 auto;text-al
 const TW=/*TW*/;
 // 每位理專的背景檔案與「看得到的資料欄位」（repo/knowledge/advisors.zh.json）
 const PROFILES=/*PROFILES*/;
+// 每位理專的課外書架（repo/knowledge/bookshelf.zh.json）：財經以外的公有領域書，替理專加上個人想法
+const SHELF=/*SHELF*/;
+const GUT=id=>`https://www.gutenberg.org/ebooks/${id}`;
+// 依眼前這檔的狀況，挑一本書說出理專自己的想法（第幾本書, 想法）
+const SHELF_VOICE={
+ tech:(s,d)=>{const dev=d.p/d.ma-1;return dev>0.08?[1,`股價已高於月均價 ${pct(dev)}，人群正在追。我寧可等熱度退了再說，不跟著一起發瘋。`]:s>=1?[0,"訊號是好的，但我下單前一定先把停損價寫下來；先求不敗，獲利是對手犯錯送來的。"]:[2,"現在的線型說不出清楚的故事。證據不夠時硬要下結論，只會讓我開始替自己找理由。"]},
+ macro:(s,d)=>/紅/.test(d.light||"")?[2,"景氣正熱的時候，我反而先想衰退會從哪裡開始：負債、庫存、還是估值。"]:/藍/.test(d.light||"")?[0,"景氣低迷不是第一次，也不會是最後一次。歷史告訴我復甦總會來，只是通常比大家想的慢。"]:[1,"手上的數據是落後的，下個月還可能被修正。我會留一部分現金當預備隊，不一次押滿。"],
+ value:(s,d)=>isETF(d)?[0,"買 ETF 我最在意的是每年被扣走多少內扣費用，省下的費用就是穩賺的報酬。"]:s>=2?[2,"便宜的好公司常常要等很久，市場才會發現它的價值。我願意等。"]:s<=-1?[1,"這檔太貴了，但股價怎麼走不是我能控制的。我能控制的是不在這個價位買。"]:[0,"價格合理不代表要急著買。我會像富蘭克林記帳一樣，先寫下買進理由，之後每季對帳。"],
+ mom:(s,d)=>{const r=d.p/d.m[6]-1;return r>0.8?[2,`半年漲了 ${pct(r)}，我提醒自己別像亞哈船長一樣死追不放。設好移動停利，趨勢一斷就下船。`]:s>=1?[1,"強勢股能一直強，是因為它適應了現在的市場。我跟著強者走，但每個月都汰弱留強。"]:[0,"動能不見了就換車，不在原地等它回來。時間也是成本。"]},
+ quant:(s,d)=>{const z=(d.p-mean(d.m))/std(d.m);return Math.abs(z)>1.5?[0,`z 分數 ${z.toFixed(2)} 很極端，但只有 12 個月的樣本，我會把它當機率不是保證，小量分批。`]:s>0?[2,"單一檔的訊號雜訊很大。我寧可同時買幾檔統計上偏便宜的，讓個別差異互相抵銷。"]:[1,"我的模型只看價格這一個維度，看不到公司本身的變化。沒有統計優勢的時候，就不下注。"]},
+ div:(s,d)=>{const y=d.dy||0;return y>8?[2,`殖利率 ${y.toFixed(1)}% 高得不尋常。追更大塊的肉之前，先確定嘴裡這塊不會掉：這種配息能維持嗎？`]:y>=4?[0,"股利領到不是拿去花，而是再買回來。小錢滾久了，就是退休後不用看人臉色的底氣。"]:[1,"殖利率不高，我就不勉強。持股簡單一點、少一點，睡得比較好。"]},
+};
+function bookVoice(k,s,d){const f=SHELF_VOICE[k],b=SHELF[k];if(!f||!b)return "";const [i,t]=f(s,d);return `<div class="book">📖 <b>讀《${b[i].zh}》的心得</b>　${t}</div>`}
 const IND={"01":"水泥","02":"食品","03":"塑膠","04":"紡織纖維","05":"電機機械","06":"電器電纜","08":"玻璃陶瓷","09":"造紙","10":"鋼鐵","11":"橡膠","12":"汽車","14":"建材營造","15":"航運","16":"觀光餐旅","17":"金融保險","18":"貿易百貨","19":"綜合","20":"其他","21":"化學","22":"生技醫療","23":"油電燃氣","24":"半導體","25":"電腦及週邊","26":"光電","27":"通信網路","28":"電子零組件","29":"電子通路","30":"資訊服務","31":"其他電子","32":"文化創意","33":"農業科技","35":"綠能環保","36":"數位雲端","37":"運動休閒","38":"居家生活"};
 const indName=i=>IND[i]||"其他";
 const MONTHS=TW.dates.map(d=>`${+d.slice(4,6)}月`);
@@ -517,6 +531,8 @@ function renderCards(){
   <div class="weight"><label for="w_${a.key}" style="margin:0">⚖️ 採信權重</label><input id="w_${a.key}" type="range" min="0" max="3" step="0.5" value="${weights[a.key]}" data-k="${a.key}"><span class="num" id="wv_${a.key}">${weights[a.key]}×</span></div>
   ${PROFILES[a.key]?`<details class="kb"><summary>👤 背景檔案與資料庫</summary>${(p=>`<div class="kb-item"><b>🎓 經歷</b><ul class="why">${p.career.map(x=>`<li>${x}</li>`).join("")}</ul></div><div class="kb-item"><b>⚠️ 最在意的風險</b><ul class="why">${p.risk.map(x=>`<li>${x}</li>`).join("")}</ul></div><div class="kb-item"><b>📏 評判標準</b><ul class="why">${p.criteria.map(x=>`<li>${x}</li>`).join("")}</ul></div><div class="kb-item"><b>🗄️ 資料庫（只看得到這些）</b><div class="metrics">${p.db.map(x=>`<span>${x}</span>`).join("")}</div></div><div class="kb-item"><b>🙈 盲點</b><p>${p.blind}</p></div><div class="kb-item"><b>🧑‍🤝‍🧑 適合的客戶</b><p>${p.client}</p></div>`)(PROFILES[a.key])}</details>`:""}
   <details class="kb"><summary>📚 知識依據（${(KB[a.key]||[]).length} 張概念卡）</summary>${(KB[a.key]||[]).map(k=>`<div class="kb-item"><b>${k.t}</b><p>${k.b}</p><div class="kb-src">延伸原典：${k.r.map(id=>`<a href="${SRC[id].u}" target="_blank" rel="noopener">${SRC[id].t}</a>`).join("、")}</div></div>`).join("")}</details>
+  ${bookVoice(a.key,s,state)}
+  ${SHELF[a.key]?`<details class="kb"><summary>📚 課外書架（${SHELF[a.key].length} 本）</summary>${SHELF[a.key].map(b=>`<div class="kb-item"><b>《${b.zh}》</b><span class="kb-src">　${b.author}${b.year?`・${b.year}`:""}・${b.genre}</span><p>✨ 帶給他的特質：${b.trait}</p><p class="kb-src">${b.idea}　<a href="${GUT(b.gid)}" target="_blank" rel="noopener">讀原文（Project Gutenberg）</a></p></div>`).join("")}</details>`:""}
   <div class="critique"><b>💬 同儕質疑</b>　${a.critique}</div>
   <div class="vote-row"><button class="vote" type="button" data-v="${a.key}">❤ 投他一票</button><span class="votes">目前 <b class="num" id="vc_${a.key}">${votesOf(a.key)}</b> 票</span></div></article>`}).join("")}
 function renderConsensus(){const res=lastRes;
@@ -547,7 +563,7 @@ $("gacha").addEventListener("click",()=>{const a=ADVISORS[Math.floor(Math.random
  $("bubble").innerHTML=`<button class="close" type="button" id="mClose" aria-label="關閉">✕</button>
  <div class="avatar" style="background:${a.tape}" aria-hidden="true">${a.emoji}</div>
  <h3 id="mTitle">今天聽 ${a.name} 的！</h3><div class="muted" style="font-size:13px">${a.style}</div>
- <div class="say">「${a.quip}」<br><br>我的首選是 <b>${label(top.st)}</b>，看法 <b>${lab}</b>。<br>${top.why.join("；")}<br>🎯 ${top.entry}</div>
+ <div class="say">「${a.quip}」<br><br>我的首選是 <b>${label(top.st)}</b>，看法 <b>${lab}</b>。<br>${top.why.join("；")}<br>🎯 ${top.entry}${bookVoice(a.key,top.s,dataOf(top.st))}</div>
  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn" type="button" id="mAgain">🎰 再抽一次</button><button class="btn ghost" type="button" id="mSee" data-c="${top.st.c}">看這檔的完整意見</button></div>
  <div class="muted" style="font-size:11px;margin-top:10px">抽籤僅供娛樂，規則計算結果不保證準確，非投資建議。</div>`;
  $("modal").hidden=false;$("mSee").focus()});

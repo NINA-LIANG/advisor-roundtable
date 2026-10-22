@@ -28,17 +28,19 @@ def read(path):
 def pages():
     tw = read(ROOT / "data" / "tw.json").strip()
     profiles = read(ROOT / "knowledge" / "advisors.zh.json").strip()
+    shelf = json.dumps(json.loads(read(ROOT / "knowledge" / "bookshelf.zh.json")), ensure_ascii=False)
     insider = json.dumps(json.loads(read(ROOT / "knowledge" / "insider.zh.json")), ensure_ascii=False)
     src = read(WEB / "index.template.html")
     index = (src.replace("/*KB*/", read(WEB / "kb.js").strip())
                 .replace("/*TW*/", tw)
                 .replace("/*PROFILES*/", profiles)
                 .replace("/*INSIDER*/", insider)
+                .replace("/*SHELF*/", shelf)
                 .replace("__ASOF__", json.loads(tw)["asof"]))
     # 模擬倉共用理專圓桌的資料與六位理專的規則
     shared = src[src.index("// ---------- 台股資料"):src.index("const TABS=")]
     sim = (read(WEB / "sim.template.html").replace("/*SHARED*/", shared)
-           .replace("/*TW*/", tw).replace("/*PROFILES*/", profiles))
+           .replace("/*TW*/", tw).replace("/*PROFILES*/", profiles).replace("/*SHELF*/", shelf))
     rates = read(WEB / "rates.template.html").replace("/*RATES*/", json.dumps(
         json.loads(read(ROOT / "data" / "rates.json")), ensure_ascii=False, separators=(",", ":")))
     news = read(WEB / "news.template.html").replace("/*NEWS*/", json.dumps(
