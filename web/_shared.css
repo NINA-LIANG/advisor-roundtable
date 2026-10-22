@@ -46,3 +46,28 @@
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
 .sitefoot a{color:#4a87b5}
 .paper>.sitenav{margin-bottom:14px}
+
+/* 左側目錄：從左邊滑出，分組、圖示、右側數字 */
+.navbtn{border:none;background:#fff1e3;border-radius:12px;width:36px;height:36px;font-size:18px;line-height:1;color:#4a3b32;cursor:pointer;flex:none}
+.navbtn:hover{background:#ffd9a0}
+.drawer-bg{position:fixed;inset:0;background:rgba(74,59,50,.35);z-index:90}
+.drawer{position:fixed;top:0;left:0;bottom:0;z-index:91;width:min(340px,86vw);overflow-y:auto;background:#fffaf4;border-right:2px solid #f1e2d6;
+  box-shadow:8px 0 30px rgba(74,59,50,.18);padding:16px 14px 24px;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:#4a3b32;
+  padding-left:max(14px,env(safe-area-inset-left,0px));animation:drawerIn .2s ease-out}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.drawer{animation:none}}
+.dhead{display:flex;align-items:center;gap:10px;padding:2px 4px 14px;border-bottom:2px dashed #f1e2d6;margin-bottom:6px}
+.dlogo{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffd9a0,#f7b7c5);display:grid;place-items:center;font-size:22px;flex:none}
+.dhead b{display:block;font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-weight:400;font-size:20px;line-height:1.2}
+.dhead small{color:#8a7566;font-size:12.5px;letter-spacing:.04em}
+.dclose{margin-left:auto;border:none;background:none;font-size:20px;color:#8a7566;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.dclose:hover{background:#fff1e3}
+.dgrp{padding:10px 0 4px}
+.dgrp h4{margin:0 6px 4px;font-size:13px;font-weight:700;color:#8a7566;display:flex;gap:8px;align-items:baseline}
+.dgrp h4 small{font-weight:400;font-size:12px}
+.drawer a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:46px;padding:6px 10px;border-radius:14px;color:#4a3b32;text-decoration:none;font-size:16px}
+.drawer a:hover{background:#fff1e3}
+.drawer a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.drawer a i{font-style:normal;font-size:18px;text-align:center}
+.drawer a small{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;color:#8a7566}
+.dnote{margin:14px 8px 0;font-size:12px;color:#8a7566}

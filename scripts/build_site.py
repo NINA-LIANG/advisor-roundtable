@@ -27,6 +27,12 @@ PAGE_URL = {rel: url for url, rel in ARTIFACT_URLS.items()}
 NAV = [("學", [("learn.html", "入門教室"), ("news.html", "人氣小報")]),
        ("查", [("market.html", "台股全覽"), ("dividend.html", "除權息"), ("rates.html", "存款利率")]),
        ("做", [("index.html", "理專圓桌"), ("sim.html", "百萬模擬倉")])]
+# 左側目錄：分組標題、副標，每項的圖示（數字由 pages() 依資料算）
+DRAWER = [("學", "打好基本功", [("learn.html", "🌱", "入門教室"), ("news.html", "📰", "人氣小報")]),
+          ("查", "看懂市場資料", [("market.html", "📇", "台股全覽"), ("dividend.html", "💰", "除權息行事曆"),
+                             ("rates.html", "🏦", "存款利率")]),
+          ("做", "練習自己判斷", [("index.html", "✨", "理專圓桌"), ("sim.html", "🐷", "百萬模擬倉")]),
+          ("站", "認識這個網站", [("about.html", "📖", "關於本站")])]
 DISCLAIMER = ("示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。"
               "理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；"
               "依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。")
@@ -43,13 +49,28 @@ def link(rel, text, cur):
     return f'<a href="{PAGE_URL[rel]}" target="_blank" rel="noopener"{attr}>{text}</a>'
 
 
-def chrome(html, cur, asof, basics):
+def drawer(cur, counts):
+    groups = []
+    for g, sub, items in DRAWER:
+        rows = "".join(
+            f'<a href="{PAGE_URL[rel]}" target="_blank" rel="noopener"{" aria-current=\"page\"" if rel == cur else ""}>'
+            f'<i aria-hidden="true">{ic}</i><span>{t}</span><small>{counts.get(rel, "")}</small></a>' for rel, ic, t in items)
+        groups.append(f'<div class="dgrp"><h4>{g}<small>{sub}</small></h4>{rows}</div>')
+    return ('<div class="drawer-bg" hidden></div>'
+            '<aside class="drawer" id="sitedrawer" aria-label="網站目錄" hidden>'
+            '<div class="dhead"><span class="dlogo" aria-hidden="true">✨</span><div><b>理專圓桌</b><small>Advisor Roundtable</small></div>'
+            '<button class="dclose" type="button" aria-label="關閉目錄">✕</button></div>'
+            f'{"".join(groups)}<p class="dnote">示範與教育用途，非投資建議</p></aside>')
+
+
+def chrome(html, cur, asof, basics, counts):
     """把共用導覽列、樣式、頁尾聲明與名詞提示放進頁面"""
     css = read(WEB / "_shared.css")
     groups = "".join(f'<div class="grp"><span>{g}</span>{"".join(link(r, t, cur) for r, t in items)}</div>'
                      for g, items in NAV)
     badge = f'<span class="asofb" data-asof="{asof}">資料日期 {asof}</span>' if asof else ""
-    nav = (f"<style>{css}</style>\n<nav class=\"sitenav\" aria-label=\"網站導覽\">"
+    nav = (f"<style>{css}</style>\n{drawer(cur, counts)}\n<nav class=\"sitenav\" aria-label=\"網站導覽\">"
+           '<button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button>'
            f'<a class="brand" href="{PAGE_URL["index.html"]}" target="_blank" rel="noopener">✨ 理專圓桌</a>'
            f'{groups}{link("about.html", "關於本站", cur)}{badge}</nav>')
     gl = {"terms": basics["terms"], "url": PAGE_URL["learn.html"]}
@@ -104,7 +125,12 @@ def pages():
             "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": ""}
     out = {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
            "market.html": market, "dividend.html": dividend, "about.html": about}
-    return {k: chrome(v, k, asof[k], basics) for k, v in out.items()}
+    div = json.loads(read(ROOT / "data" / "dividends.json"))
+    counts = {"learn.html": len(basics["terms"]), "news.html": "月刊",
+              "market.html": f'{len(uni["stock"]) + len(uni["etf"]):,}',
+              "dividend.html": sum(1 for e in div["up"] if e[0] >= div["asof"]),
+              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬"}
+    return {k: chrome(v, k, asof[k], basics, counts) for k, v in out.items()}
 
 
 def main():

@@ -144,8 +144,34 @@ details.myth p{margin-top:6px;font-size:14.5px}
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
 .sitefoot a{color:#4a87b5}
 .paper>.sitenav{margin-bottom:14px}
+
+/* 左側目錄：從左邊滑出，分組、圖示、右側數字 */
+.navbtn{border:none;background:#fff1e3;border-radius:12px;width:36px;height:36px;font-size:18px;line-height:1;color:#4a3b32;cursor:pointer;flex:none}
+.navbtn:hover{background:#ffd9a0}
+.drawer-bg{position:fixed;inset:0;background:rgba(74,59,50,.35);z-index:90}
+.drawer{position:fixed;top:0;left:0;bottom:0;z-index:91;width:min(340px,86vw);overflow-y:auto;background:#fffaf4;border-right:2px solid #f1e2d6;
+  box-shadow:8px 0 30px rgba(74,59,50,.18);padding:16px 14px 24px;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:#4a3b32;
+  padding-left:max(14px,env(safe-area-inset-left,0px));animation:drawerIn .2s ease-out}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.drawer{animation:none}}
+.dhead{display:flex;align-items:center;gap:10px;padding:2px 4px 14px;border-bottom:2px dashed #f1e2d6;margin-bottom:6px}
+.dlogo{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffd9a0,#f7b7c5);display:grid;place-items:center;font-size:22px;flex:none}
+.dhead b{display:block;font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-weight:400;font-size:20px;line-height:1.2}
+.dhead small{color:#8a7566;font-size:12.5px;letter-spacing:.04em}
+.dclose{margin-left:auto;border:none;background:none;font-size:20px;color:#8a7566;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.dclose:hover{background:#fff1e3}
+.dgrp{padding:10px 0 4px}
+.dgrp h4{margin:0 6px 4px;font-size:13px;font-weight:700;color:#8a7566;display:flex;gap:8px;align-items:baseline}
+.dgrp h4 small{font-weight:400;font-size:12px}
+.drawer a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:46px;padding:6px 10px;border-radius:14px;color:#4a3b32;text-decoration:none;font-size:16px}
+.drawer a:hover{background:#fff1e3}
+.drawer a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.drawer a i{font-style:normal;font-size:18px;text-align:center}
+.drawer a small{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;color:#8a7566}
+.dnote{margin:14px 8px 0;font-size:12px;color:#8a7566}
 </style>
-<nav class="sitenav" aria-label="網站導覽"><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html" aria-current="page">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html">存款利率</a></div><div class="grp"><span>做</span><a href="index.html">理專圓桌</a><a href="sim.html">百萬模擬倉</a></div><a href="about.html">關於本站</a></nav>
+<div class="drawer-bg" hidden></div><aside class="drawer" id="sitedrawer" aria-label="網站目錄" hidden><div class="dhead"><span class="dlogo" aria-hidden="true">✨</span><div><b>理專圓桌</b><small>Advisor Roundtable</small></div><button class="dclose" type="button" aria-label="關閉目錄">✕</button></div><div class="dgrp"><h4>學<small>打好基本功</small></h4><a href="learn.html" aria-current="page"><i aria-hidden="true">🌱</i><span>入門教室</span><small>27</small></a><a href="news.html"><i aria-hidden="true">📰</i><span>人氣小報</span><small>月刊</small></a></div><div class="dgrp"><h4>查<small>看懂市場資料</small></h4><a href="market.html"><i aria-hidden="true">📇</i><span>台股全覽</span><small>2,352</small></a><a href="dividend.html"><i aria-hidden="true">💰</i><span>除權息行事曆</span><small>45</small></a><a href="rates.html"><i aria-hidden="true">🏦</i><span>存款利率</span><small>37</small></a></div><div class="dgrp"><h4>做<small>練習自己判斷</small></h4><a href="index.html"><i aria-hidden="true">✨</i><span>理專圓桌</span><small>6</small></a><a href="sim.html"><i aria-hidden="true">🐷</i><span>百萬模擬倉</span><small>100萬</small></a></div><div class="dgrp"><h4>站<small>認識這個網站</small></h4><a href="about.html"><i aria-hidden="true">📖</i><span>關於本站</span><small></small></a></div><p class="dnote">示範與教育用途，非投資建議</p></aside>
+<nav class="sitenav" aria-label="網站導覽"><button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html" aria-current="page">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html">存款利率</a></div><div class="grp"><span>做</span><a href="index.html">理專圓桌</a><a href="sim.html">百萬模擬倉</a></div><a href="about.html">關於本站</a></nav>
   <header>
     <div>
       <div class="eyebrow">理專圓桌・姊妹頁</div>
@@ -281,6 +307,16 @@ $("myths").innerHTML=L.myths.map(m=>`<details class="myth"><summary>${esc(m.q)}<
     const d=new Date(b.dataset.asof+"T00:00:00"),now=new Date();let n=0;
     for(const x=new Date(d);x<now;x.setDate(x.getDate()+1)){const w=x.getDay();if(x>d&&w&&w<6)n++}
     if(n>3){b.classList.add("stale");b.textContent+="・資料可能過期"}
+  }
+
+  // 左側目錄：☰ 打開，✕、點背景或按 Esc 關閉，關閉後焦點回到 ☰
+  const nb=document.querySelector(".navbtn"),dr=document.getElementById("sitedrawer"),bg=document.querySelector(".drawer-bg");
+  if(nb&&dr){
+    const show=on=>{dr.hidden=bg.hidden=!on;nb.setAttribute("aria-expanded",on);if(on)(dr.querySelector("[aria-current]")||dr.querySelector("a")).focus();else nb.focus()};
+    nb.addEventListener("click",()=>show(true));
+    dr.querySelector(".dclose").addEventListener("click",()=>show(false));
+    bg.addEventListener("click",()=>show(false));
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dr.hidden)show(false)});
   }
 
   // 手機上導覽列可橫滑：把目前這一頁捲到看得見的位置

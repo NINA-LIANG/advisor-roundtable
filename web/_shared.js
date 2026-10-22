@@ -8,6 +8,16 @@
     if(n>3){b.classList.add("stale");b.textContent+="・資料可能過期"}
   }
 
+  // 左側目錄：☰ 打開，✕、點背景或按 Esc 關閉，關閉後焦點回到 ☰
+  const nb=document.querySelector(".navbtn"),dr=document.getElementById("sitedrawer"),bg=document.querySelector(".drawer-bg");
+  if(nb&&dr){
+    const show=on=>{dr.hidden=bg.hidden=!on;nb.setAttribute("aria-expanded",on);if(on)(dr.querySelector("[aria-current]")||dr.querySelector("a")).focus();else nb.focus()};
+    nb.addEventListener("click",()=>show(true));
+    dr.querySelector(".dclose").addEventListener("click",()=>show(false));
+    bg.addEventListener("click",()=>show(false));
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dr.hidden)show(false)});
+  }
+
   // 手機上導覽列可橫滑：把目前這一頁捲到看得見的位置
   const nv=document.querySelector(".sitenav"),cur=nv&&nv.querySelector("[aria-current]");
   if(cur&&nv.scrollWidth>nv.clientWidth)nv.scrollLeft=cur.offsetLeft-nv.clientWidth/2+cur.offsetWidth/2;
