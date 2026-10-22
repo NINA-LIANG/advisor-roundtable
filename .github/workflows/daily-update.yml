@@ -1,4 +1,4 @@
-# 每個交易日收盤後抓證交所資料、重建網站並發佈到 GitHub Pages
+# 每個交易日收盤後抓證交所資料與銀行牌告利率、重建網站並發佈到 GitHub Pages
 name: daily-update
 
 on:
@@ -25,14 +25,17 @@ jobs:
           python-version: "3.12"
       - name: 抓證交所資料
         run: python scripts/fetch_twse.py
+      - name: 抓央行牌告利率
+        run: python scripts/fetch_rates.py
+        continue-on-error: true
       - name: 重建網站
         run: python scripts/build_site.py
       - name: 保存資料快照
         run: |
           git config user.name "daily-update-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/tw.json web/index.html
-          git diff --cached --quiet || git commit -m "data: $(date -u +%F) 證交所收盤資料"
+          git add data/tw.json data/rates.json web/index.html
+          git diff --cached --quiet || git commit -m "data: $(date -u +%F) 證交所收盤與銀行牌告利率"
           git push
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
