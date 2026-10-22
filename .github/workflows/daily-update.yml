@@ -34,7 +34,7 @@ jobs:
         run: |
           git config user.name "daily-update-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/tw.json data/rates.json web/index.html
+          git add data/tw.json data/rates.json web/index.html web/sim.html web/rates.html
           git diff --cached --quiet || git commit -m "data: $(date -u +%F) 證交所收盤與銀行牌告利率"
           git push
       - uses: actions/configure-pages@v5
