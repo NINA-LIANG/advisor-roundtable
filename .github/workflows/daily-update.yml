@@ -1,0 +1,42 @@
+# 每個交易日收盤後抓證交所資料、重建網站並發佈到 GitHub Pages
+name: daily-update
+
+on:
+  schedule:
+    - cron: "30 10 * * 1-5"   # 台灣時間 18:30（本益比、殖利率約 17:00 後才更新）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓證交所資料
+        run: python scripts/fetch_twse.py
+      - name: 重建網站
+        run: python scripts/build_site.py
+      - name: 保存資料快照
+        run: |
+          git config user.name "daily-update-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/tw.json web/index.html
+          git diff --cached --quiet || git commit -m "data: $(date -u +%F) 證交所收盤資料"
+          git push
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deploy
+        uses: actions/deploy-pages@v4
