@@ -1,7 +1,7 @@
 <title>百萬模擬倉</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: 理專圓桌的姊妹頁，像一本存摺。上方資產總覽 → 跟單下單台 → 持股與交易明細 → 回測。台股慣例：漲紅、跌綠。刻意只做淺色主題。 */
 :root{
@@ -91,6 +91,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
 </style>
 
 <div class="wrap">
+  <!--SITE-NAV-->
   <header>
     <div>
       <h1>🐷 百萬模擬倉</h1>
@@ -148,7 +149,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
     <h2>⏪ 如果半年前就把 100 萬交給理專？</h2>
     <p class="note" style="margin:6px 0 0">用過去一年的真實月收盤做回測：從 <span id="btFrom"></span> 起，每個月月底依理專當時能看到的股價挑前三名、平均買進，持有到下個月再換股，計入手續費與證交稅。只有<b>只看股價</b>的三位理專能這樣回測；價值派、存股派、總經派需要「當時」的本益比、殖利率與景氣燈號，目前沒有這些歷史資料，硬算會偷看到未來，所以不列入。</p>
     <div class="bt-grid">
-      <div><div class="chart" id="btChart"></div><div class="legend" id="btLeg"></div></div>
+      <div><p id="btSay" style="margin:0 0 6px;font-weight:700"></p><div class="chart" id="btChart"></div><div class="legend" id="btLeg"></div></div>
       <div class="tbl-box" style="margin-top:0"><table class="tbl" style="min-width:0"><thead><tr><th>策略</th><th>期末資產</th><th>報酬率</th><th>最大回落</th></tr></thead><tbody id="btT"></tbody></table></div>
     </div>
     <details style="margin-top:12px"><summary class="muted">每個月各買了什麼</summary><div class="tbl-box"><table class="tbl"><thead><tr><th>月份</th><th>陳怡君</th><th>周以恆</th><th>張雅雯</th></tr></thead><tbody id="btPicks"></tbody></table></div></details>
@@ -180,7 +181,7 @@ const label=s=>`${s.c} ${s.n}`;
 const money=x=>Math.round(x).toLocaleString("zh-TW");
 const signed=x=>`${x>=0?"+":"−"}${money(Math.abs(x))}`;
 const pctS=x=>`${x>=0?"+":""}${(x*100).toFixed(2)}%`;
-const cls=x=>x>0?"up":x<0?"down":"";
+const cls=x=>x>0?"pc up":x<0?"pc down":"";
 const macro={light:"綠",rate:0,pmi:50.5};
 const view=(a,d)=>{const v={c:d.c,n:d.n};(PROFILES[a.key]?.fields||Object.keys(d)).forEach(k=>v[k]=d[k]);return v};
 function runA(a,d){const r=a.run(view(a,{...d,...macro}));if(!isETF(d)||!["槓桿反向","期貨商品"].includes(d.t))return r;return {...r,s:Math.min(r.s,-1),tb:-99}}
@@ -303,9 +304,13 @@ function renderBT(){const runs=[backtest("tech"),backtest("mom"),backtest("quant
  M.forEach((m,i)=>{if(i%2===0||i===6)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?"start":i===6?"end":"middle"}">${m}</text>`});
  all.forEach((r,j)=>{g+=`<path d="M${r.curve.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L")}" fill="none" stroke="${colors[j]}" stroke-width="${j<3?2.6:2}" ${j>=3?'stroke-dasharray="6 4"':""} stroke-linejoin="round"/><circle cx="${x(6)}" cy="${y(r.curve[6])}" r="4" fill="${colors[j]}"/>`});
  $("btChart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="回測資產走勢">${g}</svg>`;
+ {const best=[...runs].sort((a,b)=>b.curve[6]-a.curve[6])[0],bench=all[3],r0=best.curve[6]/START-1,rb=bench.curve[6]/START-1;
+  $("btSay").textContent=`這半年表現最好的是${best.name}（${pctS(r0)}），${r0>rb?"贏過":"沒贏過"}${bench.name}（${pctS(rb)}）。只有 6 個月，可能只是運氣。`}
  $("btLeg").innerHTML=all.map((r,j)=>`<span><i style="background:${colors[j]}"></i>${r.emoji} ${r.name}</span>`).join("");
  $("btT").innerHTML=all.map(r=>{const e=r.curve[6],ret=e/START-1;return `<tr><td>${r.emoji} ${r.name}</td><td class="mono">${money(e)}</td><td class="mono ${cls(ret)}">${pctS(ret)}</td><td class="mono">${(maxDD(r.curve)*100).toFixed(1)}%</td></tr>`}).join("");
  $("btPicks").innerHTML=M.slice(0,6).map((m,i)=>`<tr><td class="mono">${m}</td>${runs.map(r=>`<td style="text-align:left;white-space:normal">${r.picks[i].join("、")||"空手"}</td>`).join("")}</tr>`).join("")}
 
 renderAll();renderBT();
+{const h=decodeURIComponent(location.hash.slice(1)),s=h&&byCode(h);if(s){$("mCode").value=label(s);renderManual()}}
 </script>
+<!--SITE-FOOT-->

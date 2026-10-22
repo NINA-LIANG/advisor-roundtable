@@ -1,7 +1,7 @@
 <title>理專圓桌</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
 <style>
 /* Layout: 馬卡龍軟萌風。頂部標題與扭蛋 → 選股面板 → 共識＋人氣排行 → 期間分頁＋理專貼紙卡 → 書庫。刻意只做淺色主題。 */
 :root{
@@ -196,27 +196,38 @@ footer{font-size:12px;color:var(--ink-soft);max-width:80ch;margin:0 auto;text-al
 .pk ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:13px}
 .linkbtn{border:none;background:none;padding:0;color:var(--sky-deep);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .pk .why2{color:var(--ink-soft);font-size:12px}
+.pk details{font-size:12px;color:var(--ink-soft)}
+.pk summary{cursor:pointer;color:var(--sky-deep);font-weight:700;width:max-content}
+.pk details ul{margin:4px 0 0;padding-left:16px}
+.route{background:#fffdfa;border:2px dashed var(--apricot-deep);border-radius:22px;padding:10px 18px;text-align:left;font-size:14px;max-width:560px}
+.route ol{margin:4px 0 6px;padding-left:22px}
+.route a{color:var(--sky-deep);font-weight:700}
+.jump{font-size:13px;color:var(--ink-soft);margin-top:6px}
+.jump a{color:var(--sky-deep);font-weight:700}
 
 </style>
 
 <div class="wrap">
+  <!--SITE-NAV-->
   <header class="hero">
     <h1>✨ 理專圓桌 ✨</h1>
     <p class="sub">台股買哪一檔、什麼時候進場？六位理專陪你一起想！🐾</p>
     <button class="gacha" id="gacha" type="button">🎰 今天聽誰的？（扭蛋抽一位）</button>
-    <a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb" target="_blank" rel="noopener" style="color:var(--sky-deep);font-weight:700">🐷 拿 100 萬去模擬倉試試看 →</a>
-    <a href="https://claude.ai/artifact/Bmc4PG8mYgvAV9iEik8PDz" target="_blank" rel="noopener" style="color:var(--sky-deep);font-weight:700">🏦 各銀行存款利率比較 →</a>
-    <a href="https://claude.ai/artifact/DMkJkY1CJP7BVhm61qV4Fx" target="_blank" rel="noopener" style="color:var(--sky-deep);font-weight:700">📰 投資人氣小報：大家都買什麼 →</a>
-    <a href="https://claude.ai/artifact/RK74vfRrALWhutPXahWRtu" target="_blank" rel="noopener" style="color:var(--sky-deep);font-weight:700">🌱 投資入門教室：基礎心法與知識 →</a>
-    <a href="https://claude.ai/artifact/Aj4eFHk9RZrjkuUmr7kRXb" target="_blank" rel="noopener" style="color:var(--sky-deep);font-weight:700">📇 台股全覽：所有股票與 ETF 內容物 →</a>
-    <a href="https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw" target="_blank" rel="noopener" style="color:var(--sky-deep);font-weight:700">💰 除權息行事曆：誰要配息、填息了沒 →</a>
-    <div class="disclaimer">💡 示範用途，非投資建議。股價與本益比為臺灣證券交易所公開資料（__ASOF__ 收盤快照，非即時），理專選股是固定規則的計算結果，不保證準確，理專皆為虛構角色，不代表任何真實人士或學校立場。本站不收費、不收廣告、不提供個人化推介，依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。</div>
+    <div class="route" id="route" hidden>
+      <b>第一次來？照這三步走</b>
+      <ol>
+        <li><a href="https://claude.ai/artifact/RK74vfRrALWhutPXahWRtu" target="_blank" rel="noopener">花十分鐘讀入門教室</a></li>
+        <li><a href="#picks">看六位理專各自選了什麼、為什麼</a></li>
+        <li><a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb" target="_blank" rel="noopener">拿 100 萬模擬倉練習</a></li>
+      </ol>
+      <button class="linkbtn" type="button" id="routeX">知道了，不用再顯示</button>
+    </div>
   </header>
 
   <section class="box panel-grid" aria-label="選股與參數">
     <div>
       <div><label for="stock">🍙 想問哪一檔？（輸入代號或名稱）</label><input id="stock" list="stockList" autocomplete="off" style="width:100%;font:inherit;color:var(--ink);background:#fff9f4;border:2px solid var(--line);border-radius:16px;padding:8px 12px"><datalist id="stockList"></datalist></div>
-      <div class="chart-box" id="chart"></div>
+      <p id="chartSay" style="margin:10px 0 4px;font-size:14px;font-weight:700"></p><div class="chart-box" id="chart"></div>
       <div class="legend"><span><i style="background:var(--ink)"></i>每月收盤（約每月 21 日）</span><span><i style="background:var(--matcha-deep)"></i>近一個月均價</span></div>
     </div>
     <div>
@@ -427,8 +438,8 @@ $("rate").value=macro.rate;$("pmi").value=macro.pmi;
 const dataOf=s=>({...s,...macro});
 function loadStock(c){const s=byCode(c);if(!s)return;state=dataOf(s);$("stock").value=label(s);renderFacts();render()}
 function renderFacts(){const s=state,cls=s.chg>0?"up":s.chg<0?"down":"";
- const f=isETF(s)?[["類型",s.t],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["近一年配息",s.cd?`${s.cd} 元`:"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["月均價",fmt(s.ma)],["資料日",TW.asof]]:[["產業",indName(s.i)],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["本益比",s.pe??"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["淨值比",s.pb??"—"],["月均價",fmt(s.ma)],["資料日",TW.asof]];
- $("facts").innerHTML=f.map(([k,v])=>`<div class="fact"><span>${k}</span><b>${v}</b></div>`).join("")}
+ const f=isETF(s)?[["類型",s.t],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="pc ${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["近一年配息",s.cd?`${s.cd} 元`:"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["月均價",fmt(s.ma)],["資料日",TW.asof]]:[["產業",indName(s.i)],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="pc ${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["本益比",s.pe??"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["淨值比",s.pb??"—"],["月均價",fmt(s.ma)],["資料日",TW.asof]];
+ $("facts").innerHTML=f.map(([k,v])=>`<div class="fact"><span>${k}</span><b>${v}</b></div>`).join("")+`<div class="jump" style="grid-column:1/-1">帶著 ${s.n} 去：<a href="https://claude.ai/artifact/Aj4eFHk9RZrjkuUmr7kRXb#${s.c}" target="_blank" rel="noopener">台股全覽</a>・<a href="https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw#${s.c}" target="_blank" rel="noopener">除權息</a>・<a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb#${s.c}" target="_blank" rel="noopener">模擬倉</a></div>`}
 function renderLights(){$("lights").innerHTML=LIGHTS.map(([n,c])=>`<button class="chip" type="button" aria-pressed="${macro.light===n}" data-l="${n}"><span class="dot" style="background:${c}"></span>${n}燈</button>`).join("")}
 function setMacro(k,v){macro[k]=v;store.set(k,v);state={...state,[k]:v};render();renderPicks()}
 $("lights").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;macro.light=b.dataset.l;renderLights();setMacro("light",b.dataset.l)});
@@ -444,6 +455,7 @@ function drawChart(d){const p=[...d.m,d.p],W=520,H=200,pl=8,pr=44,pt=10,pb=22,n=
  const lo=Math.min(...p,d.ma)*0.97,hi=Math.max(...p,d.ma)*1.03,x=i=>pl+(W-pl-pr)*i/(n-1),y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo));
  let g="";for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4,yy=y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#f1e2d6"/><text x="${W-pr+4}" y="${yy+3}">${fmt(v)}</text>`}
  const pts=p.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L");
+ {const ch=d.p/d.m[0]-1;$("chartSay").innerHTML=`${d.n} 近一年從 ${fmt(d.m[0])} 到 ${fmt(d.p)}，<span class="pc ${ch>0?"up":ch<0?"down":""}">${ch>0?"+":""}${(ch*100).toFixed(1)}%</span>；現價${d.p>=d.ma?"在":"低於"}月均價 ${fmt(d.ma)}${d.p>=d.ma?"之上":""}。`}
  $("chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:320px;display:block" role="img" aria-label="${d.n} 近一年每月收盤價">${g}
  <line x1="${pl}" x2="${W-pr}" y1="${y(d.ma)}" y2="${y(d.ma)}" stroke="var(--matcha-deep)" stroke-width="2" stroke-dasharray="6 5"/>
  <path d="M${pts}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>
@@ -471,7 +483,10 @@ function renderPicks(){screen();const cnt={};
  Object.entries(PICKS).forEach(([k,l])=>l.forEach(r=>{if(r.s>=0.5&&!(uni==="etf"&&k==="value"))(cnt[r.st.c]=cnt[r.st.c]||[]).push(r)}));
  const hot=Object.entries(cnt).filter(([,v])=>v.length>=2).sort((x,y)=>y[1].length-x[1].length);
  $("hot").innerHTML=hot.length?`🔥 <b>共識熱門${uni==="etf"?" ETF":"股"}</b>　${hot.map(([c,v])=>`<button class="linkbtn" type="button" data-c="${c}">${label(byCode(c))}</button>（${v.length} 位理專都選）`).join("、")}`:"🌱 這次沒有任何一檔同時被兩位以上的理專選中，各流派看法分散。";
- $("picks").innerHTML=ADVISORS.map(a=>`<div class="pk" style="--tape:${a.tape}"><h3>${a.emoji} ${a.name}的首選</h3>${uni==="etf"&&a.key==="value"?`<p class="why2">ETF 是一籃子股票，我不用本益比替 ETF 排名。挑 ETF 時我會先比內扣費用和追蹤誤差，這兩項資料還沒放進系統。</p>`:`<ol>${PICKS[a.key].map(r=>`<li><button class="linkbtn" type="button" data-c="${r.st.c}">${label(r.st)}</button>　<span class="pill ${LABEL(r.s)[1]}" style="font-size:11px;padding:2px 8px">${LABEL(r.s)[0]}</span><div class="why2">${r.why[1]||r.why[0]}・${Object.entries(r.metrics).slice(0,2).map(([k,v])=>`${k} ${v}`).join("・")}</div></li>`).join("")}</ol>`}</div>`).join("")}
+ $("picks").innerHTML=ADVISORS.map(a=>`<div class="pk" style="--tape:${a.tape}"><h3>${a.emoji} ${a.name}的首選</h3>${uni==="etf"&&a.key==="value"?`<p class="why2">ETF 是一籃子股票，我不用本益比替 ETF 排名。挑 ETF 時我會先比內扣費用和追蹤誤差，這兩項資料還沒放進系統。</p>`:`<ol>${PICKS[a.key].map(r=>`<li><button class="linkbtn" type="button" data-c="${r.st.c}">${label(r.st)}</button>　<span class="pill ${LABEL(r.s)[1]}" style="font-size:11px;padding:2px 8px">${LABEL(r.s)[0]}</span><div class="why2">${r.why[1]||r.why[0]}・${Object.entries(r.metrics).slice(0,2).map(([k,v])=>`${k} ${v}`).join("・")}</div><details><summary>為什麼？</summary><ul>${r.why.map(w=>`<li>${w}</li>`).join("")}<li>用到的數字：${Object.entries(r.metrics).map(([k,v])=>`${k} ${v}`).join("・")}</li><li>進場規則：${r.entry}</li></ul></details></li>`).join("")}</ol>`}</div>`).join("")}
+if(!store.get("routeDone",false))$("route").hidden=false;
+$("routeX").addEventListener("click",()=>{store.set("routeDone",true);$("route").hidden=true});
+{const h=decodeURIComponent(location.hash.slice(1));if(h&&byCode(h))setTimeout(()=>loadStock(h))}
 $("uni").addEventListener("click",e=>{const b=e.target.closest("[data-u]");if(!b)return;uni=b.dataset.u;store.set("uni",uni);renderPicks()});
 document.addEventListener("click",e=>{const b=e.target.closest(".linkbtn[data-c]");if(!b)return;loadStock(b.dataset.c);$("stock").scrollIntoView({behavior:"smooth",block:"center"})});
 
@@ -609,3 +624,4 @@ const INS=/*INSIDER*/;
     $("qOut").innerHTML=`<div class="ins-alert ok"><b>${L.name}</b>（${sum} 分）・適合 ${L.rr}<br>${esc(L.tip)}</div>`;};
 })();
 </script>
+<!--SITE-FOOT-->

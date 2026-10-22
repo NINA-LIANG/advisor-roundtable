@@ -8,7 +8,7 @@
 <title>理專圓桌</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
 <style>
 /* Layout: 馬卡龍軟萌風。頂部標題與扭蛋 → 選股面板 → 共識＋人氣排行 → 期間分頁＋理專貼紙卡 → 書庫。刻意只做淺色主題。 */
 :root{
@@ -203,27 +203,87 @@ footer{font-size:12px;color:var(--ink-soft);max-width:80ch;margin:0 auto;text-al
 .pk ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:13px}
 .linkbtn{border:none;background:none;padding:0;color:var(--sky-deep);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .pk .why2{color:var(--ink-soft);font-size:12px}
+.pk details{font-size:12px;color:var(--ink-soft)}
+.pk summary{cursor:pointer;color:var(--sky-deep);font-weight:700;width:max-content}
+.pk details ul{margin:4px 0 0;padding-left:16px}
+.route{background:#fffdfa;border:2px dashed var(--apricot-deep);border-radius:22px;padding:10px 18px;text-align:left;font-size:14px;max-width:560px}
+.route ol{margin:4px 0 6px;padding-left:22px}
+.route a{color:var(--sky-deep);font-weight:700}
+.jump{font-size:13px;color:var(--ink-soft);margin-top:6px}
+.jump a{color:var(--sky-deep);font-weight:700}
 
 </style>
 
 <div class="wrap">
+  <style>/* 全站共用：導覽列、資料日期、名詞提示、表格、漲跌符號、觸控大小、頁尾聲明。由 build_site.py 嵌入每一頁。 */
+.sitenav{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;font-size:14px;line-height:1.4;color:#4a3b32;box-shadow:0 4px 0 rgba(74,59,50,.05)}
+.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.sitenav a:hover{background:#fff1e3}
+.sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
+.sitenav .grp{display:flex;align-items:center;gap:2px}
+.sitenav .grp>span{font-size:11.5px;color:#8a7566;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
+.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#5f9147;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
+@media (max-width:760px){
+  .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
+  .sitenav::-webkit-scrollbar{display:none}
+  .sitenav .asofb{margin-left:0}
+}
+
+/* 名詞提示 */
+.gl-term{text-decoration:underline dotted #8a7566;text-underline-offset:3px;cursor:help}
+.gl-pop{position:absolute;z-index:50;max-width:min(320px,calc(100vw - 32px));background:#fffdfa;color:#4a3b32;border:2px solid #f1e2d6;border-radius:18px;
+  box-shadow:0 10px 30px rgba(74,59,50,.18);padding:10px 14px;font:14px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-align:left;white-space:normal}
+.gl-pop b{display:block;font-size:15px;margin-bottom:2px}
+.gl-pop a{display:inline-block;margin-top:4px;color:#4a87b5;font-weight:700}
+
+/* 漲跌：顏色之外再加符號 */
+.pc.up::before{content:"▲ ";font-size:.8em}
+.pc.down::before{content:"▼ ";font-size:.8em}
+
+/* 可橫滑的表格：左右出現陰影提示還有內容，名稱欄固定 */
+.scroll{background:
+  linear-gradient(to right,#fffdfa 30%,rgba(255,253,250,0)) left/40px 100% no-repeat local,
+  linear-gradient(to left,#fffdfa 30%,rgba(255,253,250,0)) right/40px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%,rgba(74,59,50,.16),transparent) left/14px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%,rgba(74,59,50,.16),transparent) right/14px 100% no-repeat scroll}
+@media (max-width:760px){
+  .scroll .stick{position:sticky;left:0;z-index:1;background:#fffdfa;box-shadow:4px 0 6px -4px rgba(74,59,50,.25);max-width:9.5em;overflow:hidden;text-overflow:ellipsis}
+  .scroll tr[aria-selected="true"] .stick{background:#e8f3fc}
+}
+
+/* 觸控裝置：按鈕、晶片至少 44 像素高 */
+@media (pointer:coarse){
+  .chip,.tab,.pager button,.more,select,.sitenav a{min-height:44px;display:inline-flex;align-items:center}
+}
+
+.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#8a7566;text-align:center;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.sitefoot a{color:#4a87b5}
+.paper>.sitenav{margin-bottom:14px}
+</style>
+<nav class="sitenav" aria-label="網站導覽"><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html">存款利率</a></div><div class="grp"><span>做</span><a href="index.html" aria-current="page">理專圓桌</a><a href="sim.html">百萬模擬倉</a></div><a href="about.html">關於本站</a><span class="asofb" data-asof="2026-10-21">資料日期 2026-10-21</span></nav>
   <header class="hero">
     <h1>✨ 理專圓桌 ✨</h1>
     <p class="sub">台股買哪一檔、什麼時候進場？六位理專陪你一起想！🐾</p>
     <button class="gacha" id="gacha" type="button">🎰 今天聽誰的？（扭蛋抽一位）</button>
-    <a href="sim.html" style="color:var(--sky-deep);font-weight:700">🐷 拿 100 萬去模擬倉試試看 →</a>
-    <a href="rates.html" style="color:var(--sky-deep);font-weight:700">🏦 各銀行存款利率比較 →</a>
-    <a href="news.html" style="color:var(--sky-deep);font-weight:700">📰 投資人氣小報：大家都買什麼 →</a>
-    <a href="learn.html" style="color:var(--sky-deep);font-weight:700">🌱 投資入門教室：基礎心法與知識 →</a>
-    <a href="market.html" style="color:var(--sky-deep);font-weight:700">📇 台股全覽：所有股票與 ETF 內容物 →</a>
-    <a href="dividend.html" style="color:var(--sky-deep);font-weight:700">💰 除權息行事曆：誰要配息、填息了沒 →</a>
-    <div class="disclaimer">💡 示範用途，非投資建議。股價與本益比為臺灣證券交易所公開資料（2026-10-21 收盤快照，非即時），理專選股是固定規則的計算結果，不保證準確，理專皆為虛構角色，不代表任何真實人士或學校立場。本站不收費、不收廣告、不提供個人化推介，依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。</div>
+    <div class="route" id="route" hidden>
+      <b>第一次來？照這三步走</b>
+      <ol>
+        <li><a href="learn.html">花十分鐘讀入門教室</a></li>
+        <li><a href="#picks">看六位理專各自選了什麼、為什麼</a></li>
+        <li><a href="sim.html">拿 100 萬模擬倉練習</a></li>
+      </ol>
+      <button class="linkbtn" type="button" id="routeX">知道了，不用再顯示</button>
+    </div>
   </header>
 
   <section class="box panel-grid" aria-label="選股與參數">
     <div>
       <div><label for="stock">🍙 想問哪一檔？（輸入代號或名稱）</label><input id="stock" list="stockList" autocomplete="off" style="width:100%;font:inherit;color:var(--ink);background:#fff9f4;border:2px solid var(--line);border-radius:16px;padding:8px 12px"><datalist id="stockList"></datalist></div>
-      <div class="chart-box" id="chart"></div>
+      <p id="chartSay" style="margin:10px 0 4px;font-size:14px;font-weight:700"></p><div class="chart-box" id="chart"></div>
       <div class="legend"><span><i style="background:var(--ink)"></i>每月收盤（約每月 21 日）</span><span><i style="background:var(--matcha-deep)"></i>近一個月均價</span></div>
     </div>
     <div>
@@ -460,8 +520,8 @@ $("rate").value=macro.rate;$("pmi").value=macro.pmi;
 const dataOf=s=>({...s,...macro});
 function loadStock(c){const s=byCode(c);if(!s)return;state=dataOf(s);$("stock").value=label(s);renderFacts();render()}
 function renderFacts(){const s=state,cls=s.chg>0?"up":s.chg<0?"down":"";
- const f=isETF(s)?[["類型",s.t],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["近一年配息",s.cd?`${s.cd} 元`:"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["月均價",fmt(s.ma)],["資料日",TW.asof]]:[["產業",indName(s.i)],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["本益比",s.pe??"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["淨值比",s.pb??"—"],["月均價",fmt(s.ma)],["資料日",TW.asof]];
- $("facts").innerHTML=f.map(([k,v])=>`<div class="fact"><span>${k}</span><b>${v}</b></div>`).join("")}
+ const f=isETF(s)?[["類型",s.t],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="pc ${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["近一年配息",s.cd?`${s.cd} 元`:"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["月均價",fmt(s.ma)],["資料日",TW.asof]]:[["產業",indName(s.i)],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="pc ${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["本益比",s.pe??"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["淨值比",s.pb??"—"],["月均價",fmt(s.ma)],["資料日",TW.asof]];
+ $("facts").innerHTML=f.map(([k,v])=>`<div class="fact"><span>${k}</span><b>${v}</b></div>`).join("")+`<div class="jump" style="grid-column:1/-1">帶著 ${s.n} 去：<a href="market.html#${s.c}" target="_blank" rel="noopener">台股全覽</a>・<a href="dividend.html#${s.c}" target="_blank" rel="noopener">除權息</a>・<a href="sim.html#${s.c}" target="_blank" rel="noopener">模擬倉</a></div>`}
 function renderLights(){$("lights").innerHTML=LIGHTS.map(([n,c])=>`<button class="chip" type="button" aria-pressed="${macro.light===n}" data-l="${n}"><span class="dot" style="background:${c}"></span>${n}燈</button>`).join("")}
 function setMacro(k,v){macro[k]=v;store.set(k,v);state={...state,[k]:v};render();renderPicks()}
 $("lights").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;macro.light=b.dataset.l;renderLights();setMacro("light",b.dataset.l)});
@@ -477,6 +537,7 @@ function drawChart(d){const p=[...d.m,d.p],W=520,H=200,pl=8,pr=44,pt=10,pb=22,n=
  const lo=Math.min(...p,d.ma)*0.97,hi=Math.max(...p,d.ma)*1.03,x=i=>pl+(W-pl-pr)*i/(n-1),y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo));
  let g="";for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4,yy=y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#f1e2d6"/><text x="${W-pr+4}" y="${yy+3}">${fmt(v)}</text>`}
  const pts=p.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L");
+ {const ch=d.p/d.m[0]-1;$("chartSay").innerHTML=`${d.n} 近一年從 ${fmt(d.m[0])} 到 ${fmt(d.p)}，<span class="pc ${ch>0?"up":ch<0?"down":""}">${ch>0?"+":""}${(ch*100).toFixed(1)}%</span>；現價${d.p>=d.ma?"在":"低於"}月均價 ${fmt(d.ma)}${d.p>=d.ma?"之上":""}。`}
  $("chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:320px;display:block" role="img" aria-label="${d.n} 近一年每月收盤價">${g}
  <line x1="${pl}" x2="${W-pr}" y1="${y(d.ma)}" y2="${y(d.ma)}" stroke="var(--matcha-deep)" stroke-width="2" stroke-dasharray="6 5"/>
  <path d="M${pts}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>
@@ -504,7 +565,10 @@ function renderPicks(){screen();const cnt={};
  Object.entries(PICKS).forEach(([k,l])=>l.forEach(r=>{if(r.s>=0.5&&!(uni==="etf"&&k==="value"))(cnt[r.st.c]=cnt[r.st.c]||[]).push(r)}));
  const hot=Object.entries(cnt).filter(([,v])=>v.length>=2).sort((x,y)=>y[1].length-x[1].length);
  $("hot").innerHTML=hot.length?`🔥 <b>共識熱門${uni==="etf"?" ETF":"股"}</b>　${hot.map(([c,v])=>`<button class="linkbtn" type="button" data-c="${c}">${label(byCode(c))}</button>（${v.length} 位理專都選）`).join("、")}`:"🌱 這次沒有任何一檔同時被兩位以上的理專選中，各流派看法分散。";
- $("picks").innerHTML=ADVISORS.map(a=>`<div class="pk" style="--tape:${a.tape}"><h3>${a.emoji} ${a.name}的首選</h3>${uni==="etf"&&a.key==="value"?`<p class="why2">ETF 是一籃子股票，我不用本益比替 ETF 排名。挑 ETF 時我會先比內扣費用和追蹤誤差，這兩項資料還沒放進系統。</p>`:`<ol>${PICKS[a.key].map(r=>`<li><button class="linkbtn" type="button" data-c="${r.st.c}">${label(r.st)}</button>　<span class="pill ${LABEL(r.s)[1]}" style="font-size:11px;padding:2px 8px">${LABEL(r.s)[0]}</span><div class="why2">${r.why[1]||r.why[0]}・${Object.entries(r.metrics).slice(0,2).map(([k,v])=>`${k} ${v}`).join("・")}</div></li>`).join("")}</ol>`}</div>`).join("")}
+ $("picks").innerHTML=ADVISORS.map(a=>`<div class="pk" style="--tape:${a.tape}"><h3>${a.emoji} ${a.name}的首選</h3>${uni==="etf"&&a.key==="value"?`<p class="why2">ETF 是一籃子股票，我不用本益比替 ETF 排名。挑 ETF 時我會先比內扣費用和追蹤誤差，這兩項資料還沒放進系統。</p>`:`<ol>${PICKS[a.key].map(r=>`<li><button class="linkbtn" type="button" data-c="${r.st.c}">${label(r.st)}</button>　<span class="pill ${LABEL(r.s)[1]}" style="font-size:11px;padding:2px 8px">${LABEL(r.s)[0]}</span><div class="why2">${r.why[1]||r.why[0]}・${Object.entries(r.metrics).slice(0,2).map(([k,v])=>`${k} ${v}`).join("・")}</div><details><summary>為什麼？</summary><ul>${r.why.map(w=>`<li>${w}</li>`).join("")}<li>用到的數字：${Object.entries(r.metrics).map(([k,v])=>`${k} ${v}`).join("・")}</li><li>進場規則：${r.entry}</li></ul></details></li>`).join("")}</ol>`}</div>`).join("")}
+if(!store.get("routeDone",false))$("route").hidden=false;
+$("routeX").addEventListener("click",()=>{store.set("routeDone",true);$("route").hidden=true});
+{const h=decodeURIComponent(location.hash.slice(1));if(h&&byCode(h))setTimeout(()=>loadStock(h))}
 $("uni").addEventListener("click",e=>{const b=e.target.closest("[data-u]");if(!b)return;uni=b.dataset.u;store.set("uni",uni);renderPicks()});
 document.addEventListener("click",e=>{const b=e.target.closest(".linkbtn[data-c]");if(!b)return;loadStock(b.dataset.c);$("stock").scrollIntoView({behavior:"smooth",block:"center"})});
 
@@ -640,6 +704,68 @@ const INS={"_note": "理專內行筆記。內容為自行整理的重點摘要�
     if(v.some(x=>!x)){$("qOut").innerHTML='<div class="ins-alert">還有題目沒作答。</div>';return;}
     const sum=v.reduce((a,x)=>a+ +x.value,0),L=Q.levels.find(l=>sum<=l.max);
     $("qOut").innerHTML=`<div class="ins-alert ok"><b>${L.name}</b>（${sum} 分）・適合 ${L.rr}<br>${esc(L.tip)}</div>`;};
+})();
+</script>
+<footer class="sitefoot">示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。 <a href="about.html">關於本站與資料來源</a></footer>
+<script>window.__GL__={"terms":[{"g":"商品","k":"股票","d":"公司的一小部分所有權。公司賺錢，股價和股利可能成長；公司經營不善，也可能大跌甚至下市。"},{"g":"商品","k":"ETF","d":"Exchange Traded Fund，在交易所買賣的基金。一檔 ETF 裡面裝了一籃子股票或債券，買一張就等於分散投資。"},{"g":"商品","k":"市值型 ETF","d":"依公司市值大小決定比重，例如追蹤台灣前 50 大公司的 ETF。台積電這類大公司占比會很高。"},{"g":"商品","k":"高股息 ETF","d":"挑選殖利率較高的股票組成，配息較多。要注意配息可能來自本金或收益平準金，配息高不等於總報酬高。"},{"g":"商品","k":"債券","d":"借錢給政府或公司，定期領利息、到期拿回本金。利率上升時，舊債券的價格會下跌。"},{"g":"商品","k":"定存","d":"把錢放在銀行一段固定期間，換取比活存高的利率。台灣每家銀行每人的存款受存保保障最高 300 萬元。"},{"g":"指標","k":"殖利率","d":"一年股利 ÷ 股價。股價 100 元、配 5 元，殖利率 5%。股價大跌時殖利率會「看起來」變高，要小心。"},{"g":"指標","k":"本益比 (P/E)","d":"股價 ÷ 每股盈餘 (EPS)。代表用幾年的獲利可以買回這個價格。越高代表市場對未來期待越高，也可能越貴。"},{"g":"指標","k":"EPS","d":"每股盈餘，公司稅後淨利 ÷ 股數。代表每一股替你賺了多少錢。"},{"g":"指標","k":"總報酬","d":"價差 + 股利一起算才是真正的報酬。只看配息或只看股價都不完整。"},{"g":"指標","k":"內扣費用","d":"ETF 或基金每年從資產裡直接扣掉的管理費、保管費等，不會另外收你錢，所以常被忽略。"},{"g":"交易","k":"除權息","d":"公司發股利的那天，股價會先扣掉股利金額。之後漲回原價叫「填息」。只是左手換右手，不是白拿。"},{"g":"交易","k":"零股","d":"台股一張是 1,000 股，不到一張的叫零股。盤中和盤後都可以買零股，小額也能投資。"},{"g":"交易","k":"定期定額","d":"每月固定日期、固定金額自動買進。很多券商最低 100 元起。"},{"g":"交易","k":"融資融券","d":"跟券商借錢買股（融資）或借股票來賣（融券）。槓桿會放大盈虧，跌破維持率會被追繳或斷頭。"},{"g":"風險","k":"波動","d":"價格上下跳動的幅度。波動大不一定是壞事，但你要能承受帳面上的大起大落。"},{"g":"風險","k":"通膨","d":"物價每年上漲，錢放著不動購買力會縮水。通膨 2% 的話，100 萬十年後大約只剩 82 萬的購買力。"},{"g":"風險","k":"匯率風險","d":"買美股或外幣資產，台幣升值時換回來會少。外幣定存的高利率可能被匯差吃掉。"},{"g":"風險","k":"資產配置","d":"把錢分在股票、債券、現金等不同資產，讓它們互相抵消一部分的風險。"},{"g":"風險","k":"再平衡","d":"定期把資產比例調回原本的設定。等於自動做到「漲多賣一點、跌多買一點」。"},{"g":"指標","k":"股價淨值比 (P/B)","d":"股價 ÷ 每股淨值。低於 1 代表股價比公司帳面上的淨資產還便宜，但也可能是市場不看好它的獲利能力。"},{"g":"指標","k":"成交值","d":"一天之內這檔股票成交的總金額。成交值大代表買賣的人多，想賣的時候比較容易賣得掉。"},{"g":"股利","k":"填息","d":"除息後股價漲回除息前一天的收盤價。有填息，領到的股利才算真的賺到；一直沒填回來叫「貼息」。"},{"g":"股利","k":"貼息","d":"除息後股價一直沒漲回除息前的價格。領到的股利被股價下跌抵銷，帳面上等於沒賺。"},{"g":"股利","k":"現金增資","d":"公司發行新股向股東籌錢。這不是發股利，股東要自己出錢認購，不認購的話持股比例會被稀釋。"},{"g":"股利","k":"收益平準金","d":"ETF 把新申購資金裡含的「未分配收益」先存起來，用來穩定配息。配息裡平準金占比高，代表不全是成分股真正賺來的股利。"},{"g":"商品","k":"上市／上櫃","d":"上市股票在證交所交易，上櫃股票在櫃買中心交易。上櫃公司通常規模較小，股價波動也可能比較大。"}],"url":"learn.html"};
+// 全站共用：資料日期過期提醒、名詞提示。由 build_site.py 嵌入每一頁，GL 是入門教室的名詞表。
+(()=>{
+  // 資料日期：超過 3 個交易日（只算週一到週五）沒更新就變橘色
+  const b=document.querySelector(".sitenav .asofb[data-asof]");
+  if(b){
+    const d=new Date(b.dataset.asof+"T00:00:00"),now=new Date();let n=0;
+    for(const x=new Date(d);x<now;x.setDate(x.getDate()+1)){const w=x.getDay();if(x>d&&w&&w<6)n++}
+    if(n>3){b.classList.add("stale");b.textContent+="・資料可能過期"}
+  }
+
+  // 手機上導覽列可橫滑：把目前這一頁捲到看得見的位置
+  const nv=document.querySelector(".sitenav"),cur=nv&&nv.querySelector("[aria-current]");
+  if(cur&&nv.scrollWidth>nv.clientWidth)nv.scrollLeft=cur.offsetLeft-nv.clientWidth/2+cur.offsetWidth/2;
+
+  // 名詞提示：表頭、統計卡標題與 data-gl 元素裡出現的名詞加底線，點一下看白話解釋
+  const GL=window.__GL__||{terms:[],url:""};
+  const SKIP=new Set(["股票","ETF","債券","定存","波動","通膨"]);
+  const T=[];
+  for(const t of GL.terms){
+    if(SKIP.has(t.k))continue;
+    const names=[t.k.replace(/\s*\(.*\)$/,"")];
+    t.k.split("／").forEach(x=>names.push(x));
+    if(/淨值比/.test(t.k))names.push("淨值比");
+    for(const n of new Set(names))if(n.length>=2)T.push([n,t]);
+  }
+  T.sort((a,b)=>b[0].length-a[0].length);
+  const SEL="th,.stats small,.kv small,.fact>span,.eyebrow,[data-gl]";
+  function wrap(el){
+    if(el.dataset.gld)return;el.dataset.gld=1;
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const nodes=[];
+    while(walker.nextNode())nodes.push(walker.currentNode);
+    for(const node of nodes){
+      if(node.parentElement.closest("button,a,.gl-term,input,select,option"))continue;
+      const s=node.nodeValue;let hit=null;
+      for(const [n,t] of T){const i=s.indexOf(n);if(i>=0){hit=[i,n,t];break}}
+      if(!hit)continue;
+      const [i,n,t]=hit,span=document.createElement("span");
+      span.className="gl-term";span.tabIndex=0;span.setAttribute("role","button");span.dataset.k=t.k;span.textContent=n;
+      const after=node.splitText(i);after.nodeValue=after.nodeValue.slice(n.length);node.parentNode.insertBefore(span,after);
+    }
+  }
+  const scan=()=>document.querySelectorAll(SEL).forEach(wrap);
+  let pend=0;new MutationObserver(()=>{if(!pend){pend=1;requestAnimationFrame(()=>{pend=0;scan()})}}).observe(document.body,{childList:true,subtree:true});
+  scan();
+
+  let pop=null;
+  const close=()=>{if(pop){pop.remove();pop=null}};
+  function open(el){
+    close();const t=GL.terms.find(x=>x.k===el.dataset.k);if(!t)return;
+    pop=document.createElement("div");pop.className="gl-pop";pop.setAttribute("role","dialog");
+    const b=document.createElement("b");b.textContent=t.k;const p=document.createElement("div");p.textContent=t.d;pop.append(b,p);
+    if(GL.url){const a=document.createElement("a");a.href=GL.url+"#t-"+encodeURIComponent(t.k);a.target="_blank";a.rel="noopener";a.textContent="在入門教室看更多 →";pop.append(a)}
+    document.body.append(pop);
+    const r=el.getBoundingClientRect(),w=pop.offsetWidth;
+    pop.style.left=Math.max(16,Math.min(scrollX+r.left,scrollX+innerWidth-w-16))+"px";pop.style.top=(scrollY+r.bottom+6)+"px";
+  }
+  document.addEventListener("click",e=>{const el=e.target.closest(".gl-term");if(el){e.stopPropagation();e.preventDefault();open(el)}else if(!e.target.closest(".gl-pop"))close()},true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")close();const el=e.target.closest&&e.target.closest(".gl-term");if(el&&(e.key==="Enter"||e.key===" ")){e.preventDefault();open(el)}});
 })();
 </script>
 

@@ -1,7 +1,7 @@
 <title>除權息行事曆</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: 理專圓桌的姊妹頁，存股族的月曆。上方劉淑芬的三個提醒 → 行事曆（依日期分組，點一筆在右側試算能領多少）→ 填息追蹤 → 殖利率排行。只做淺色主題。 */
 :root{
@@ -120,24 +120,19 @@ td.n,th.n{text-align:right;font-family:var(--f-mono)}
 </style>
 
 <div class="wrap">
+  <!--SITE-NAV-->
   <header>
     <div>
       <div class="eyebrow">理專圓桌・姊妹頁</div>
       <h1>除權息行事曆 💰</h1>
       <p>接下來哪幾檔要配息、能領多少、上次配完有沒有填息，還有誰的殖利率最高。</p>
     </div>
-    <nav class="links">
-      <a href="https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT" target="_blank" rel="noopener">← 理專圓桌</a>
-      <a href="https://claude.ai/artifact/Aj4eFHk9RZrjkuUmr7kRXb" target="_blank" rel="noopener">台股全覽</a>
-      <a href="https://claude.ai/artifact/RK74vfRrALWhutPXahWRtu" target="_blank" rel="noopener">入門教室</a>
-      <a href="https://claude.ai/artifact/Bmc4PG8mYgvAV9iEik8PDz" target="_blank" rel="noopener">存款利率</a>
-    </nav>
   </header>
 
   <div class="stats" id="stats"></div>
 
   <section class="box liu" aria-label="劉淑芬的提醒">
-    <div class="face" aria-hidden="true">🌳</div>
+    <div class="face" aria-hidden="true">🍵</div>
     <div>
       <div class="eyebrow">存股派理專・劉淑芬</div>
       <h2>「領股利前，先想這三件事」</h2>
@@ -170,12 +165,12 @@ td.n,th.n{text-align:right;font-family:var(--f-mono)}
       <div class="chips" id="fkinds"></div>
     </div>
     <div class="summary" id="fsum"></div>
-    <div class="scroll"><table><thead><tr><th>除息日</th><th>代號</th><th>名稱</th><th class="n">配了</th><th class="n">除息前</th><th class="n">最新收盤</th><th>填息進度</th></tr></thead><tbody id="fbody"></tbody></table></div>
+    <div class="scroll"><table><thead><tr><th>除息日</th><th>代號</th><th class="stick">名稱</th><th class="n">配了</th><th class="n">除息前</th><th class="n">最新收盤</th><th>填息進度</th></tr></thead><tbody id="fbody"></tbody></table></div>
     <div class="pager" id="fpager"></div>
   </section>
 
   <section class="box" aria-label="殖利率排行">
-    <div class="sec-head"><h2>🏆 殖利率排行</h2><p>股票用交易所公布的殖利率；ETF 用近一年實際配息 ÷ 收盤價</p></div>
+    <div class="sec-head"><h2>🏆 殖利率排行</h2><p>股票用交易所公布的殖利率；ETF 用近一年實際配息 ÷ 收盤價。「每 10 萬」是假設股利不變、未扣稅與健保費</p></div>
     <div class="filters">
       <div class="tabs" role="tablist">
         <button class="tab" role="tab" id="y-stock" aria-selected="true">股票</button>
@@ -289,7 +284,7 @@ function renderCalc(){
       <div><small>除息參考價約</small><b>${e.p?fmt(e.p-e.cash):"—"}</b></div>
     </div>`:`<p class="note muted">${e.cash==null?"金額還沒公告，公告後這裡會自動算。":"這次沒有現金股利。"}</p>`}
     ${last?`<p style="font-size:13.5px">上一次 ${last.d} 配 ${fmt(last.val,3)} 元，${fillText(last)}。</p>`:""}
-    <div class="say"><b>🌳 劉淑芬：</b>${liuSays(e)}</div>
+    <div class="say"><b>🍵 劉淑芬：</b>${liuSays(e)}</div>
     <p class="muted" style="font-size:12.5px">要在除權息日的<b>前一個交易日</b>收盤前買進、持有到除權息日，才領得到。股利約在 3～5 週後入帳。</p>`;
   $("lots").oninput=ev=>{lots=Math.max(0,Math.floor(+ev.target.value||0));const pos=ev.target.selectionStart;renderCalc();const i=$("lots");i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}};
 }
@@ -314,7 +309,7 @@ function renderFill(){
     const f=fillPct(e),today=e.d>=TODAY;
     const st=today||f==null?`<span class="muted" style="font-size:12.5px">${today?"今天除息":"無收盤價"}</span>`
       :`<span class="fill"><i style="width:${Math.max(0,Math.min(100,f))}%"></i></span><span class="st ${f>=100?"ok":f>0?"mid":"bad"}">${f>=100?"已填息":f>0?fmt(f,0)+"%":"貼息"}</span>`;
-    return `<tr><td class="mono">${e.d.slice(5)}</td><td class="code">${e.code}</td><td><b>${esc(e.name)}</b>${tagOf(e.k)}</td><td class="n">${fmt(e.val,3)}</td><td class="n">${fmt(e.pre)}</td><td class="n">${today?"—":fmt(e.p)}</td><td>${st}</td></tr>`;
+    return `<tr><td class="mono">${e.d.slice(5)}</td><td class="code">${e.code}</td><td class="stick"><b>${esc(e.name)}</b>${tagOf(e.k)}</td><td class="n">${fmt(e.val,3)}</td><td class="n">${fmt(e.pre)}</td><td class="n">${today?"—":fmt(e.p)}</td><td>${st}</td></tr>`;
   }).join(""):`<tr><td colspan="7" class="empty">沒有符合的紀錄。</td></tr>`;
   $("fpager").innerHTML=pages>1?`<button data-p="-1" ${fpage?"":"disabled"}>上一頁</button><span class="mono">${fpage+1} / ${pages}</span><button data-p="1" ${fpage<pages-1?"":"disabled"}>下一頁</button>`:"";
 }
@@ -342,12 +337,12 @@ function renderYld(){
   const list=src.filter(x=>x.y>0&&(ym==="etf"||!mk||x.mkt===mk)&&(!ind||x.ind===ind)&&(ym==="etf"||!safe||(x.pe&&x.y<15))).sort((a,b)=>b.y-a.y);
   const pages=Math.max(1,Math.ceil(list.length/YPER));ypage=Math.min(ypage,pages-1);
   $("yhead").innerHTML=ym==="stock"
-    ?`<tr><th class="n">#</th><th>代號</th><th>名稱</th><th>產業</th><th class="n">殖利率</th><th class="n">本益比</th><th class="n">淨值比</th><th class="n">收盤</th></tr>`
-    :`<tr><th class="n">#</th><th>代號</th><th>名稱</th><th>類型</th><th class="n">近一年殖利率</th><th class="n">近一年配息</th><th class="n">收盤</th></tr>`;
+    ?`<tr><th class="n">#</th><th>代號</th><th class="stick">名稱</th><th>產業</th><th class="n">殖利率</th><th class="n">每 10 萬一年約領</th><th class="n">本益比</th><th class="n">淨值比</th><th class="n">收盤</th></tr>`
+    :`<tr><th class="n">#</th><th>代號</th><th class="stick">名稱</th><th>類型</th><th class="n">近一年殖利率</th><th class="n">每 10 萬一年約領</th><th class="n">近一年配息</th><th class="n">收盤</th></tr>`;
   $("ybody").innerHTML=list.length?list.slice(ypage*YPER,ypage*YPER+YPER).map((x,i)=>ym==="stock"
-    ?`<tr><td class="n muted">${ypage*YPER+i+1}</td><td class="code">${x.code}</td><td><b>${esc(x.name)}</b>${x.mkt==="上櫃"?' <span class="muted" style="font-size:12px">櫃</span>':""}${yWarn(x)}</td><td>${esc(x.ind)}</td><td class="n"><b>${fmt(x.y)}%</b></td><td class="n">${x.pe?fmt(x.pe):"虧損"}</td><td class="n">${fmt(x.pb)}</td><td class="n">${fmt(x.p)}</td></tr>`
-    :`<tr><td class="n muted">${ypage*YPER+i+1}</td><td class="code">${x.code}</td><td><b>${esc(x.name)}</b>${yWarn(x)}</td><td><span class="tag">${esc(x.ind)}</span></td><td class="n"><b>${fmt(x.y)}%</b></td><td class="n">${fmt(x.cd,3)}</td><td class="n">${fmt(x.p)}</td></tr>`).join("")
-    :`<tr><td colspan="8" class="empty">沒有符合的標的。</td></tr>`;
+    ?`<tr><td class="n muted">${ypage*YPER+i+1}</td><td class="code">${x.code}</td><td class="stick"><b>${esc(x.name)}</b>${x.mkt==="上櫃"?' <span class="muted" style="font-size:12px">櫃</span>':""}${yWarn(x)}</td><td>${esc(x.ind)}</td><td class="n"><b>${fmt(x.y)}%</b></td><td class="n">${fmt(x.y*1000,0)} 元</td><td class="n">${x.pe?fmt(x.pe):"虧損"}</td><td class="n">${fmt(x.pb)}</td><td class="n">${fmt(x.p)}</td></tr>`
+    :`<tr><td class="n muted">${ypage*YPER+i+1}</td><td class="code">${x.code}</td><td class="stick"><b>${esc(x.name)}</b>${yWarn(x)}</td><td><span class="tag">${esc(x.ind)}</span></td><td class="n"><b>${fmt(x.y)}%</b></td><td class="n">${fmt(x.y*1000,0)} 元</td><td class="n">${fmt(x.cd,3)}</td><td class="n">${fmt(x.p)}</td></tr>`).join("")
+    :`<tr><td colspan="9" class="empty">沒有符合的標的。</td></tr>`;
   $("ypager").innerHTML=pages>1?`<button data-p="-1" ${ypage?"":"disabled"}>上一頁</button><span class="mono">${ypage+1} / ${pages}</span><button data-p="1" ${ypage<pages-1?"":"disabled"}>下一頁</button>`:"";
 }
 $("y-stock").onclick=()=>{ym="stock";ypage=0;$("yind").value="";renderYld()};
@@ -355,5 +350,9 @@ $("y-etf").onclick=()=>{ym="etf";ypage=0;$("yind").value="";renderYld()};
 ["ymkt","yind","ysafe"].forEach(id=>$(id).onchange=()=>{ypage=0;renderYld()});
 $("ypager").onclick=ev=>{const b=ev.target.closest("button");if(b&&!b.disabled){ypage+=+b.dataset.p;renderYld()}};
 
-renderCal();renderCalc();renderFill();renderYld();
+{const h=decodeURIComponent(location.hash.slice(1));if(/^\w{4,6}$/.test(h)){$("q").value=h;$("fq").value=h;const e=future.find(x=>x.code===h);if(e)sel=e.code+"|"+e.d}}
+renderCal();renderCalc();renderFill();
+// 殖利率排行在頁面最下方，等瀏覽器有空再畫
+(window.requestIdleCallback||(f=>setTimeout(f,60)))(renderYld);
 </script>
+<!--SITE-FOOT-->

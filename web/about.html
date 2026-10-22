@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body>
+<title>關於理專圓桌</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 一頁讀完的說明書。誰做的、為什麼做 → 六位理專的規則（卡片）→ 資料從哪裡來（表格）→ 這個網站不做什麼。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
+  --pink:#f7b7c5; --apricot:#ffd9a0; --matcha:#c5ddb0; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f4f0ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:22px;margin-bottom:8px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px}
+.muted{color:var(--ink-soft)}
+a{color:var(--sky-deep)}
+.lead{font-size:17px}
+.adv{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.adv>div{border:2px solid var(--line);border-radius:20px;padding:12px 14px;background:#fff;border-top:8px solid var(--tape)}
+.adv h3{font-size:18px}
+.adv small{display:block;color:var(--ink-soft);font-size:13px;margin-bottom:6px}
+.adv dl{margin:0;font-size:14px}
+.adv dt{font-weight:700;margin-top:6px}
+.adv dd{margin:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1.5px dashed var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--ink-soft)}
+.scroll{overflow-x:auto}
+ul{margin:0;padding-left:1.3em}
+li{margin-bottom:4px}
+</style>
+
+<div class="wrap">
+  <style>/* 全站共用：導覽列、資料日期、名詞提示、表格、漲跌符號、觸控大小、頁尾聲明。由 build_site.py 嵌入每一頁。 */
+.sitenav{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;font-size:14px;line-height:1.4;color:#4a3b32;box-shadow:0 4px 0 rgba(74,59,50,.05)}
+.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.sitenav a:hover{background:#fff1e3}
+.sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
+.sitenav .grp{display:flex;align-items:center;gap:2px}
+.sitenav .grp>span{font-size:11.5px;color:#8a7566;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
+.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#5f9147;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
+@media (max-width:760px){
+  .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
+  .sitenav::-webkit-scrollbar{display:none}
+  .sitenav .asofb{margin-left:0}
+}
+
+/* 名詞提示 */
+.gl-term{text-decoration:underline dotted #8a7566;text-underline-offset:3px;cursor:help}
+.gl-pop{position:absolute;z-index:50;max-width:min(320px,calc(100vw - 32px));background:#fffdfa;color:#4a3b32;border:2px solid #f1e2d6;border-radius:18px;
+  box-shadow:0 10px 30px rgba(74,59,50,.18);padding:10px 14px;font:14px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-align:left;white-space:normal}
+.gl-pop b{display:block;font-size:15px;margin-bottom:2px}
+.gl-pop a{display:inline-block;margin-top:4px;color:#4a87b5;font-weight:700}
+
+/* 漲跌：顏色之外再加符號 */
+.pc.up::before{content:"▲ ";font-size:.8em}
+.pc.down::before{content:"▼ ";font-size:.8em}
+
+/* 可橫滑的表格：左右出現陰影提示還有內容，名稱欄固定 */
+.scroll{background:
+  linear-gradient(to right,#fffdfa 30%,rgba(255,253,250,0)) left/40px 100% no-repeat local,
+  linear-gradient(to left,#fffdfa 30%,rgba(255,253,250,0)) right/40px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%,rgba(74,59,50,.16),transparent) left/14px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%,rgba(74,59,50,.16),transparent) right/14px 100% no-repeat scroll}
+@media (max-width:760px){
+  .scroll .stick{position:sticky;left:0;z-index:1;background:#fffdfa;box-shadow:4px 0 6px -4px rgba(74,59,50,.25);max-width:9.5em;overflow:hidden;text-overflow:ellipsis}
+  .scroll tr[aria-selected="true"] .stick{background:#e8f3fc}
+}
+
+/* 觸控裝置：按鈕、晶片至少 44 像素高 */
+@media (pointer:coarse){
+  .chip,.tab,.pager button,.more,select,.sitenav a{min-height:44px;display:inline-flex;align-items:center}
+}
+
+.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#8a7566;text-align:center;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.sitefoot a{color:#4a87b5}
+.paper>.sitenav{margin-bottom:14px}
+</style>
+<nav class="sitenav" aria-label="網站導覽"><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html">存款利率</a></div><div class="grp"><span>做</span><a href="index.html">理專圓桌</a><a href="sim.html">百萬模擬倉</a></div><a href="about.html" aria-current="page">關於本站</a></nav>
+  <header>
+    <h1>關於理專圓桌 📖</h1>
+  </header>
+
+  <section class="box">
+    <h2>這是什麼網站</h2>
+    <p class="lead">理專圓桌是一份研究原型，用來探討「人在迴圈中」（human in the loop）與「人在迴圈上」（human on the loop）兩種設計：讓幾位用不同方法判斷的 AI 理專同時給意見，再由人來看他們哪裡一致、哪裡分歧，決定要不要採用。</p>
+    <p>所以網站上每一個推薦都附上「為什麼」：用了哪幾個數字、門檻是多少。你可以自己檢查，也可以看其他理專怎麼反駁。</p>
+    <p>網站不收費、不放廣告、不收集個人資料。模擬倉和偏好設定只存在你自己的瀏覽器裡。</p>
+  </section>
+
+  <section class="box">
+    <h2>六位理專是誰、怎麼判斷</h2>
+    <p class="muted">六位理專都是虛構角色，學經歷只是為了讓每種投資流派好記，不代表任何真實人士或學校。他們的判斷是固定規則的計算結果，不是 AI 臨場發揮，也不保證準確。</p>
+    <div class="adv" id="adv"></div>
+  </section>
+
+  <section class="box">
+    <h2>資料從哪裡來</h2>
+    <p>全部用公開資料，每個平日傍晚由 GitHub Actions 自動抓取、重建網站。都是盤後快照，不是即時報價。</p>
+    <div class="scroll"><table>
+      <thead><tr><th>頁面</th><th>資料</th><th>來源</th><th>更新頻率</th></tr></thead>
+      <tbody>
+        <tr><td>理專圓桌、百萬模擬倉</td><td>上市股票與 ETF 收盤價、本益比、殖利率、近一年月收盤</td><td>臺灣證券交易所開放資料</td><td>每個交易日</td></tr>
+        <tr><td>台股全覽</td><td>上市、上櫃全部股票與 ETF 清單</td><td>證交所、櫃買中心開放資料</td><td>每個交易日</td></tr>
+        <tr><td>台股全覽</td><td>ETF 持股內容與產業分布</td><td>MoneyDJ 整理的投信公告</td><td>每週</td></tr>
+        <tr><td>除權息行事曆</td><td>除權息預告、除權息結果、個股殖利率</td><td>證交所、櫃買中心開放資料</td><td>每個交易日</td></tr>
+        <tr><td>存款利率</td><td>各銀行牌告存款利率</td><td>中央銀行</td><td>每個交易日</td></tr>
+        <tr><td>人氣小報</td><td>定期定額排行、ETF 受益人數等</td><td>證交所月報、投信投顧公會等</td><td>每月人工整理</td></tr>
+        <tr><td>入門教室</td><td>稅費與基本觀念</td><td>財政部、證交所、健保署公告</td><td>每年檢查</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="box">
+    <h2>這個網站不做什麼</h2>
+    <ul>
+      <li>不提供投資建議，也不針對個人狀況推薦標的。依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。</li>
+      <li>不做即時報價、不幫你下單、不連結券商帳戶。</li>
+      <li>不用倒數計時、排行榜或「已有多少人買進」這類設計催你做決定。</li>
+    </ul>
+  </section>
+
+  <section class="box">
+    <h2>發現錯誤或有建議</h2>
+    <p>網站原始碼與每日資料都公開在 <a href="https://github.com/NINA-LIANG/advisor-roundtable" target="_blank" rel="noopener">GitHub</a>。看到數字不對、說明不清楚，歡迎到 <a href="https://github.com/NINA-LIANG/advisor-roundtable/issues" target="_blank" rel="noopener">Issues</a> 留言。</p>
+  </section>
+</div>
+
+<script>
+const P={
+ "tech": {"career": ["中原大學財務金融學系", "券商自營部交易員 8 年，管理短線部位", "2020 年疫情崩盤時靠停損紀律保住本金"],
+  "risk": ["價格風險：買進後馬上套牢", "流動性：成交量太小、想賣賣不掉"], "criteria": ["趨勢方向（月均價對三個月均價）", "股價與月均價的乖離", "跌破支撐就停損"],
+  "fields": ["p", "ma", "m", "tv"], "db": ["每月收盤價", "近一個月均價", "成交值"],
+  "blind": "不看公司賺不賺錢；盤整時容易被來回洗出場。", "client": "能每天看盤、接受停損的積極型（KYC RR4–RR5）"},
+ "macro": {"career": ["Stanford University 經濟學系", "前央行經濟研究處研究員，做過銀行壓力測試", "經歷 2008 金融海嘯，專看景氣循環"],
+  "risk": ["系統性風險：整個市場一起跌", "利率風險：升息壓抑估值"], "criteria": ["國發會景氣燈號所在階段", "央行利率方向", "PMI 是否站上 50", "產業與 ETF 類型輪動"],
+  "fields": ["light", "rate", "pmi", "i", "t", "pb"], "db": ["景氣對策信號", "央行利率", "製造業 PMI", "產業別／ETF 類型", "股價淨值比"],
+  "blind": "看不到個別公司差異；訊號常提早半年到一年。", "client": "持有 1–2 年、能忍受過程波動的穩健型（RR3–RR4）"},
+ "value": {"career": ["國立臺灣大學會計學系、CFA 持證人", "會計師事務所審計 3 年，看過財報粉飾手法", "投信研究員 12 年，專寫個股報告"],
+  "risk": ["永久性虧損：買到爛公司或買太貴", "盈餘品質：一次性獲利讓本益比看起來很低"], "criteria": ["本益比和同產業中位數比較", "股價淨值比", "安全邊際（同業本益比八折價）"],
+  "fields": ["p", "pe", "pb", "i", "t"], "db": ["本益比", "股價淨值比", "同產業本益比中位數"],
+  "blind": "便宜可能更便宜（價值陷阱）；成長股永遠嫌貴；ETF 不做估值。", "client": "願意等 1–3 年、重視本金安全的穩健型（RR3）"},
+ "mom": {"career": ["Columbia Business School MBA", "紐約避險基金分析師，操作動能策略", "2021 年航運飆股吃到大段，也在 2022 年被修正教訓過"],
+  "risk": ["機會成本：錯過強勢股", "趨勢反轉：高點急殺"], "criteria": ["近 6 個月報酬", "距一年高點的距離", "風險調整後報酬（報酬除以波動）"],
+  "fields": ["p", "m"], "db": ["每月收盤價", "一年高點", "報酬波動度"],
+  "blind": "追高後遇到反轉會跌很快；需要嚴格出場紀律。", "client": "持有 3–6 個月、能執行停損的積極型（RR4–RR5）"},
+ "quant": {"career": ["國立政治大學統計學系碩士", "金控量化交易員，回測過上千組策略", "只相信樣本外驗證過的規則"],
+  "risk": ["模型風險：歷史規律失效", "尾部風險：極端事件比常態分布預期的更常發生"], "criteria": ["現價相對一年均值的 z 分數", "標準差區間", "公司仍有獲利或為分散的 ETF"],
+  "fields": ["p", "m", "pe", "i"], "db": ["價格時間序列", "均值與標準差", "是否獲利"],
+  "blind": "產業結構改變時，過去均值不再有意義，可能是接刀。", "client": "短線、資金分散、接受統計輸贏的積極型（RR4）"},
+ "div": {"career": ["國立高雄科技大學財務管理系", "銀行理專 20 年，陪客戶走過 2008、2022 兩次空頭", "帶過上百位上班族定期定額存股"],
+  "risk": ["現金流中斷：公司砍股利", "行為風險：波動太大讓人賣在低點"], "criteria": ["現金殖利率", "近一年實際配息", "股價波動度", "公司是否有獲利"],
+  "fields": ["p", "dy", "pe", "m", "i", "t", "cd"], "db": ["現金殖利率", "近一年配息（含 ETF 除息紀錄）", "本益比", "月報酬波動"],
+  "blind": "忽略成長性；高殖利率可能是股價大跌或一次性配息造成的。", "client": "5 年以上、追求穩定現金流的保守到穩健型（RR2–RR3）"}
+}, A=[{"key": "tech", "name": "陳怡君", "emoji": "📈", "tape": "var(--sky)", "style": "技術分析・波段（2–8 週）"}, {"key": "macro", "name": "林思遠", "emoji": "🌏", "tape": "var(--matcha)", "style": "總體經濟循環・長期（1–2 年）"}, {"key": "value", "name": "王建明", "emoji": "📒", "tape": "var(--apricot)", "style": "價值投資・長期（1–3 年）"}, {"key": "mom", "name": "周以恆", "emoji": "🚀", "tape": "var(--pink)", "style": "動能趨勢・中期（3–6 個月）"}, {"key": "quant", "name": "張雅雯", "emoji": "🎲", "tape": "var(--lilac)", "style": "均值回歸・短期（數日–4 週）"}, {"key": "div", "name": "劉淑芬", "emoji": "🍵", "tape": "#ffe0c4", "style": "存股・定期定額（5 年以上）"}];
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+document.getElementById("adv").innerHTML=A.map(a=>{const p=P[a.key]||{};return `<div style="--tape:${a.tape}">
+  <h3>${a.emoji} ${esc(a.name)}</h3><small>${esc(a.style)}</small>
+  <dl><dt>看哪些數字</dt><dd>${esc((p.criteria||[]).join("、"))}</dd>
+  <dt>最在意的風險</dt><dd>${esc((p.risk||[]).join("；"))}</dd>
+  <dt>盲點</dt><dd>${esc(p.blind)}</dd>
+  <dt>適合誰</dt><dd>${esc(p.client)}</dd></dl></div>`}).join("");
+</script>
+<footer class="sitefoot">示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。 <a href="about.html">關於本站與資料來源</a></footer>
+<script>window.__GL__={"terms":[{"g":"商品","k":"股票","d":"公司的一小部分所有權。公司賺錢，股價和股利可能成長；公司經營不善，也可能大跌甚至下市。"},{"g":"商品","k":"ETF","d":"Exchange Traded Fund，在交易所買賣的基金。一檔 ETF 裡面裝了一籃子股票或債券，買一張就等於分散投資。"},{"g":"商品","k":"市值型 ETF","d":"依公司市值大小決定比重，例如追蹤台灣前 50 大公司的 ETF。台積電這類大公司占比會很高。"},{"g":"商品","k":"高股息 ETF","d":"挑選殖利率較高的股票組成，配息較多。要注意配息可能來自本金或收益平準金，配息高不等於總報酬高。"},{"g":"商品","k":"債券","d":"借錢給政府或公司，定期領利息、到期拿回本金。利率上升時，舊債券的價格會下跌。"},{"g":"商品","k":"定存","d":"把錢放在銀行一段固定期間，換取比活存高的利率。台灣每家銀行每人的存款受存保保障最高 300 萬元。"},{"g":"指標","k":"殖利率","d":"一年股利 ÷ 股價。股價 100 元、配 5 元，殖利率 5%。股價大跌時殖利率會「看起來」變高，要小心。"},{"g":"指標","k":"本益比 (P/E)","d":"股價 ÷ 每股盈餘 (EPS)。代表用幾年的獲利可以買回這個價格。越高代表市場對未來期待越高，也可能越貴。"},{"g":"指標","k":"EPS","d":"每股盈餘，公司稅後淨利 ÷ 股數。代表每一股替你賺了多少錢。"},{"g":"指標","k":"總報酬","d":"價差 + 股利一起算才是真正的報酬。只看配息或只看股價都不完整。"},{"g":"指標","k":"內扣費用","d":"ETF 或基金每年從資產裡直接扣掉的管理費、保管費等，不會另外收你錢，所以常被忽略。"},{"g":"交易","k":"除權息","d":"公司發股利的那天，股價會先扣掉股利金額。之後漲回原價叫「填息」。只是左手換右手，不是白拿。"},{"g":"交易","k":"零股","d":"台股一張是 1,000 股，不到一張的叫零股。盤中和盤後都可以買零股，小額也能投資。"},{"g":"交易","k":"定期定額","d":"每月固定日期、固定金額自動買進。很多券商最低 100 元起。"},{"g":"交易","k":"融資融券","d":"跟券商借錢買股（融資）或借股票來賣（融券）。槓桿會放大盈虧，跌破維持率會被追繳或斷頭。"},{"g":"風險","k":"波動","d":"價格上下跳動的幅度。波動大不一定是壞事，但你要能承受帳面上的大起大落。"},{"g":"風險","k":"通膨","d":"物價每年上漲，錢放著不動購買力會縮水。通膨 2% 的話，100 萬十年後大約只剩 82 萬的購買力。"},{"g":"風險","k":"匯率風險","d":"買美股或外幣資產，台幣升值時換回來會少。外幣定存的高利率可能被匯差吃掉。"},{"g":"風險","k":"資產配置","d":"把錢分在股票、債券、現金等不同資產，讓它們互相抵消一部分的風險。"},{"g":"風險","k":"再平衡","d":"定期把資產比例調回原本的設定。等於自動做到「漲多賣一點、跌多買一點」。"},{"g":"指標","k":"股價淨值比 (P/B)","d":"股價 ÷ 每股淨值。低於 1 代表股價比公司帳面上的淨資產還便宜，但也可能是市場不看好它的獲利能力。"},{"g":"指標","k":"成交值","d":"一天之內這檔股票成交的總金額。成交值大代表買賣的人多，想賣的時候比較容易賣得掉。"},{"g":"股利","k":"填息","d":"除息後股價漲回除息前一天的收盤價。有填息，領到的股利才算真的賺到；一直沒填回來叫「貼息」。"},{"g":"股利","k":"貼息","d":"除息後股價一直沒漲回除息前的價格。領到的股利被股價下跌抵銷，帳面上等於沒賺。"},{"g":"股利","k":"現金增資","d":"公司發行新股向股東籌錢。這不是發股利，股東要自己出錢認購，不認購的話持股比例會被稀釋。"},{"g":"股利","k":"收益平準金","d":"ETF 把新申購資金裡含的「未分配收益」先存起來，用來穩定配息。配息裡平準金占比高，代表不全是成分股真正賺來的股利。"},{"g":"商品","k":"上市／上櫃","d":"上市股票在證交所交易，上櫃股票在櫃買中心交易。上櫃公司通常規模較小，股價波動也可能比較大。"}],"url":"learn.html"};
+// 全站共用：資料日期過期提醒、名詞提示。由 build_site.py 嵌入每一頁，GL 是入門教室的名詞表。
+(()=>{
+  // 資料日期：超過 3 個交易日（只算週一到週五）沒更新就變橘色
+  const b=document.querySelector(".sitenav .asofb[data-asof]");
+  if(b){
+    const d=new Date(b.dataset.asof+"T00:00:00"),now=new Date();let n=0;
+    for(const x=new Date(d);x<now;x.setDate(x.getDate()+1)){const w=x.getDay();if(x>d&&w&&w<6)n++}
+    if(n>3){b.classList.add("stale");b.textContent+="・資料可能過期"}
+  }
+
+  // 手機上導覽列可橫滑：把目前這一頁捲到看得見的位置
+  const nv=document.querySelector(".sitenav"),cur=nv&&nv.querySelector("[aria-current]");
+  if(cur&&nv.scrollWidth>nv.clientWidth)nv.scrollLeft=cur.offsetLeft-nv.clientWidth/2+cur.offsetWidth/2;
+
+  // 名詞提示：表頭、統計卡標題與 data-gl 元素裡出現的名詞加底線，點一下看白話解釋
+  const GL=window.__GL__||{terms:[],url:""};
+  const SKIP=new Set(["股票","ETF","債券","定存","波動","通膨"]);
+  const T=[];
+  for(const t of GL.terms){
+    if(SKIP.has(t.k))continue;
+    const names=[t.k.replace(/\s*\(.*\)$/,"")];
+    t.k.split("／").forEach(x=>names.push(x));
+    if(/淨值比/.test(t.k))names.push("淨值比");
+    for(const n of new Set(names))if(n.length>=2)T.push([n,t]);
+  }
+  T.sort((a,b)=>b[0].length-a[0].length);
+  const SEL="th,.stats small,.kv small,.fact>span,.eyebrow,[data-gl]";
+  function wrap(el){
+    if(el.dataset.gld)return;el.dataset.gld=1;
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const nodes=[];
+    while(walker.nextNode())nodes.push(walker.currentNode);
+    for(const node of nodes){
+      if(node.parentElement.closest("button,a,.gl-term,input,select,option"))continue;
+      const s=node.nodeValue;let hit=null;
+      for(const [n,t] of T){const i=s.indexOf(n);if(i>=0){hit=[i,n,t];break}}
+      if(!hit)continue;
+      const [i,n,t]=hit,span=document.createElement("span");
+      span.className="gl-term";span.tabIndex=0;span.setAttribute("role","button");span.dataset.k=t.k;span.textContent=n;
+      const after=node.splitText(i);after.nodeValue=after.nodeValue.slice(n.length);node.parentNode.insertBefore(span,after);
+    }
+  }
+  const scan=()=>document.querySelectorAll(SEL).forEach(wrap);
+  let pend=0;new MutationObserver(()=>{if(!pend){pend=1;requestAnimationFrame(()=>{pend=0;scan()})}}).observe(document.body,{childList:true,subtree:true});
+  scan();
+
+  let pop=null;
+  const close=()=>{if(pop){pop.remove();pop=null}};
+  function open(el){
+    close();const t=GL.terms.find(x=>x.k===el.dataset.k);if(!t)return;
+    pop=document.createElement("div");pop.className="gl-pop";pop.setAttribute("role","dialog");
+    const b=document.createElement("b");b.textContent=t.k;const p=document.createElement("div");p.textContent=t.d;pop.append(b,p);
+    if(GL.url){const a=document.createElement("a");a.href=GL.url+"#t-"+encodeURIComponent(t.k);a.target="_blank";a.rel="noopener";a.textContent="在入門教室看更多 →";pop.append(a)}
+    document.body.append(pop);
+    const r=el.getBoundingClientRect(),w=pop.offsetWidth;
+    pop.style.left=Math.max(16,Math.min(scrollX+r.left,scrollX+innerWidth-w-16))+"px";pop.style.top=(scrollY+r.bottom+6)+"px";
+  }
+  document.addEventListener("click",e=>{const el=e.target.closest(".gl-term");if(el){e.stopPropagation();e.preventDefault();open(el)}else if(!e.target.closest(".gl-pop"))close()},true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")close();const el=e.target.closest&&e.target.closest(".gl-term");if(el&&(e.key==="Enter"||e.key===" ")){e.preventDefault();open(el)}});
+})();
+</script>
+
+</body>
+</html>

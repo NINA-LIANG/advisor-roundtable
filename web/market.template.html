@@ -1,7 +1,7 @@
 <title>台股全覽</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: 理專圓桌的姊妹頁，像一本台股電話簿。上方切「股票／ETF」→ 篩選列 → 清單（分頁）→ 點一檔在右側（手機在下方）展開詳情：ETF 看內容物與產業分布，股票看哪些 ETF 持有它。只做淺色主題。 */
 :root{
@@ -93,22 +93,24 @@ tbody tr[aria-selected="true"]{background:#e8f3fc}
 .note{background:#f5faff;border-radius:16px;padding:8px 12px;font-size:13.5px}
 .desc{font-size:14px;background:#fff9f4;border-radius:16px;padding:8px 12px}
 .empty{padding:30px 10px;text-align:center;color:var(--ink-soft)}
+.active{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:13px}
+.active:empty{display:none}
+.active button{border:none;background:var(--lilac);border-radius:999px;padding:2px 10px;font-size:13px}
+.morecol{border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:2px 12px;font-size:13px}
+table:not(.wide) .opt{display:none}
+.jump{display:flex;flex-wrap:wrap;gap:8px}
+.jump a{border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:3px 12px;font-size:13.5px;font-weight:700;text-decoration:none}
 .foot{font-size:13px;color:var(--ink-soft);text-align:center}
 </style>
 
 <div class="wrap">
+  <!--SITE-NAV-->
   <header>
     <div>
       <div class="eyebrow">理專圓桌・姊妹頁</div>
       <h1>台股全覽 📇</h1>
       <p>上市、上櫃的每一檔股票和 ETF 都在這裡。點一檔 ETF 看它裡面裝了什麼，點一檔股票看哪些 ETF 持有它。</p>
     </div>
-    <nav class="links">
-      <a href="https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT" target="_blank" rel="noopener">← 理專圓桌</a>
-      <a href="https://claude.ai/artifact/DMkJkY1CJP7BVhm61qV4Fx" target="_blank" rel="noopener">人氣小報</a>
-      <a href="https://claude.ai/artifact/RK74vfRrALWhutPXahWRtu" target="_blank" rel="noopener">入門教室</a>
-      <a href="https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw" target="_blank" rel="noopener">除權息</a>
-    </nav>
   </header>
 
   <div class="stats" id="stats"></div>
@@ -124,12 +126,13 @@ tbody tr[aria-selected="true"]{background:#e8f3fc}
       <select id="sort" aria-label="排序"></select>
     </div>
     <div class="chips" id="cats"></div>
+    <div class="active" id="active"></div>
   </section>
 
   <div class="main">
     <section class="box list" aria-label="清單">
-      <div class="muted" id="count" style="font-size:13.5px"></div>
-      <div class="scroll"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="muted" id="count" style="font-size:13.5px"></div><button class="morecol" type="button" id="morecol" aria-pressed="false">更多欄位</button></div>
+      <div class="scroll"><table id="tbl"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
       <div class="pager" id="pager"></div>
     </section>
     <aside class="box detail" id="detail" aria-live="polite"></aside>
@@ -182,17 +185,19 @@ function cats(){
   const list=Object.entries(c).sort((a,b)=>b[1]-a[1]);
   $("cats").innerHTML=`<button class="chip" data-c="" aria-pressed="${!cat}">全部</button>`+list.map(([k,n])=>`<button class="chip" data-c="${esc(k)}" aria-pressed="${cat===k}">${esc(k)}<small>${n}</small></button>`).join("");
 }
-function pct(x){if(x.p==null||x.chg==null)return "—";const base=x.p-x.chg;const v=base?x.chg/base*100:0;return `<span class="${v>0?"up":v<0?"down":""}">${v>0?"+":""}${v.toFixed(2)}%</span>`}
+function pct(x){if(x.p==null||x.chg==null)return "—";const base=x.p-x.chg;const v=base?x.chg/base*100:0;return `<span class="pc ${v>0?"up":v<0?"down":""}">${v>0?"+":""}${v.toFixed(2)}%</span>`}
 function render(){
   cats();const r=rows(),pages=Math.max(1,Math.ceil(r.length/PER));page=Math.min(page,pages-1);
   $("count").textContent=`共 ${r.length.toLocaleString()} 檔`+(r.length>PER?`，第 ${page+1} / ${pages} 頁`:"");
   $("thead").innerHTML=mode==="stock"
-    ?`<tr><th>代號</th><th>名稱</th><th>產業</th><th class="n">收盤</th><th class="n">漲跌</th><th class="n">成交值(億)</th><th class="n">ETF 持有</th></tr>`
-    :`<tr><th>代號</th><th>名稱</th><th>類型</th><th class="n">收盤</th><th class="n">漲跌</th><th class="n">成交值(億)</th><th>內容物</th></tr>`;
+    ?`<tr><th>代號</th><th class="stick">名稱</th><th>產業</th><th class="n">收盤</th><th class="n">漲跌</th><th class="n opt">成交值(億)</th><th class="n opt">ETF 持有</th></tr>`
+    :`<tr><th>代號</th><th class="stick">名稱</th><th>類型</th><th class="n">收盤</th><th class="n">漲跌</th><th class="n opt">成交值(億)</th><th>內容物</th></tr>`;
+  const mk=$("mkt").value,q=$("q").value.trim();
+  $("active").innerHTML=[q&&["q",`搜尋「${esc(q)}」`],mk&&["mkt",mk],cat&&["cat",esc(cat)]].filter(Boolean).map(([k,t])=>`<button type="button" data-x="${k}" aria-label="清除 ${t}">已篩選：${t} ×</button>`).join("");
   const slice=r.slice(page*PER,page*PER+PER);
   $("tbody").innerHTML=slice.length?slice.map(x=>mode==="stock"
-    ?`<tr data-k="${x.code}" aria-selected="${sel===x.code}"><td class="code">${x.code}</td><td><b>${esc(x.name)}</b>${x.mkt==="上櫃"?' <span class="muted" style="font-size:12px">櫃</span>':""}</td><td>${esc(x.cat)}</td><td class="n">${fmt(x.p)}</td><td class="n">${pct(x)}</td><td class="n">${fmt(x.tv)}</td><td class="n">${(OWN[x.name]||[]).length||""}</td></tr>`
-    :`<tr data-k="${x.code}" aria-selected="${sel===x.code}"><td class="code">${x.code}</td><td><b>${esc(x.name)}</b>${x.mkt==="上櫃"?' <span class="muted" style="font-size:12px">櫃</span>':""}</td><td><span class="tag">${esc(x.cat)}</span></td><td class="n">${fmt(x.p)}</td><td class="n">${pct(x)}</td><td class="n">${fmt(x.tv)}</td><td>${H[x.code]?.h?.length?`<span class="tag has">${H[x.code].n} 檔</span>`:/槓桿|商品/.test(x.cat)?'<span class="muted" style="font-size:12px">期貨為主</span>':'<span class="muted" style="font-size:12px">待收錄</span>'}</td></tr>`).join("")
+    ?`<tr data-k="${x.code}" aria-selected="${sel===x.code}"><td class="code">${x.code}</td><td class="stick"><b>${esc(x.name)}</b>${x.mkt==="上櫃"?' <span class="muted" style="font-size:12px">櫃</span>':""}</td><td>${esc(x.cat)}</td><td class="n">${fmt(x.p)}</td><td class="n">${pct(x)}</td><td class="n opt">${fmt(x.tv)}</td><td class="n opt">${(OWN[x.name]||[]).length||""}</td></tr>`
+    :`<tr data-k="${x.code}" aria-selected="${sel===x.code}"><td class="code">${x.code}</td><td class="stick"><b>${esc(x.name)}</b>${x.mkt==="上櫃"?' <span class="muted" style="font-size:12px">櫃</span>':""}</td><td><span class="tag">${esc(x.cat)}</span></td><td class="n">${fmt(x.p)}</td><td class="n">${pct(x)}</td><td class="n opt">${fmt(x.tv)}</td><td>${H[x.code]?.h?.length?`<span class="tag has">${H[x.code].n} 檔</span>`:/槓桿|商品/.test(x.cat)?'<span class="muted" style="font-size:12px">期貨為主</span>':'<span class="muted" style="font-size:12px">待收錄</span>'}</td></tr>`).join("")
     :`<tr><td colspan="7" class="empty">找不到符合的標的，換個關鍵字或分類試試。</td></tr>`;
   $("pager").innerHTML=pages>1?`<button data-p="-1" ${page?"":"disabled"}>上一頁</button><span class="mono">${page+1} / ${pages}</span><button data-p="1" ${page<pages-1?"":"disabled"}>下一頁</button>`:"";
 }
@@ -211,6 +216,7 @@ function detail(){
     const x=S.find(s=>s.code===sel);const own=OWN[x.name]||[];
     d.innerHTML=`<div><span class="code">${x.code}・${x.mkt}</span><h2>${esc(x.name)}</h2><span class="tag">${esc(x.cat)}</span></div>
     <div class="kv"><div><small>收盤</small><b>${fmt(x.p)}</b></div><div><small>漲跌</small><b>${pct(x)}</b></div><div><small>成交值</small><b>${fmt(x.tv)} 億</b></div><div><small>股本</small><b>${fmt(x.cap,1)} 億</b></div><div><small>上市（櫃）</small><b>${x.yr||"—"}</b></div><div><small>ETF 持有</small><b>${own.length} 檔</b></div></div>
+    <div class="jump"><a href="https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw#${x.code}" target="_blank" rel="noopener">💰 看配息</a><a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb#${x.code}" target="_blank" rel="noopener">🐷 模擬倉下單</a><a href="https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT#${x.code}" target="_blank" rel="noopener">✨ 問理專</a></div>
     <h3>哪些 ETF 持有它</h3>
     ${own.length?ownBars(own):`<p class="muted">已收錄內容物的 ${Object.keys(H).length} 檔 ETF 都沒有持有它。</p>`}
     <p class="note">比重是這檔股票占該 ETF 的百分比。只算已收錄內容物的 ETF，資料每週更新。</p>`;
@@ -218,6 +224,7 @@ function detail(){
     const x=E.find(e=>e.code===sel),h=H[x.code];
     d.innerHTML=`<div><span class="code">${x.code}・${x.mkt}</span><h2>${esc(x.name)}</h2><span class="tag">${esc(x.cat)}</span></div>
     <div class="kv"><div><small>收盤</small><b>${fmt(x.p)}</b></div><div><small>漲跌</small><b>${pct(x)}</b></div><div><small>成交值</small><b>${fmt(x.tv)} 億</b></div></div>
+    <div class="jump"><a href="https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw#${x.code}" target="_blank" rel="noopener">💰 看配息</a><a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb#${x.code}" target="_blank" rel="noopener">🐷 模擬倉下單</a><a href="https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT#${x.code}" target="_blank" rel="noopener">✨ 問理專</a></div>
     ${h?.d?`<p class="desc">${esc(h.d)}</p>`:""}
     ${h?.sec?.length?`<h3>${/北美|歐|亞|日本|新興|拉丁|紐澳/.test(h.sec.map(s=>s[0]).join(""))?"投資地區":"產業／資產分布"} <small class="muted">${h.sd||""}</small></h3>${bars(h.sec,"sec",false)}`:""}
     ${h?.h?.length?`<h3>持股明細 <small class="muted">${h.hd||""}・共 ${h.n} 檔${h.n>h.h.length?`，列出前 ${h.h.length} 大`:""}</small></h3>${bars(h.h,"",true)}`
@@ -233,5 +240,10 @@ $("pager").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(
 $("tbody").addEventListener("click",e=>{const tr=e.target.closest("tr[data-k]");if(!tr)return;sel=tr.dataset.k;render();detail();if(innerWidth<900)$("detail").scrollIntoView({behavior:"smooth"})});
 $("detail").addEventListener("click",e=>{const a=e.target.closest("[data-go]");if(!a)return;e.preventDefault();const [m,c]=a.dataset.go.split(":");if(m!==mode)setMode(m);sel=c;$("q").value="";cat="";
   const r=rows(),i=r.findIndex(x=>x.code===c);page=i<0?0:Math.floor(i/PER);render();detail();$("detail").scrollTop=0});
+$("morecol").onclick=()=>{const on=$("tbl").classList.toggle("wide");$("morecol").setAttribute("aria-pressed",on);$("morecol").textContent=on?"收起欄位":"更多欄位"};
+$("active").addEventListener("click",e=>{const b=e.target.closest("[data-x]");if(!b)return;const k=b.dataset.x;if(k==="q")$("q").value="";else if(k==="mkt")$("mkt").value="";else cat="";page=0;render()});
 setMode("stock");
+{const h=decodeURIComponent(location.hash.slice(1));const m=S.some(x=>x.code===h)?"stock":E.some(x=>x.code===h)?"etf":null;
+ if(m){if(m!=="stock")setMode(m);sel=h;const r=rows(),i=r.findIndex(x=>x.code===h);page=i<0?0:Math.floor(i/PER);render();detail()}}
 </script>
+<!--SITE-FOOT-->

@@ -1,0 +1,48 @@
+/* 全站共用：導覽列、資料日期、名詞提示、表格、漲跌符號、觸控大小、頁尾聲明。由 build_site.py 嵌入每一頁。 */
+.sitenav{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;font-size:14px;line-height:1.4;color:#4a3b32;box-shadow:0 4px 0 rgba(74,59,50,.05)}
+.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.sitenav a:hover{background:#fff1e3}
+.sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
+.sitenav .grp{display:flex;align-items:center;gap:2px}
+.sitenav .grp>span{font-size:11.5px;color:#8a7566;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
+.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#5f9147;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
+@media (max-width:760px){
+  .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
+  .sitenav::-webkit-scrollbar{display:none}
+  .sitenav .asofb{margin-left:0}
+}
+
+/* 名詞提示 */
+.gl-term{text-decoration:underline dotted #8a7566;text-underline-offset:3px;cursor:help}
+.gl-pop{position:absolute;z-index:50;max-width:min(320px,calc(100vw - 32px));background:#fffdfa;color:#4a3b32;border:2px solid #f1e2d6;border-radius:18px;
+  box-shadow:0 10px 30px rgba(74,59,50,.18);padding:10px 14px;font:14px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-align:left;white-space:normal}
+.gl-pop b{display:block;font-size:15px;margin-bottom:2px}
+.gl-pop a{display:inline-block;margin-top:4px;color:#4a87b5;font-weight:700}
+
+/* 漲跌：顏色之外再加符號 */
+.pc.up::before{content:"▲ ";font-size:.8em}
+.pc.down::before{content:"▼ ";font-size:.8em}
+
+/* 可橫滑的表格：左右出現陰影提示還有內容，名稱欄固定 */
+.scroll{background:
+  linear-gradient(to right,#fffdfa 30%,rgba(255,253,250,0)) left/40px 100% no-repeat local,
+  linear-gradient(to left,#fffdfa 30%,rgba(255,253,250,0)) right/40px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%,rgba(74,59,50,.16),transparent) left/14px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%,rgba(74,59,50,.16),transparent) right/14px 100% no-repeat scroll}
+@media (max-width:760px){
+  .scroll .stick{position:sticky;left:0;z-index:1;background:#fffdfa;box-shadow:4px 0 6px -4px rgba(74,59,50,.25);max-width:9.5em;overflow:hidden;text-overflow:ellipsis}
+  .scroll tr[aria-selected="true"] .stick{background:#e8f3fc}
+}
+
+/* 觸控裝置：按鈕、晶片至少 44 像素高 */
+@media (pointer:coarse){
+  .chip,.tab,.pager button,.more,select,.sitenav a{min-height:44px;display:inline-flex;align-items:center}
+}
+
+.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#8a7566;text-align:center;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.sitefoot a{color:#4a87b5}
+.paper>.sitenav{margin-bottom:14px}

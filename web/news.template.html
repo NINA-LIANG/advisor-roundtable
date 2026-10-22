@@ -1,7 +1,7 @@
 <title>投資人氣小報</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: 一份報紙。報頭 → 頭條（定期定額 ETF 榜）→ 三欄內頁（個股榜、受益人數、錢放哪裡）→ 市場溫度 → 編輯小語。
    紙色底＋細黑線分欄，馬卡龍色只當版面標籤，跟理專圓桌是同一家人但讀起來像報紙。刻意只做淺色主題。 */
@@ -90,19 +90,12 @@ footer ul{margin:4px 0 8px;padding-left:1.2em}
 </style>
 
 <div class="paper">
+  <!--SITE-NAV-->
   <header class="mast">
-    <div class="top"><span id="issue"></span><span>理專圓桌 · 每月一期</span><span>純資訊分享　不構成投資建議</span></div>
+    <div class="top"><span id="issue"></span><span>理專圓桌 · 每月一期 · <span id="nextIssue"></span></span><span>純資訊分享　不構成投資建議</span></div>
     <h1>投資人氣小報</h1>
     <div class="motto">看看大家把錢放在哪裡</div>
   </header>
-  <nav class="nav" aria-label="姊妹頁">
-    <a href="https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT" target="_blank" rel="noopener">理專圓桌</a>
-    <a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb" target="_blank" rel="noopener">百萬模擬倉</a>
-    <a href="https://claude.ai/artifact/Bmc4PG8mYgvAV9iEik8PDz" target="_blank" rel="noopener">存款利率比較</a>
-    <a href="https://claude.ai/artifact/RK74vfRrALWhutPXahWRtu" target="_blank" rel="noopener">投資入門教室</a>
-    <a href="https://claude.ai/artifact/Aj4eFHk9RZrjkuUmr7kRXb" target="_blank" rel="noopener">台股全覽</a>
-      <a href="https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw" target="_blank" rel="noopener">除權息</a>
-  </nav>
 
   <section class="lead">
     <div>
@@ -188,6 +181,8 @@ function bars(el,rows,colorOf,fmt,max){
 function legend(el,map){el.innerHTML=Object.entries(map).map(([k,c])=>`<span style="--c:${c}">${k}</span>`).join("")}
 
 $("issue").textContent=`${ym(D.issue)}號 · ${D.issue} 出刊`;
+// 證交所約在每月第 7 個營業日公布上月定期定額排行，下一期跟著它出刊
+{const [y,m]=D.issue.split("-").map(Number),n=new Date(y,m,1);$("nextIssue").textContent=`下期預計 ${n.getFullYear()} 年 ${n.getMonth()+1} 月 10 日前後`}
 
 // 頭版：定期定額 ETF
 const e=D.dca_etf, first=e[0], etfTotal=e.reduce((s,r)=>s+r[2],0);
@@ -246,3 +241,4 @@ $("gauges").innerHTML=[
 
 $("srcs").innerHTML=D.sources.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${t}</a></li>`).join("");
 </script>
+<!--SITE-FOOT-->

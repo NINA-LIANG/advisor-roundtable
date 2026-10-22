@@ -1,4 +1,4 @@
-"""把知識庫與台股資料嵌入網頁模板，產生單一檔案的 web/index.html、web/sim.html、web/rates.html 與 web/news.html。
+"""把知識庫與台股資料嵌入網頁模板，產生單一檔案的 web/*.html（每頁都套上共用導覽列與頁尾）。
 
 用法：python scripts/fetch_twse.py && python scripts/fetch_rates.py && python scripts/build_site.py
       python scripts/build_site.py --bare OUTDIR   產生不含 <html>/<head> 外殼的版本（給 Claude Artifact 發佈）
@@ -20,12 +20,43 @@ ARTIFACT_URLS = {
     "https://claude.ai/artifact/Aj4eFHk9RZrjkuUmr7kRXb": "market.html",
     "https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw": "dividend.html",
 }
+ABOUT_URL = "https://claude.ai/artifact/4yrjpspWAKxAFJ6zeodjpA"
+ARTIFACT_URLS[ABOUT_URL] = "about.html"
+PAGE_URL = {rel: url for url, rel in ARTIFACT_URLS.items()}
+# 全站導覽：依使用者要做的事分三組
+NAV = [("學", [("learn.html", "入門教室"), ("news.html", "人氣小報")]),
+       ("查", [("market.html", "台股全覽"), ("dividend.html", "除權息"), ("rates.html", "存款利率")]),
+       ("做", [("index.html", "理專圓桌"), ("sim.html", "百萬模擬倉")])]
+DISCLAIMER = ("示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。"
+              "理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；"
+              "依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。")
 SHELL = ('<!doctype html>\n<html lang="zh-Hant">\n<head>\n<meta charset="utf-8">\n'
          '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n</head>\n<body>\n{}\n</body>\n</html>\n')
 
 
 def read(path):
     return path.read_text(encoding="utf-8")
+
+
+def link(rel, text, cur):
+    attr = ' aria-current="page"' if rel == cur else ""
+    return f'<a href="{PAGE_URL[rel]}" target="_blank" rel="noopener"{attr}>{text}</a>'
+
+
+def chrome(html, cur, asof, basics):
+    """把共用導覽列、樣式、頁尾聲明與名詞提示放進頁面"""
+    css = read(WEB / "_shared.css")
+    groups = "".join(f'<div class="grp"><span>{g}</span>{"".join(link(r, t, cur) for r, t in items)}</div>'
+                     for g, items in NAV)
+    badge = f'<span class="asofb" data-asof="{asof}">資料日期 {asof}</span>' if asof else ""
+    nav = (f"<style>{css}</style>\n<nav class=\"sitenav\" aria-label=\"網站導覽\">"
+           f'<a class="brand" href="{PAGE_URL["index.html"]}" target="_blank" rel="noopener">✨ 理專圓桌</a>'
+           f'{groups}{link("about.html", "關於本站", cur)}{badge}</nav>')
+    gl = {"terms": basics["terms"], "url": PAGE_URL["learn.html"]}
+    foot = (f'<footer class="sitefoot">{DISCLAIMER} <a href="{PAGE_URL["about.html"]}" target="_blank" rel="noopener">關於本站與資料來源</a></footer>\n'
+            f"<script>window.__GL__={json.dumps(gl, ensure_ascii=False, separators=(',', ':'))};\n{read(WEB / '_shared.js')}</script>")
+    assert "<!--SITE-NAV-->" in html and "<!--SITE-FOOT-->" in html, cur
+    return html.replace("<!--SITE-NAV-->", nav, 1).replace("<!--SITE-FOOT-->", foot, 1)
 
 
 def pages():
@@ -59,8 +90,21 @@ def pages():
     px.update({r[0]: [r[4], r[3], "e", r[2]] for r in uni["etf"]})
     dividend = (read(WEB / "dividend.template.html").replace("/*DIVIDENDS*/", compact("dividends.json"))
                 .replace("/*PX*/", json.dumps(px, ensure_ascii=False, separators=(",", ":"))))
-    return {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
-            "market.html": market, "dividend.html": dividend}
+    # 關於本站：理專的名字、樣式從首頁的 ADVISORS 抓
+    import re
+    adv = [dict(zip(("key", "name", "emoji", "tape", "style"), m)) for m in re.findall(
+        r'\{key:"(\w+)",name:"([^"]+)",emoji:"([^"]+)",tape:"([^"]+)".*?style:"([^"]+)"', src)]
+    about = (read(WEB / "about.template.html").replace("/*PROFILES*/", profiles)
+             .replace("/*ADVISORS*/", json.dumps(adv, ensure_ascii=False)))
+    basics = json.loads(read(ROOT / "knowledge" / "basics.zh.json"))
+    asof = {"index.html": json.loads(tw)["asof"], "sim.html": json.loads(tw)["asof"],
+            "rates.html": json.loads(read(ROOT / "data" / "rates.json")).get("asof", ""),
+            "news.html": "",
+            "learn.html": "", "market.html": uni["asof"],
+            "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": ""}
+    out = {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
+           "market.html": market, "dividend.html": dividend, "about.html": about}
+    return {k: chrome(v, k, asof[k], basics) for k, v in out.items()}
 
 
 def main():
@@ -73,7 +117,7 @@ def main():
         return
     for name, html in out.items():
         for url, rel in ARTIFACT_URLS.items():
-            html = html.replace(f'href="{url}" target="_blank" rel="noopener"', f'href="{rel}"')
+            html = html.replace(f'href="{url}" target="_blank" rel="noopener"', f'href="{rel}"').replace(url, rel)
         (WEB / name).write_text(SHELL.format(html), encoding="utf-8")
         print(f"ok  web/{name}")
 
