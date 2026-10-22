@@ -1,4 +1,4 @@
-# 每個交易日收盤後抓證交所資料與銀行牌告利率、重建網站並發佈到 GitHub Pages
+# 每個交易日收盤後抓證交所資料、銀行牌告利率、上市櫃清單（ETF 持股每週一次）、重建網站並發佈到 GitHub Pages
 name: daily-update
 
 on:
@@ -28,13 +28,19 @@ jobs:
       - name: 抓央行牌告利率
         run: python scripts/fetch_rates.py
         continue-on-error: true
+      - name: 抓上市櫃全部股票與 ETF 清單
+        run: python scripts/fetch_universe.py
+        continue-on-error: true
+      - name: 抓 ETF 持股明細（每週一次，約 6 分鐘）
+        run: python scripts/fetch_etf_holdings.py
+        continue-on-error: true
       - name: 重建網站
         run: python scripts/build_site.py
       - name: 保存資料快照
         run: |
           git config user.name "daily-update-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/tw.json data/rates.json web/index.html web/sim.html web/rates.html web/news.html web/learn.html
+          git add data/tw.json data/rates.json data/universe.json data/etf_holdings.json web/index.html web/sim.html web/rates.html web/news.html web/learn.html web/market.html
           git diff --cached --quiet || git commit -m "data: $(date -u +%F) 證交所收盤與銀行牌告利率"
           git push
       - uses: actions/configure-pages@v5

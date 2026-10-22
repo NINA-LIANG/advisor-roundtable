@@ -17,6 +17,7 @@ ARTIFACT_URLS = {
     "https://claude.ai/artifact/Bmc4PG8mYgvAV9iEik8PDz": "rates.html",
     "https://claude.ai/artifact/DMkJkY1CJP7BVhm61qV4Fx": "news.html",
     "https://claude.ai/artifact/RK74vfRrALWhutPXahWRtu": "learn.html",
+    "https://claude.ai/artifact/Aj4eFHk9RZrjkuUmr7kRXb": "market.html",
 }
 SHELL = ('<!doctype html>\n<html lang="zh-Hant">\n<head>\n<meta charset="utf-8">\n'
          '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n</head>\n<body>\n{}\n</body>\n</html>\n')
@@ -48,7 +49,11 @@ def pages():
         json.loads(read(ROOT / "data" / "popular.json")), ensure_ascii=False, separators=(",", ":")))
     learn = read(WEB / "learn.template.html").replace("/*LEARN*/", json.dumps(
         json.loads(read(ROOT / "knowledge" / "basics.zh.json")), ensure_ascii=False, separators=(",", ":")))
-    return {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn}
+    compact = lambda name: json.dumps(json.loads(read(ROOT / "data" / name)), ensure_ascii=False, separators=(",", ":"))
+    market = (read(WEB / "market.template.html").replace("/*UNIVERSE*/", compact("universe.json"))
+              .replace("/*HOLDINGS*/", compact("etf_holdings.json")))
+    return {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
+            "market.html": market}
 
 
 def main():
