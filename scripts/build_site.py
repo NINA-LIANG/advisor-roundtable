@@ -22,16 +22,19 @@ ARTIFACT_URLS = {
 }
 ABOUT_URL = "https://claude.ai/artifact/4yrjpspWAKxAFJ6zeodjpA"
 ARTIFACT_URLS[ABOUT_URL] = "about.html"
+LAB_URL = "https://claude.ai/artifact/2mfKRYx1SjgSHwN6w67Eu9"
+ARTIFACT_URLS[LAB_URL] = "lab.html"
 PAGE_URL = {rel: url for url, rel in ARTIFACT_URLS.items()}
 # 全站導覽：依使用者要做的事分三組
 NAV = [("學", [("learn.html", "入門教室"), ("news.html", "人氣小報")]),
        ("查", [("market.html", "台股全覽"), ("dividend.html", "除權息"), ("rates.html", "存款利率")]),
-       ("做", [("index.html", "理專圓桌"), ("sim.html", "百萬模擬倉")])]
+       ("做", [("index.html", "理專圓桌"), ("sim.html", "百萬模擬倉"), ("lab.html", "理專考場")])]
 # 左側目錄：分組標題、副標，每項的圖示（數字由 pages() 依資料算）
 DRAWER = [("學", "打好基本功", [("learn.html", "🌱", "入門教室"), ("news.html", "📰", "人氣小報")]),
           ("查", "看懂市場資料", [("market.html", "📇", "台股全覽"), ("dividend.html", "💰", "除權息行事曆"),
                              ("rates.html", "🏦", "存款利率")]),
-          ("做", "練習自己判斷", [("index.html", "✨", "理專圓桌"), ("sim.html", "🐷", "百萬模擬倉")]),
+          ("做", "練習自己判斷", [("index.html", "✨", "理專圓桌"), ("sim.html", "🐷", "百萬模擬倉"),
+                             ("lab.html", "🧪", "理專考場")]),
           ("站", "認識這個網站", [("about.html", "📖", "關於本站")])]
 DISCLAIMER = ("示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。"
               "理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；"
@@ -115,6 +118,9 @@ def pages():
     import re
     adv = [dict(zip(("key", "name", "emoji", "tape", "style"), m)) for m in re.findall(
         r'\{key:"(\w+)",name:"([^"]+)",emoji:"([^"]+)",tape:"([^"]+)".*?style:"([^"]+)"', src)]
+    # 理專考場：跟模擬倉一樣共用首頁的資料與六位理專
+    lab = (read(WEB / "lab.template.html").replace("/*SHARED*/", shared)
+           .replace("/*TW*/", tw).replace("/*PROFILES*/", profiles).replace("/*SHELF*/", shelf))
     about = (read(WEB / "about.template.html").replace("/*PROFILES*/", profiles)
              .replace("/*ADVISORS*/", json.dumps(adv, ensure_ascii=False)))
     basics = json.loads(read(ROOT / "knowledge" / "basics.zh.json"))
@@ -122,14 +128,14 @@ def pages():
             "rates.html": json.loads(read(ROOT / "data" / "rates.json")).get("asof", ""),
             "news.html": "",
             "learn.html": "", "market.html": uni["asof"],
-            "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": ""}
+            "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": "", "lab.html": json.loads(tw)["asof"]}
     out = {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
-           "market.html": market, "dividend.html": dividend, "about.html": about}
+           "market.html": market, "dividend.html": dividend, "about.html": about, "lab.html": lab}
     div = json.loads(read(ROOT / "data" / "dividends.json"))
     counts = {"learn.html": len(basics["terms"]), "news.html": "月刊",
               "market.html": f'{len(uni["stock"]) + len(uni["etf"]):,}',
               "dividend.html": sum(1 for e in div["up"] if e[0] >= div["asof"]),
-              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬"}
+              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題"}
     return {k: chrome(v, k, asof[k], basics, counts) for k, v in out.items()}
 
 
