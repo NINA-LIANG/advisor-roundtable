@@ -31,7 +31,7 @@ def asof(repo):
 def test_current_data_passes(repo):
     errors, warnings, status = validate(repo, today=asof(repo) + dt.timedelta(days=1))
     assert errors == [] and warnings == [] and status["ok"]
-    assert [d["state"] for d in status["datasets"]] == ["ok"] * 6
+    assert [d["state"] for d in status["datasets"]] == ["ok"] * 7
 
 
 def test_empty_stock_list_blocks_publish(repo):
