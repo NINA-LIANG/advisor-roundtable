@@ -34,3 +34,8 @@ def test_snapshot_is_written_once(tmp_path):
 def test_run_report_lists_failed_steps():
     body = run_report.report({"twse": {"outcome": "failure"}, "rates": {"outcome": "success"}}, None, "https://run")
     assert "❌ failure" in body and "https://run" in body
+
+
+def test_run_report_explains_pages_not_enabled():
+    body = run_report.report({"validate": {"outcome": "success"}, "pages": {"outcome": "failure"}}, None, "")
+    assert "Settings → Pages" in body
