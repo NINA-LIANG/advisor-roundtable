@@ -134,6 +134,8 @@ async function init(){
   // 上次關頁時還在傳送的，當作沒送成功，完成頁才會出現重新送出與下載
   for(const k in S.sent||{})if(S.sent[k]==="pending")S.sent[k]="error";
   if(!PREVIEW)store.set("study_v1_last",pid);save();render();testNote();
+  // 之前沒送成功的階段，重新打開頁面時自動再送一次（DataPipe 設定修好後不用重做）
+  for(const k of ["pre","task","final"])if(S.sent[k]==="error")send(k);
 }
 
 function render(){
