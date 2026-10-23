@@ -11,11 +11,9 @@
   "app_version": "1.0.0",
   "datapipe_experiment_id": "fY4jbKM2bLQT",
   "datapipe_condition_assignment": false,
-  "rec_approval": "（審查通過後填入倫理審查編號）",
   "researcher": "梁瑜庭",
-  "contact": "（填入聯絡 email）",
-  "advisor_professor": "（填入指導教授）",
-  "rec_contact": "（填入學校倫理審查委員會聯絡方式）",
+  "contact": "ninaliang0521@gmail.com",
+  "advisor_professor": "",
   "minutes": "30–40",
   "has_reward": false,
   "reward": "本研究沒有提供謝禮。"

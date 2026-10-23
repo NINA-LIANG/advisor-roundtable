@@ -145,10 +145,10 @@ function consent(m){
    <li><b>這不是投資建議</b>：題目都是歷史資料，不涉及真實金錢，結果不代表任何股票未來會怎麼走。</li>
    <li><b>為了公平</b>：題目會隱藏股票名稱和日期，價格也重新換算過，結束時會全部告訴你是哪一檔、哪一段時間。不同參與者看到的理專呈現方式可能不同。</li>
    <li><b>收集哪些資料</b>：你的選擇、信心、每個步驟花的秒數、問卷回答。<b>不收</b>姓名、電話、email 或任何能識別你的資料，只用隨機編號 <span class="mono">${esc(S.pid)}</span>。</li>
-   <li><b>資料存放</b>：作答資料會傳到研究者的 Google 雲端硬碟（伺服器可能在國外），只有研究者與指導教授看得到，結果只以整體統計發表，研究結束後依倫理審查規定保存與銷毀。</li>
+   <li><b>資料存放</b>：作答資料會傳到研究者的 Google 雲端硬碟（伺服器可能在國外），只有研究者與指導教授看得到，結果只以整體統計發表，論文完成後依學校規定保存，期滿銷毀。</li>
    <li><b>自願參加</b>：你可以隨時關掉頁面退出，不會有任何損失；中途退出的資料${C.withdraw_note?esc(C.withdraw_note):"不會用於分析"}。</li>
    <li><b>謝禮</b>：${esc(C.reward)}</li>
-   <li><b>聯絡</b>：研究者 ${esc(C.researcher)}（${esc(C.contact)}）；指導教授 ${esc(C.advisor_professor)}；倫理審查 ${esc(C.rec_contact)}。審查編號：${esc(C.rec_approval)}。</li>
+   <li><b>聯絡</b>：研究者 ${esc(C.researcher)}（${esc(C.contact)}）${C.advisor_professor?`；指導教授 ${esc(C.advisor_professor)}`:""}${C.rec_contact?`；倫理審查 ${esc(C.rec_contact)}`:""}。${C.rec_approval?`審查編號：${esc(C.rec_approval)}。`:""}有任何問題，或想刪除自己的資料（請附上上方的編號），都可以來信。</li>
   </ul></div>
   ${PREVIEW?`<p class="warn">預覽模式（第 ${S.cond+1} 組：${CONDS[S.cond]}）：資料不會送出。</p>`:""}
   <div class="row" style="margin-top:14px"><button class="btn" id="yes" type="button">我已閱讀，同意參加</button><button class="btn ghost" id="no" type="button">不同意</button></div></section>`;
