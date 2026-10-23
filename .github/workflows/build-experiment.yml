@@ -45,7 +45,7 @@ jobs:
         run: |
           if [ ! -f knowledge/experiment/panel.json ]; then python scripts/fetch_experiment_panel.py; fi
       - name: 建題庫
-        run: python scripts/build_experiment_items.py
+        run: python scripts/build_experiment_items.py || python -c "import json,sys;sys.exit(json.load(open('knowledge/experiment/items.v1.json'))['draft'])"
       - name: 重建網站（實驗頁嵌入題庫）
         run: python scripts/build_site.py
       - name: 提交

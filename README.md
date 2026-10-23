@@ -104,7 +104,7 @@ python scripts/validate_data.py --status data/status.json && python scripts/buil
 
 上線前要做的事：
 
-1. **題庫**：推送後 build-experiment 會自動跑（約 25 分鐘）並把題庫提交回分支。PMI 還沒補齊時題庫是草稿（`draft: true`），補完 `macro_2023_2024.csv` 再跑一次就是正式版，之後不會再被覆寫。
+1. **題庫**：推送後 build-experiment 會自動跑（約 25 分鐘）並把題庫提交回分支。PMI 還沒補齊時題庫是草稿（`draft: true`），補完 `macro_2023_2024.csv` 再跑一次就是正式版，之後不會再被覆寫。 2026-10-23 已補齊 PMI，題庫已是正式版。
 2. **DataPipe**：到 [pipe.jspsych.org](https://pipe.jspsych.org/) 註冊、連 Google 雲端硬碟、建一個實驗並開啟資料收集，把實驗代號填進 `config.json` 的 `datapipe_experiment_id`。公開招募想讓 DataPipe 輪流分組，就在後台開「condition assignment」設 4 組，並把 `datapipe_condition_assignment` 改成 `true`。送資料的網址寫在 `study.template.html` 的 `send()`，請和 DataPipe 後台 Code Samples 對一次。沒設定時，受試者在最後可以下載作答檔交給你。
 3. **同意書**：聯絡信箱、謝禮在 `config.json`；之後要送倫理審查的話，加上 `rec_approval`（審查編號）與 `rec_contact` 就會出現在同意書；同意書文字在 `study.template.html` 的 `consent()`。
 4. **預覽**：`study.html?preview=1&cond=1`（1～4 組），預覽不會送資料。

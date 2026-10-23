@@ -47,6 +47,11 @@ def exp(tmp_path):
     for name in ("config.json", "macro_2023_2024.csv"):
         shutil.copy2(EXP / name, tmp_path / name)
     (tmp_path / "panel.json").write_text(json.dumps(fake_panel()), encoding="utf-8")
+    # 留一個月 PMI 空白，題庫維持草稿、可以重建
+    macro = tmp_path / "macro_2023_2024.csv"
+    lines = macro.read_text(encoding="utf-8").splitlines()
+    lines[-1] = lines[-1].rsplit(",", 1)[0] + ","
+    macro.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return tmp_path
 
 
@@ -89,6 +94,9 @@ def test_macro_uses_previous_month_and_pmi_gap_marks_draft(exp):
     assert bei.rate_dir("20230728") == 1 and bei.rate_dir("20250430") == 0
     items, _ = bei.build(exp)
     assert items["draft"] is True
+    shutil.copy2(EXP / "macro_2023_2024.csv", exp / "macro_2023_2024.csv")  # 真實資料 PMI 已補齊
+    items, _ = bei.build(exp)
+    assert items["draft"] is False
 
 
 def test_no_look_ahead_in_engine_inputs(exp):
