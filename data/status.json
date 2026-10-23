@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-23 23:53",
+ "checked": "2026-10-24 00:22",
  "ok": true,
  "datasets": [
   {
@@ -9,7 +9,7 @@
    "page": "理專圓桌、模擬倉、考場",
    "asof": "2026-10-22",
    "count": 421,
-   "age": 1,
+   "age": 2,
    "state": "ok",
    "note": "",
    "step": "skipped"
@@ -21,7 +21,7 @@
    "page": "台股全覽",
    "asof": "2026-10-23",
    "count": 2354,
-   "age": 0,
+   "age": 1,
    "state": "ok",
    "note": "",
    "step": "skipped"
@@ -33,7 +33,7 @@
    "page": "除權息行事曆",
    "asof": "2026-10-23",
    "count": 1981,
-   "age": 0,
+   "age": 1,
    "state": "ok",
    "note": "",
    "step": "skipped"
@@ -45,7 +45,7 @@
    "page": "存款利率",
    "asof": "2026-10-22",
    "count": 37,
-   "age": 1,
+   "age": 2,
    "state": "ok",
    "note": "",
    "step": "skipped"
@@ -57,7 +57,7 @@
    "page": "台股全覽",
    "asof": "2026-10-22",
    "count": 313,
-   "age": 1,
+   "age": 2,
    "state": "ok",
    "note": "",
    "step": "skipped"
@@ -69,7 +69,7 @@
    "page": "人氣小報",
    "asof": "2026-10-22",
    "count": 20,
-   "age": 1,
+   "age": 2,
    "state": "ok",
    "note": "",
    "step": ""
@@ -87,5 +87,5 @@
   "dividends": "skipped",
   "holdings": "skipped"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/39982170469"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/39986205947"
 }
