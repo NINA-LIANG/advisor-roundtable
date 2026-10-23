@@ -156,3 +156,13 @@ def test_scoring_metrics(exp):
     assert p["manip_ok"] == 1 and p["attention_ok"] == 1
     wrong = sum(not r["ai_correct"] for r in formal.values())
     assert p["brier"] == round(wrong / len(formal), 4)  # 信心 100%：答錯的題目每題 1 分
+
+
+def test_latest_reads_datapipe_array(tmp_path):
+    import sys
+    sys.path.insert(0, str(ROOT / "analysis"))
+    import score_study
+    (tmp_path / "A_pre.json").write_text(json.dumps([{"trial_type": "advisor-study", "pid": "A", "trials": []}]), encoding="utf-8")
+    (tmp_path / "B.json").write_text(json.dumps({"pid": "B", "trials": [{}]}), encoding="utf-8")
+    got = {s["pid"] for s in score_study.latest(tmp_path)}
+    assert got == {"A", "B"}

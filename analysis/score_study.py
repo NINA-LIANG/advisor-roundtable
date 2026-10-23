@@ -27,6 +27,8 @@ def latest(folder):
         except (json.JSONDecodeError, UnicodeDecodeError):
             print(f"skip  {f.name}（不是 JSON）", file=sys.stderr)
             continue
+        if isinstance(s, list) and len(s) == 1:  # DataPipe 版本包成一筆的陣列
+            s = s[0]
         if not isinstance(s, dict) or "pid" not in s or s.get("preview"):
             continue
         rank = (len(s.get("trials", [])), bool(s.get("post")), PHASE.get(f.stem.rsplit("_", 1)[-1], 0))
