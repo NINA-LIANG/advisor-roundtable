@@ -338,6 +338,8 @@ async function done(m){
   }catch(e){$("reveal").textContent="揭曉資料載入失敗，研究結束後研究者會另外公布。"}
 }
 function payload(){return JSON.stringify({...S,sent:undefined})}
+// DataPipe 的資料驗證只收「每筆有 trial_type 的陣列」，所以送雲端時包一層；下載檔維持原樣
+function pipePayload(){return JSON.stringify([{trial_type:"advisor-study",...S,sent:undefined}])}
 function download(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([payload()],{type:"application/json"}));a.download=`advisor-study-${S.pid}.json`;document.body.append(a);a.click();a.remove()}
 function showSend(){
   const st=$("sendst");if(!st)return;
@@ -363,7 +365,7 @@ async function send(phase){
   S.sent[phase]="pending";save();if(phase==="final")showSend();testNote();
   try{
     const r=await fetch("https://pipe.jspsych.org/api/data/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},
-      body:JSON.stringify({experimentID:C.datapipe_experiment_id,filename:`${S.pid}_${phase}.json`,data:payload()})});
+      body:JSON.stringify({experimentID:C.datapipe_experiment_id,filename:`${S.pid}_${phase}.json`,data:pipePayload()})});
     // 201 已存、202 已收到稍後寫入；FILE_EXISTS 代表這份之前已經送成功過
     let ok=r.ok,why="HTTP "+r.status;if(!ok){try{const j=await r.json();why+=" "+(j.error||j.message||"");ok=j.error==="FILE_EXISTS"}catch(e){}}
     S.sent[phase]=ok?"ok":"error";if(!ok)S.sent[phase+"_why"]=why.trim();
