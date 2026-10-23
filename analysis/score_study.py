@@ -44,11 +44,13 @@ def score(s, key, surveys):
     rows = []
     for t in trials:
         k = key["items"][t["item_id"]]
-        y, a = k["truth"], t.get("shown_rec") or k["rec"]
+        # 依賴指標一律以四組相同的等權共識（k["rec"]）為準，組間才能比較；第 4 組實際看到的加權建議另列 shown_rec
+        y, a, shown = k["truth"], k["rec"], t.get("shown_rec", k["rec"])
         rows.append({"pid": s["pid"], "cond": s["cond"] + 1, "item_id": t["item_id"], "order": t["order"], "d1": t["d1"], "c1": t["c1"],
                      "ai_rec": a, "ai_correct": int(a == y), "sigma": k["sigma"], "d2": t["d2"], "c2": t["c2"], "truth": y,
                      "correct1": int(t["d1"] == y), "correct2": int(t["d2"] == y), "switched": int(t["d1"] != t["d2"]),
-                     "agree_ai": int(t["d2"] == a), "t_pre": t.get("t_pre"), "t_post": t.get("t_post"),
+                     "agree_ai": int(t["d2"] == a), "shown_rec": shown or "", "agree_shown": int(t["d2"] == shown) if shown else "",
+                     "reloads": t.get("reloads", 0), "t_pre": t.get("t_pre"), "t_post": t.get("t_post"),
                      "opened": len(t.get("opened", [])), "w_moves": t.get("w_moves", 0),
                      "w_final": json.dumps(t.get("w_final", ""), ensure_ascii=False) if t.get("w_final") else ""})
     n = len(rows)

@@ -134,12 +134,17 @@ const qs=new URLSearchParams(location.search);
 const PREVIEW=qs.has("preview");
 let S=null;
 function key(pid){return "study_v1_"+pid}
-function save(){if(S)store.set(key(S.pid),S)}
+function save(){if(S&&!S.preview)store.set(key(S.pid),S)}
 async function init(){
   if(!ITEMS){$("main").innerHTML=`<section class="box"><h2>題庫尚未產生</h2><p>請研究者先執行 build-experiment 流程。</p></section>`;return}
   let pid=(qs.get("pid")||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
-  if(!pid){pid=store.get("study_v1_last")||("W"+randCode(5))}
-  S=store.get(key(pid));
+  if(PREVIEW)pid="PREVIEW";
+  else if(!pid){
+    // 沒有編號時只接續「同一台電腦上還沒做完」的那一份，做完或不同意的就換新編號，避免下一位受試者看到上一位的結果
+    const last=store.get("study_v1_last"),ls=last&&store.get(key(last));
+    pid=ls&&!["done","declined"].includes(ls.step)?last:"W"+randCode(5);
+  }
+  S=PREVIEW?null:store.get(key(pid));
   if(!S){
     let cond=condOf(pid),how="pid";
     if(PREVIEW&&qs.has("cond")){cond=Math.max(0,Math.min(3,(+qs.get("cond")||1)-1));how="preview"}
@@ -152,7 +157,9 @@ async function init(){
     S={pid,cond,assigned_by:how,preview:PREVIEW,app_ver:C.app_version,items_sha:STUDY.items_sha,engine_sha:ITEMS.engine_sha,draft:ITEMS.draft,
        started:new Date().toISOString(),ua:navigator.userAgent.slice(0,160),step:"consent",pre:{},post:{},practice:[],trials:[],order,k:0,sent:{}};
   }
-  store.set("study_v1_last",pid);save();render();
+  // 上次關頁時還在傳送的，當作沒送成功，完成頁才會出現重新送出與下載
+  for(const k in S.sent||{})if(S.sent[k]==="pending")S.sent[k]="error";
+  if(!PREVIEW)store.set("study_v1_last",pid);save();render();
 }
 
 function render(){
@@ -254,7 +261,10 @@ function bindPick(id,cb){$(id).addEventListener("click",e=>{const b=e.target.clo
 function trialStep(m){
   const list=curList(),k=S.k;
   if(k>=list.length){if(S.step==="practice")return go("trials");send("task");return go("post")}
-  const it=list[k],isP=S.step==="practice",T={item_id:it.id,order:k+1,practice:isP,cond:S.cond};
+  const it=list[k],isP=S.step==="practice";
+  // 看過理專意見後重新整理：第一次的判斷不能重答，直接回到第二階段
+  const resumed=S.cur&&S.cur.item_id===it.id&&S.cur.practice===isP;
+  const T=resumed?{...S.cur,reloads:(S.cur.reloads||0)+1}:{item_id:it.id,order:k+1,practice:isP,cond:S.cond};
   m.innerHTML=`<section class="box"><div class="progress"><span>${isP?`練習 ${k+1}／${list.length}`:`第 ${k+1}／${list.length} 題`}</span><span>不計時，慢慢看</span></div>
    <h2>${esc(it.label)}</h2>${dataCard(it)}
    <div style="margin-top:14px"><h3>你的判斷：現在買進、持有 3 個月，會贏過 0050 嗎？</h3>${choiceHTML("d1")}${confHTML("c1")}
@@ -263,7 +273,9 @@ function trialStep(m){
   const t0=now();
   const ready=()=>$("see").disabled=!(T.d1&&T.c1);
   bindPick("d1",v=>{T.d1=v;ready()});bindPick("c1",v=>{T.c1=+v;ready()});
-  $("see").onclick=()=>{T.t_pre=+((now()-t0)/1000).toFixed(1);$("d1").querySelectorAll("button").forEach(b=>b.disabled=true);$("c1").querySelectorAll("button").forEach(b=>b.disabled=true);$("see").hidden=true;stage2(it,T,isP)};
+  const lock=()=>{for(const [id,v] of [["d1",T.d1],["c1",T.c1]])$(id).querySelectorAll("button").forEach(b=>{b.disabled=true;b.setAttribute("aria-pressed",b.dataset.v===String(v))});$("see").hidden=true;stage2(it,T,isP)};
+  $("see").onclick=()=>{T.t_pre=+((now()-t0)/1000).toFixed(1);S.cur=T;save();lock()};
+  if(resumed){S.cur=T;save();lock()}
 }
 
 function verdictOf(it,w){const keys=ITEMS.advisors.map(a=>a.key),tw=keys.reduce((t,k)=>t+w[k],0);if(!tw)return {rec:null,avg:null};const avg=keys.reduce((t,k)=>t+it.advisors[k].s*w[k],0)/tw;return {rec:avg>=0.5?"buy":"no",avg}}
@@ -276,10 +288,10 @@ function aiPanel(it,T){
     return `<div class="ai"><div class="eyebrow">🧑‍💼 首席理專</div><div class="verdict">建議：${REC(it.rec)}</div><ul>${it.advisors[lead.key].why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>`;
   }
   if(c===1)return `<div class="ai"><div class="eyebrow">🤝 六位理專的共識</div><div class="verdict">建議：${REC(it.rec)}</div><p class="muted" style="margin:0">綜合六位理專的判斷。</p></div>`;
-  const cards=A.map(a=>{const r=it.advisors[a.key],al=it.alerts.filter(x=>x.on===a.key),by=A.find(x=>x.key===(al[0]||{}).by);
+  const cards=A.map(a=>{const r=it.advisors[a.key],al=it.alerts.filter(x=>x.on===a.key),nm=k=>(A.find(x=>x.key===k)||{}).name||"";
     return `<div class="card" style="--tape:${a.tape}"><div class="row" style="justify-content:space-between"><b>${a.emoji} ${esc(a.name)}</b><span class="pill">${LABEL(r.s)}</span></div>
      <div class="muted" style="font-size:12.5px">${esc(a.style)}</div><ul>${r.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
-     <details data-k="${a.key}"><summary>同儕質疑</summary><p>${esc(a.critique)}</p>${al.map(x=>`<p>⚠️ ${esc(by?by.name:"")}：${esc(x.msg)}</p>`).join("")}</details>
+     <details data-k="${a.key}"><summary>同儕質疑</summary><p>${esc(a.critique)}</p>${al.map(x=>`<p>⚠️ ${esc(nm(x.by))}：${esc(x.msg)}</p>`).join("")}</details>
      ${c===3?`<div class="weight"><label for="w_${a.key}">採信權重</label><input id="w_${a.key}" type="range" min="0" max="3" step="0.5" value="1" data-k="${a.key}"><span class="num" id="wv_${a.key}">1×</span></div>`:""}</div>`}).join("");
   return `<div class="ai"><div class="eyebrow">🪑 六位理專圓桌</div><div class="verdict" id="cons"></div><div class="muted" id="spread" style="font-size:14px"></div><div class="cards">${cards}</div></div>`;
 }
@@ -288,6 +300,7 @@ function stage2(it,T,isP){
   box.hidden=false;
   box.innerHTML=`<hr style="border:none;border-top:2px dashed var(--line);margin:18px 0">${aiPanel(it,T)}
    <div style="margin-top:14px"><h3>你的最後決定</h3>${choiceHTML("d2")}${confHTML("c2")}<button class="btn" id="nx" type="button" disabled>${isP?"送出，看答案":"送出，下一題"}</button></div><div id="fb"></div>`;
+  T.shown_rec=it.rec;
   const refresh=()=>{if(S.cond<2)return;const v=verdictOf(it,w);T.shown_rec=v.rec;
     $("cons").textContent=v.rec?`${S.cond===3?"加權":"等權"}共識：建議${REC(v.rec)}（平均分數 ${v.avg.toFixed(2)}）`:"你沒有採信任何一位理專";
     $("spread").textContent=`分歧度 σ = ${it.sigma.toFixed(2)}　${it.sigma>1.2?"意見嚴重分歧":it.sigma>0.7?"意見有落差":"多數理專看法接近"}`};
@@ -297,9 +310,9 @@ function stage2(it,T,isP){
   const ready=()=>$("nx").disabled=!(T.d2&&T.c2);
   bindPick("d2",v=>{T.d2=v;ready()});bindPick("c2",v=>{T.c2=+v;ready()});
   $("nx").onclick=()=>{
-    T.t_post=+((now()-t0)/1000).toFixed(1);T.ai_rec=it.rec;T.sigma=it.sigma;T.shown_rec=T.shown_rec??it.rec;
+    T.t_post=+((now()-t0)/1000).toFixed(1);T.ai_rec=it.rec;T.sigma=it.sigma;
     if(S.cond===3)T.w_final={...w};T.at=new Date().toISOString();
-    (isP?S.practice:S.trials).push(T);S.k++;save();
+    (isP?S.practice:S.trials).push(T);S.k++;delete S.cur;save();
     if(!isP)return render();
     const ok=T.d2===it.truth,aiOk=it.rec===it.truth,pct=x=>`${x>=0?"+":""}${(x*100).toFixed(1)}%`;
     $("nx").hidden=true;box.querySelectorAll("button,input").forEach(b=>b.disabled=true);
@@ -329,6 +342,7 @@ function download(){const a=document.createElement("a");a.href=URL.createObjectU
 function showSend(){
   const st=$("sendst");if(!st)return;
   const ok=S.sent.final==="ok";
+  if(S.sent.final==="pending"&&!PREVIEW){st.innerHTML=`<p class="muted">作答資料傳送中…</p>`;return}
   st.innerHTML=ok?`<p class="feedback">作答資料已送出。</p>`
    :`<p class="warn">${PREVIEW?"預覽模式不送出資料。":C.datapipe_experiment_id?"作答資料還沒送出成功。":"研究者還沒設定資料收集服務。"}請按下面的按鈕下載作答檔，交給研究者。</p>
      <div class="row">${C.datapipe_experiment_id&&!PREVIEW?`<button class="btn" id="retry" type="button">重新送出</button>`:""}<button class="btn ghost" id="dl" type="button">下載作答檔</button></div>`;
@@ -338,7 +352,7 @@ function showSend(){
 // 每個階段送一份完整快照到 DataPipe（檔名：編號_階段.json）；分析時每位受試者取最後一份
 async function send(phase){
   if(PREVIEW||!C.datapipe_experiment_id)return;
-  S.sent[phase]="pending";save();
+  S.sent[phase]="pending";save();if(phase==="final")showSend();
   try{
     const r=await fetch("https://pipe.jspsych.org/api/data/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},
       body:JSON.stringify({experimentID:C.datapipe_experiment_id,filename:`${S.pid}_${phase}.json`,data:payload()})});
