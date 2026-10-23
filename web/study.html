@@ -159,7 +159,7 @@ async function init(){
   }
   // 上次關頁時還在傳送的，當作沒送成功，完成頁才會出現重新送出與下載
   for(const k in S.sent||{})if(S.sent[k]==="pending")S.sent[k]="error";
-  if(!PREVIEW)store.set("study_v1_last",pid);save();render();
+  if(!PREVIEW)store.set("study_v1_last",pid);save();render();testNote();
 }
 
 function render(){
@@ -349,18 +349,26 @@ function showSend(){
   if($("dl"))$("dl").onclick=download;
   if($("retry"))$("retry").onclick=()=>send("final");
 }
+// 研究者測試用：編號以 TEST 開頭時，在頁面最上方顯示每個階段的傳送結果
+function testNote(){
+  if(!S.pid.startsWith("TEST")||PREVIEW)return;
+  let n=$("testnote");if(!n){n=document.createElement("p");n.id="testnote";n.className="warn";$("main").before(n)}
+  const tx={ok:"已送出",pending:"傳送中…",error:"失敗"};
+  const parts=["pre","task","final"].filter(k=>S.sent[k]).map(k=>`${k} ${tx[S.sent[k]]||S.sent[k]}${S.sent[k]==="error"&&S.sent[k+"_why"]?`（${S.sent[k+"_why"]}）`:""}`);
+  n.textContent="測試模式："+(parts.join("，")||"還沒有送出任何資料");
+}
 // 每個階段送一份完整快照到 DataPipe（檔名：編號_階段.json）；分析時每位受試者取最後一份
 async function send(phase){
   if(PREVIEW||!C.datapipe_experiment_id)return;
-  S.sent[phase]="pending";save();if(phase==="final")showSend();
+  S.sent[phase]="pending";save();if(phase==="final")showSend();testNote();
   try{
     const r=await fetch("https://pipe.jspsych.org/api/data/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},
       body:JSON.stringify({experimentID:C.datapipe_experiment_id,filename:`${S.pid}_${phase}.json`,data:payload()})});
     // 201 已存、202 已收到稍後寫入；FILE_EXISTS 代表這份之前已經送成功過
-    let ok=r.ok;if(!ok&&r.status===400){try{ok=(await r.json()).error==="FILE_EXISTS"}catch(e){}}
-    S.sent[phase]=ok?"ok":"error";
-  }catch(e){S.sent[phase]="error"}
-  save();if(phase==="final")showSend();
+    let ok=r.ok,why="HTTP "+r.status;if(!ok){try{const j=await r.json();why+=" "+(j.error||j.message||"");ok=j.error==="FILE_EXISTS"}catch(e){}}
+    S.sent[phase]=ok?"ok":"error";if(!ok)S.sent[phase+"_why"]=why.trim();
+  }catch(e){S.sent[phase]="error";S.sent[phase+"_why"]="連不上 DataPipe："+e.message}
+  save();if(phase==="final")showSend();testNote();
 }
 init();
 </script>
