@@ -24,6 +24,7 @@ DATASETS = [
     ("dividends", "dividends.json", "除權息與殖利率", "除權息行事曆", 5, "dividends"),
     ("rates", "rates.json", "銀行牌告利率", "存款利率", 7, "rates"),
     ("etf_holdings", "etf_holdings.json", "ETF 持股明細", "台股全覽", 10, "holdings"),
+    ("financials", "financials.json", "上市櫃財報與月營收", "台股全覽", 10, "financials"),
     ("popular", "popular.json", "人氣小報（人工整理）", "人氣小報", 45, None),
 ]
 ADVISORS = ("tech", "macro", "value", "mom", "quant", "div")
@@ -89,13 +90,24 @@ def check_holdings(d):
     return n, [] if n >= 20 else [f"ETF 持股只有 {n} 檔"]
 
 
+def check_financials(d):
+    if d.get("pending"):  # 剛加進來、Actions 還沒第一次抓
+        return 0, []
+    fin, cols = d.get("fin", {}), d.get("cols", [])
+    err = [] if len(fin) >= 800 else [f"財報只有 {len(fin)} 家（上市櫃平常約 1800 家）"]
+    err += [f"{c} 財報欄位數不對" for c, r in list(fin.items()) if len(r) != len(cols)][:5]
+    if not re.fullmatch(r"\d{4} Q[1-4]", d.get("quarter", "")):
+        err.append(f"季別格式不對：{d.get('quarter')!r}")
+    return len(fin), err
+
+
 def check_popular(d):
     err = [] if d.get("dca_etf") and d.get("dca_stock") else ["定期定額排行是空的"]
     return len(d.get("dca_etf", [])), err
 
 
 CHECKS = {"tw": check_tw, "universe": check_universe, "dividends": check_dividends, "rates": check_rates,
-          "etf_holdings": check_holdings, "popular": check_popular}
+          "etf_holdings": check_holdings, "financials": check_financials, "popular": check_popular}
 
 
 def check_knowledge(root):

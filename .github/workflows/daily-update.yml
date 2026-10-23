@@ -11,7 +11,7 @@ on:
         description: 要更新哪些資料
         type: choice
         default: all
-        options: [all, twse, rates, universe, dividends, holdings, 只重建網站]
+        options: [all, twse, rates, universe, dividends, holdings, financials, 只重建網站]
 
 permissions:
   contents: write
@@ -80,6 +80,11 @@ jobs:
         id: holdings
         if: env.ONLY == 'all' || env.ONLY == 'holdings'
         run: python scripts/fetch_etf_holdings.py
+        continue-on-error: true
+      - name: 抓上市櫃最新一季財報與月營收
+        id: financials
+        if: env.ONLY == 'all' || env.ONLY == 'financials'
+        run: python scripts/fetch_financials.py
         continue-on-error: true
       - name: 資料品質檢查（沒過就不發佈）
         id: validate

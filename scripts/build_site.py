@@ -215,7 +215,7 @@ def pages():
         json.loads(read(ROOT / "knowledge" / "basics.zh.json")), ensure_ascii=False, separators=(",", ":")))
     compact = lambda name: json.dumps(json.loads(read(ROOT / "data" / name)), ensure_ascii=False, separators=(",", ":"))
     market = (read(WEB / "market.template.html").replace("/*UNIVERSE*/", compact("universe.json"))
-              .replace("/*HOLDINGS*/", compact("etf_holdings.json")))
+              .replace("/*HOLDINGS*/", compact("etf_holdings.json")).replace("/*FIN*/", compact("financials.json")))
     # 除權息頁只需要每檔的收盤、產業／類型、股或 ETF、市場
     uni = json.loads(read(ROOT / "data" / "universe.json"))
     px = {r[0]: [r[4], r[3], "s", r[2]] for r in uni["stock"]}

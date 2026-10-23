@@ -111,7 +111,7 @@ table:not(.wide) .opt{display:none}
     <div>
       <div class="eyebrow">理專圓桌・姊妹頁</div>
       <h1>台股全覽 📇</h1>
-      <p>上市、上櫃的每一檔股票和 ETF 都在這裡。點一檔 ETF 看它裡面裝了什麼，點一檔股票看哪些 ETF 持有它。</p>
+      <p>上市、上櫃的每一檔股票和 ETF 都在這裡。點一檔 ETF 看它裡面裝了什麼，點一檔股票看它的財報、月營收，以及哪些 ETF 持有它。</p>
     </div>
   </header>
 
@@ -144,7 +144,7 @@ table:not(.wide) .opt{display:none}
 </div>
 
 <script>
-const U=/*UNIVERSE*/, HD=/*HOLDINGS*/;
+const U=/*UNIVERSE*/, HD=/*HOLDINGS*/, FIN=/*FIN*/;
 const H=HD.etfs||{};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -211,6 +211,24 @@ function ownBars(own){
   const max=Math.max(...own.map(x=>x[1]||0),1);
   return `<div class="bars">${own.map(([c,w])=>`<div class="bar"><span title="${esc(etfBy[c]?.name||c)}"><a href="#" data-go="etf:${c}">${c} ${esc(etfBy[c]?.name||"")}</a></span><i style="width:${Math.max(2,(w||0)/max*100)}%"></i><em>${w==null?"—":w.toFixed(2)+"%"}</em></div>`).join("")}</div>`;
 }
+// 財報：最新一季累計（億元），欄位順序看 FIN.cols
+function finBlock(code){
+  const r=FIN.fin?.[code],m=FIN.mrev?.[code];
+  if(!r&&!m)return FIN.pending?`<h3>財務報表</h3><p class="muted">財報資料準備中，下一次每日更新後就會出現。</p>`:"";
+  const v=Object.fromEntries((FIN.cols||[]).map((k,i)=>[k,r?.[i]??null]));
+  const ratio=(a,b)=>a==null||!b?"—":(a/b*100).toFixed(1)+"%";
+  const yi=x=>x==null?"—":fmt(x,x>=100||x<=-100?0:2)+" 億";
+  const sg=x=>x==null?"—":`<span class="${x>0?"up":x<0?"down":""}">${x>0?"+":""}${x.toFixed(1)}%</span>`;
+  const [y,q]=(FIN.quarter||"").split(" Q");
+  return `<h3>財務報表 <small class="muted">${y?`${y} 年第 1～${q} 季累計`:""}</small></h3>
+    ${r?`<div class="kv"><div><small>營收</small><b>${yi(v.rev)}</b></div><div><small>毛利率</small><b>${ratio(v.gp,v.rev)}</b></div><div><small>營業利益率</small><b>${ratio(v.op,v.rev)}</b></div>
+    <div><small>稅後淨利</small><b>${yi(v.np??v.net)}</b></div><div><small>EPS</small><b>${v.eps==null?"—":fmt(v.eps)+" 元"}</b></div><div><small>ROE（累計）</small><b>${ratio(v.np??v.net,v.eqp??v.eq)}</b></div>
+    <div><small>總資產</small><b>${yi(v.assets)}</b></div><div><small>負債比</small><b>${ratio(v.liab,v.assets)}</b></div><div><small>流動比</small><b>${ratio(v.ca,v.cl)}</b></div>
+    <div><small>每股淨值</small><b>${v.bvps==null?"—":fmt(v.bvps)+" 元"}</b></div></div>`:""}
+    ${m?`<div class="kv"><div><small>${m[0].replace("-","/")} 月營收</small><b>${yi(m[1])}</b></div><div><small>月增</small><b>${sg(m[2])}</b></div><div><small>年增</small><b>${sg(m[3])}</b></div><div><small>今年累計營收</small><b>${yi(m[4])}</b></div><div><small>累計年增</small><b>${sg(m[5])}</b></div></div>`:""}
+    <p class="note">來源：公開資訊觀測站彙總表（證交所、櫃買中心開放資料）。財報為今年累計數，ROE 未年化；銀行、保險等金融業沒有毛利與流動比。完整報表可到<a href="https://mops.twse.com.tw/mops/" target="_blank" rel="noopener">公開資訊觀測站</a>輸入代號 ${esc(code)} 查詢。</p>`;
+}
+
 function detail(){
   const d=$("detail");
   if(!sel){d.innerHTML=`<h2>${mode==="stock"?"選一檔股票":"選一檔 ETF"}</h2><p class="muted">${mode==="stock"?"點左邊清單的任一檔，會列出哪些 ETF 持有它、各放了多少比重。":"點左邊清單的任一檔，會列出它的持股明細與產業分布。"}</p><p class="note">💡 小技巧：ETF 的內容物裡，名字有底線的股票可以點，會直接跳到那檔股票。</p>`;return}
@@ -219,6 +237,7 @@ function detail(){
     d.innerHTML=`<div><span class="code">${x.code}・${x.mkt}</span><h2>${esc(x.name)}</h2><span class="tag">${esc(x.cat)}</span></div>
     <div class="kv"><div><small>收盤</small><b>${fmt(x.p)}</b></div><div><small>漲跌</small><b>${pct(x)}</b></div><div><small>成交值</small><b>${fmt(x.tv)} 億</b></div><div><small>股本</small><b>${fmt(x.cap,1)} 億</b></div><div><small>上市（櫃）</small><b>${x.yr||"—"}</b></div><div><small>ETF 持有</small><b>${own.length} 檔</b></div></div>
     <div class="jump"><a href="https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw#${x.code}" target="_blank" rel="noopener">💰 看配息</a><a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb#${x.code}" target="_blank" rel="noopener">🐷 模擬倉下單</a><a href="https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT#${x.code}" target="_blank" rel="noopener">✨ 問理專</a></div>
+    ${finBlock(x.code)}
     <h3>哪些 ETF 持有它</h3>
     ${own.length?ownBars(own):`<p class="muted">已收錄內容物的 ${Object.keys(H).length} 檔 ETF 都沒有持有它。</p>`}
     <p class="note">比重是這檔股票占該 ETF 的百分比。只算已收錄內容物的 ETF，資料每週更新。</p>`;

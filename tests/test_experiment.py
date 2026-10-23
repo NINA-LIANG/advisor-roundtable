@@ -164,5 +164,6 @@ def test_latest_reads_datapipe_array(tmp_path):
     import score_study
     (tmp_path / "A_pre.json").write_text(json.dumps([{"trial_type": "advisor-study", "pid": "A", "trials": []}]), encoding="utf-8")
     (tmp_path / "B.json").write_text(json.dumps({"pid": "B", "trials": [{}]}), encoding="utf-8")
+    (tmp_path / "TEST04_pre.json").write_text(json.dumps([{"trial_type": "advisor-study", "pid": "TEST04", "trials": []}]), encoding="utf-8")
     got = {s["pid"] for s in score_study.latest(tmp_path)}
     assert got == {"A", "B"}
