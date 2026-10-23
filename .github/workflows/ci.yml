@@ -1,0 +1,28 @@
+# 每個 PR 與推到 main 時檢查：單元測試、資料與知識庫格式、網站能不能建置
+# 用 Pages CMS 或 GitHub 網頁改 knowledge/*.json 時，格式錯了這裡會變紅
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths-ignore: ["data/**", "web/*.html", "web/sitemap.xml"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest
+      - name: 單元測試
+        run: python -m pytest -q
+      - name: 資料與知識庫檢查
+        run: python scripts/validate_data.py
+      - name: 建置網站
+        run: python scripts/build_site.py

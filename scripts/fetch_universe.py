@@ -14,8 +14,9 @@ import json
 import re
 import sys
 import time
-import urllib.request
 from pathlib import Path
+
+from net import fetch
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "universe.json"
@@ -31,8 +32,7 @@ FOREIGN = re.compile(r"美|日|全球|中國|滬深|上證|上証|深證|深証|
 
 
 def get(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    return urllib.request.urlopen(req, timeout=60).read()
+    return fetch(url)
 
 
 def isin_rows(raw):

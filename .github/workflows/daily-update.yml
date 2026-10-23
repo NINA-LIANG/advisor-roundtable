@@ -1,42 +1,91 @@
-# 每個交易日收盤後抓證交所資料、銀行牌告利率、上市櫃清單（ETF 持股每週一次）、重建網站並發佈到 GitHub Pages
+# 每個交易日收盤後抓證交所資料、銀行牌告利率、上市櫃清單（ETF 持股每週一次），檢查品質後重建網站並發佈到 GitHub Pages
+# 手動執行：Actions → daily-update → Run workflow，可選只更新某一份資料；手動執行不看休市日
 name: daily-update
 
 on:
   schedule:
     - cron: "30 10 * * 1-5"   # 台灣時間 18:30（本益比、殖利率約 17:00 後才更新）
   workflow_dispatch:
+    inputs:
+      only:
+        description: 要更新哪些資料
+        type: choice
+        default: all
+        options: [all, twse, rates, universe, dividends, holdings, 只重建網站]
 
 permissions:
   contents: write
   pages: write
   id-token: write
+  issues: write
 
 concurrency:
   group: daily-update
   cancel-in-progress: false
 
 jobs:
-  update:
+  market:
     runs-on: ubuntu-latest
+    outputs:
+      open: ${{ steps.check.outputs.open }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'schedule'
+      - uses: actions/setup-python@v5
+        if: github.event_name == 'schedule'
+        with:
+          python-version: "3.12"
+      - name: 今天有沒有開市
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            python scripts/market_open.py
+          else
+            echo "open=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  update:
+    needs: market
+    if: needs.market.outputs.open == 'true'
+    runs-on: ubuntu-latest
+    env:
+      ONLY: ${{ inputs.only || 'all' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # 每支抓取程式失敗都只沿用舊資料、不中斷；最後由品質檢查決定能不能發佈
       - name: 抓證交所資料
+        id: twse
+        if: env.ONLY == 'all' || env.ONLY == 'twse'
         run: python scripts/fetch_twse.py
+        continue-on-error: true
       - name: 抓央行牌告利率
+        id: rates
+        if: env.ONLY == 'all' || env.ONLY == 'rates'
         run: python scripts/fetch_rates.py
         continue-on-error: true
       - name: 抓上市櫃全部股票與 ETF 清單
+        id: universe
+        if: env.ONLY == 'all' || env.ONLY == 'universe'
         run: python scripts/fetch_universe.py
         continue-on-error: true
       - name: 抓除權息預告、填息與殖利率
+        id: dividends
+        if: env.ONLY == 'all' || env.ONLY == 'dividends'
         run: python scripts/fetch_dividends.py
         continue-on-error: true
       - name: 抓 ETF 持股明細（每週一次，約 6 分鐘）
+        id: holdings
+        if: env.ONLY == 'all' || env.ONLY == 'holdings'
         run: python scripts/fetch_etf_holdings.py
         continue-on-error: true
+      - name: 資料品質檢查（沒過就不發佈）
+        id: validate
+        run: python scripts/validate_data.py --status data/status.json
+        env:
+          STEPS: ${{ toJSON(steps) }}
       - name: 重建網站
         run: python scripts/build_site.py
         env:
@@ -45,12 +94,44 @@ jobs:
         run: |
           git config user.name "daily-update-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/tw.json data/rates.json data/universe.json data/etf_holdings.json data/dividends.json web/index.html web/sim.html web/rates.html web/news.html web/learn.html web/market.html web/dividend.html web/about.html web/lab.html web/404.html web/sitemap.xml web/robots.txt
+          git add data/*.json web/*.html web/sitemap.xml web/robots.txt
           git diff --cached --quiet || git commit -m "data: $(date -u +%F) 證交所收盤與銀行牌告利率"
           git push
+      - name: 歷史快照存到 data-history 分支
+        continue-on-error: true
+        run: |
+          if git fetch --depth=1 origin data-history 2>/dev/null; then
+            git worktree add history FETCH_HEAD && git -C history checkout -B data-history
+          else
+            git worktree add --detach history && git -C history checkout --orphan data-history && git -C history rm -rfq .
+          fi
+          python scripts/snapshot_history.py history
+          cd history
+          git add -A
+          git diff --cached --quiet || { git commit -qm "history: $(date -u +%F)" && git push origin data-history; }
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
       - id: deploy
         uses: actions/deploy-pages@v4
+      # 有任何一步失敗就開 Issue（GitHub 會寄信）；之後成功一次就自動關閉
+      - name: 通知
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STEPS: ${{ toJSON(steps) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          open=$(gh issue list --label data-update --state open --json number -q '.[0].number' 2>/dev/null || true)
+          body=$(python scripts/run_report.py)
+          if [ "${{ contains(steps.*.outcome, 'failure') }}" = "true" ]; then
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --body "$body"
+            else
+              gh label create data-update --color d73a4a --description "每日資料更新失敗" --force
+              gh issue create --title "每日資料更新有問題（$(date -u +%F)）" --label data-update --body "$body"
+            fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "✅ $(date -u +%F) 更新全部成功，自動關閉。$RUN_URL"
+          fi
