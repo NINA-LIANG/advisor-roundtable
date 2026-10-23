@@ -109,6 +109,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-top:6px}
 .legend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:4px}
 .note{font-size:13px;color:var(--ink-soft);max-width:80ch}
+.how{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;counter-reset:h}
+.how li{counter-increment:h;border:2px solid var(--line);border-radius:18px;padding:10px 12px 10px 48px;position:relative;background:#fff9f4;font-size:14px}
+.how li::before{content:counter(h);position:absolute;left:12px;top:10px;width:26px;height:26px;border-radius:50%;background:var(--apricot);display:grid;place-items:center;font-family:var(--f-mono)}
+.how b{display:block;font-family:var(--f-display);font-weight:400;font-size:16px}
+.act h3{font-size:18px;margin-top:18px}
+.tbl td.hold{white-space:normal;text-align:left;min-width:180px;font-size:13px}
 .note li{margin-bottom:4px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:999px;padding:9px 18px;font-size:14px;z-index:20}
 @media (prefers-reduced-motion:reduce){.btn:active{transform:none}}
@@ -255,6 +261,38 @@ button,select,[role="button"],input[type="checkbox"],input[type="radio"]{min-hei
       <div class="preview" id="mPrev" style="margin-top:12px"></div>
       <div class="row" style="margin-top:12px"><button class="btn" type="button" id="mBuy">買進</button><button class="btn sell" type="button" id="mSell">賣出</button><span class="msg" id="mMsg"></span></div>
     </div>
+  </section>
+
+  <section class="box act" aria-labelledby="h-act" id="active">
+    <h2 id="h-act">🎯 主動型 ETF 練習區</h2>
+    <p class="muted" style="margin:6px 0 0;font-size:14px">主動型 ETF 和共同基金一樣由經理人主動選股，但像股票一樣在證交所買賣。下面列出全部 <b id="actN"></b> 檔，價格都是證交所 <span id="actAsof"></span> 的真實收盤價，持股是投信公告的資料。沒買過也沒關係，先用模擬倉的 100 萬練習。</p>
+    <ol class="how">
+      <li><b>看策略與持股</b>主動型 ETF 的表現取決於經理人。先看它買了哪些股票、集中在哪些產業，確認你看得懂。</li>
+      <li><b>比費用</b>主動型的經理費通常比追蹤指數的被動型 ETF 高，買之前到投信官網或公開說明書查清楚。</li>
+      <li><b>決定怎麼買</b>沒把握抓時機，就用定期定額或分批買。很多券商提供 ETF 定期定額（可買零股），每月幾千元就能開始，可選的標的各家不同。</li>
+      <li><b>定期檢查</b>每季比一次它和 0050（大盤）的報酬。如果長期落後、費用又比較高，就該想想要不要換。</li>
+    </ol>
+
+    <h3>① 挑一檔：全部主動型 ETF</h3>
+    <div class="tbl-box"><table class="tbl" style="min-width:760px"><thead><tr><th>ETF</th><th>收盤</th><th>漲跌</th><th>成交值（億）</th><th>近一年</th><th style="text-align:left">前三大持股</th><th></th></tr></thead><tbody id="actT"></tbody></table></div>
+    <p class="note" style="margin-top:6px">「近一年」用還原除權息的月收盤計算，只有本站有一年歷史資料的幾檔才有；上市不到一年或還沒收錄的顯示「—」。按「練習買進」會帶到上面的「自己下單」。</p>
+
+    <h3>② 試算：如果一年前就開始每月定期定額</h3>
+    <div class="row" style="margin-top:10px">
+      <div class="field"><label for="dEtf">主動型 ETF</label><select id="dEtf"></select></div>
+      <div class="field"><label for="dAmt">每月投入（元）</label><input id="dAmt" type="number" min="1000" step="1000" value="5000" inputmode="numeric"></div>
+    </div>
+    <div class="preview" id="dPrev" style="margin-top:12px"></div>
+
+    <h3>③ 開始練習：在模擬倉每月自動定期定額</h3>
+    <p class="muted" style="margin:6px 0 0;font-size:13.5px">設定後馬上用今天收盤價買第一次（零股，手續費最低 1 元）。之後每個月第一次打開這頁、網站也更新到新月份的收盤價時，會自動再扣款買進一次。</p>
+    <div class="row" style="margin-top:10px">
+      <div class="field"><label for="pEtf">主動型 ETF</label><select id="pEtf"></select></div>
+      <div class="field"><label for="pAmt">每月投入（元）</label><input id="pAmt" type="number" min="1000" step="1000" value="5000" inputmode="numeric"></div>
+      <button class="btn" type="button" id="pGo">開始定期定額</button>
+    </div>
+    <div class="msg" id="pMsg"></div>
+    <div class="tbl-box"><table class="tbl" style="min-width:520px"><thead><tr><th>定期定額</th><th>每月</th><th>最近一次扣款</th><th></th></tr></thead><tbody id="pT"></tbody></table></div>
   </section>
 
   <section class="box" aria-label="持股">
@@ -409,7 +447,12 @@ const ADVISORS=[
 
 // ---------- 模擬倉 ----------
 const START=1000000,FEE=0.001425,DEPOSIT=0.017; // 定存年利率假設 1.7%
-const ETFS2=TW.etfs||[],ALL2=[...TW.stocks,...ETFS2];
+const ACTIVE={"asof":"2026-10-23","list":[{"c":"00406A","n":"主動中信台灣收益","mk":"上市","p":9.06,"chg":-1.74,"tv":95.55,"h":[["台積電",9.39],["聯發科",5.77],["奇鋐",5.54]],"hd":"2026/09/30","nh":62},{"c":"00981A","n":"主動統一台股增長","mk":"上市","p":28.19,"chg":-2.39,"tv":68.91,"h":[["台積電",9.97],["聯發科",8.77],["欣興",8.28]],"hd":"2026/09/30","nh":34},{"c":"00403A","n":"主動統一升級50","mk":"上市","p":10.04,"chg":-2.71,"tv":23.57,"h":[["台積電",13.09],["聯發科",7.45],["欣興",6.81]],"hd":"2026/09/30","nh":40},{"c":"00992A","n":"主動群益科技創新","mk":"上市","p":16.93,"chg":-3.2,"tv":13.06,"h":[["奇鋐",8.19],["貿聯-KY",7.18],["欣興",6.95]],"hd":"2026/09/30","nh":42},{"c":"00991A","n":"主動復華未來50","mk":"上市","p":16.67,"chg":-2.86,"tv":10.41,"h":[["台積電",13.35],["南亞科",8.65],["台光電",8.54]],"hd":"2026/09/30","nh":24},{"c":"00415A","n":"主動群益核心50","mk":"上市","p":9.3,"chg":-3.33,"tv":7.65,"h":[],"hd":"","nh":0},{"c":"00405A","n":"主動富邦台灣龍耀","mk":"上市","p":8.47,"chg":-3.53,"tv":7.18,"h":[["欣興",7.8],["健策",6.82],["貿聯-KY",6.66]],"hd":"2026/09/30","nh":43},{"c":"00400A","n":"主動國泰動能高息","mk":"上市","p":14.41,"chg":-2.9,"tv":7.05,"h":[["台積電",8.89],["聯發科",7.04],["健策",5.21]],"hd":"2026/09/30","nh":45},{"c":"00982A","n":"主動群益台灣強棒","mk":"上市","p":21.45,"chg":-2.85,"tv":5.33,"h":[["台積電",8.87],["聯發科",7.22],["穩懋",6.17]],"hd":"2026/09/30","nh":52},{"c":"00985A","n":"主動野村台灣50","mk":"上市","p":20.23,"chg":-1.56,"tv":4.94,"h":[["台積電",14.9],["日月光投控",4.68],["中華電",4.03]],"hd":"2026/09/30","nh":50},{"c":"00407A","n":"主動凱基台灣","mk":"上市","p":9.33,"chg":-2.91,"tv":4.23,"h":[["台積電",9.17],["聯發科",5.89],["奇鋐",5.74]],"hd":"2026/09/30","nh":50},{"c":"00412A","n":"主動安聯亞半導體","mk":"上市","p":8.88,"chg":-2.31,"tv":2.74,"h":[],"hd":"","nh":0},{"c":"00988A","n":"主動統一全球創新","mk":"上市","p":15.11,"chg":-1.37,"tv":2.16,"h":[["LUMENTUM HOLDINGS INC",6.88],["BLOOM ENERGY CORP- A",6.54],["欣興",5.81]],"hd":"2026/09/30","nh":42},{"c":"00996A","n":"主動兆豐台灣豐收","mk":"上市","p":12.94,"chg":-3.79,"tv":1.68,"h":[["台積電",9.45],["聯發科",6.91],["臻鼎-KY",5.87]],"hd":"2026/09/30","nh":52},{"c":"00980A","n":"主動野村臺灣優選","mk":"上市","p":23.75,"chg":-2.74,"tv":1.58,"h":[["台積電",9.35],["聯發科",6.13],["川湖",4.04]],"hd":"2026/09/30","nh":50},{"c":"00984D","n":"主動聯博全球非投","mk":"上市","p":9.68,"chg":-0.1,"tv":1.32,"h":[["US 5YR NOTE (CBT) DEC26 31-DEC-2026",5.39],["US 10YR NOTE (CBT)DEC26 21-DEC-2026",3.35],["VENTURE GLOBAL LNG INC SER REGS (REG S) 9.5 01FEB2",1.12]],"hd":"2026/09/30","nh":394},{"c":"00409A","n":"主動復華全球50","mk":"上市","p":9.05,"chg":-1.63,"tv":1.17,"h":[["帕蘭提爾科技公司",5.24],["魯門特姆控股公司",5.12],["布魯姆能源公司",4.87]],"hd":"2026/09/30","nh":50},{"c":"00411A","n":"主動統一前沿科技","mk":"上櫃","p":9.93,"chg":-1.1,"tv":1.07,"h":[["BLOOM ENERGY CORP- A",9.66],["SPACE EXPLORATION TECHN-CL A",8.53],["NVIDIA CORP(輝達公司)",8.44]],"hd":"2026/09/30","nh":31},{"c":"00990A","n":"主動元大AI新經濟","mk":"上市","p":14.81,"chg":-0.47,"tv":1.07,"h":[["LUMENTUM HOLDINGS INC",7.19],["BLOOM ENERGY CORP- A",5.84],["Micron Technology Inc",4.67]],"hd":"2026/09/30","nh":46},{"c":"00401A","n":"主動摩根台灣鑫收","mk":"上市","p":13.47,"chg":-1.82,"tv":1.05,"h":[["台積電",20.09],["聯發科",6.7],["日月光投控",2.55]],"hd":"2026/09/30","nh":56},{"c":"00410A","n":"主動永豐科技趨勢","mk":"上市","p":11.51,"chg":-3.11,"tv":0.98,"h":[["台積電",5.81],["全新",5.75],["健策",5.31]],"hd":"2026/09/30","nh":29},{"c":"00404A","n":"主動聯博動能50","mk":"上市","p":9.37,"chg":-1.58,"tv":0.83,"h":[["台積電",22.97],["聯發科",6.62],["日月光投控",3.55]],"hd":"2026/09/30","nh":52},{"c":"00998A","n":"主動復華金融股息","mk":"上櫃","p":16.17,"chg":0.12,"tv":0.75,"h":[["標準人壽公開有限公司",4.43],["荷蘭銀行公眾有限公司",3.98],["賽普勒斯銀行控股公開有限公司",3.91]],"hd":"2026/09/30","nh":52},{"c":"00999A","n":"主動野村臺灣高息","mk":"上市","p":10.56,"chg":-1.95,"tv":0.7,"h":[["台積電",6.02],["健策",4.55],["聯發科",4.41]],"hd":"2026/09/30","nh":55},{"c":"00993A","n":"主動安聯台灣","mk":"上市","p":12.85,"chg":-2.8,"tv":0.69,"h":[["台積電",8.49],["聯發科",6.32],["欣興",5.98]],"hd":"2026/09/30","nh":53},{"c":"00984A","n":"主動安聯台灣高息","mk":"上市","p":15.06,"chg":-1.38,"tv":0.68,"h":[["長榮",3.73],["台積電",3.57],["瑞昱",2.79]],"hd":"2026/09/30","nh":97},{"c":"00995A","n":"主動中信台灣卓越","mk":"上市","p":15.8,"chg":-2.83,"tv":0.68,"h":[["台積電",9.03],["聯發科",7.6],["台光電",7.42]],"hd":"2026/09/30","nh":54},{"c":"00994A","n":"主動第一金台股優","mk":"上市","p":15.79,"chg":-2.41,"tv":0.59,"h":[["台積電",14.47],["聯發科",6.83],["欣興",6.36]],"hd":"2026/09/30","nh":39},{"c":"00997A","n":"主動群益美國增長","mk":"上市","p":10.57,"chg":-1.67,"tv":0.4,"h":[["美光科技公司",4.75],["晟碟公司（德拉瓦州）",4.23],["Crowdstrike控股公司",4.19]],"hd":"2026/09/30","nh":51},{"c":"00987A","n":"主動台新優勢成長","mk":"上市","p":15.78,"chg":-3.43,"tv":0.36,"h":[["台積電",8.78],["欣興",7.68],["奇鋐",7.03]],"hd":"2026/09/30","nh":29},{"c":"00408A","n":"主動第一金優股息","mk":"上市","p":9.62,"chg":-2.53,"tv":0.31,"h":[["台積電",5.77],["聯發科",5.53],["欣興",4.24]],"hd":"2026/09/30","nh":50},{"c":"00402A","n":"主動安聯美國科技","mk":"上市","p":9.61,"chg":-1.23,"tv":0.18,"h":[["NVIDIA CORP",8.56],["APPLE INC",7.54],["Micron Technology Inc",6.61]],"hd":"2026/09/30","nh":50},{"c":"00983A","n":"主動中信ARK創新","mk":"上市","p":12.68,"chg":-0.47,"tv":0.17,"h":[["特斯拉公司",8.56],["太空探索科技公司",6.25],["TEMPUS AI INC",6.17]],"hd":"2026/09/30","nh":43},{"c":"00983D","n":"主動富邦複合收益","mk":"上市","p":9.8,"chg":0.31,"tv":0.14,"h":[["ISHARES 20+ YEAR TREASURY BOND",7.77],["ISHARES INVESTMENT GRADE CORPO",7.26],["BHCCN 11 09/30/28",1.91]],"hd":"2026/09/30","nh":84},{"c":"00985D","n":"主動貝萊德優投等","mk":"上櫃","p":9.78,"chg":0.62,"tv":0.1,"h":[["ISHARES 20+ YEAR TREASURY BO COM 0 -",19.75],["CVS HEALTH CORP 6 2044/6/1",1.36],["BANK OF AMERICA CORP 6.11 2037/1/29",1.2]],"hd":"2026/09/30","nh":187},{"c":"00980D","n":"主動聯博投等入息","mk":"上櫃","p":19.56,"chg":0.15,"tv":0.09,"h":[["US 10YR NOTE (CBT)DEC26 21-DEC-2026",17.71],["US LONG BOND(CBT) DEC26 21-DEC-2026",5.2],["US 2YR NOTE (CBT) DEC26 31-DEC-2026",1.66]],"hd":"2026/09/30","nh":216},{"c":"00989A","n":"主動摩根美國科技","mk":"上市","p":17.2,"chg":-0.17,"tv":0.08,"h":[["NVIDIA CORP",4.53],["META PLATFORMS INC-CLASS A",4.18],["CROWDSTRIKE HOLDINGS INC - A",3.65]],"hd":"2026/09/30","nh":68},{"c":"00982D","n":"主動富邦動態入息","mk":"上市","p":9.51,"chg":0.42,"tv":0.04,"h":[["ISHARES INVESTMENT GRADE CORPO",8.9],["ISHARES 20+ YEAR TREASURY BOND",7.68],["BACR 7.437 11/02/33",2.78]],"hd":"2026/09/30","nh":65},{"c":"00986A","n":"主動台新龍頭成長","mk":"上市","p":14.06,"chg":-0.85,"tv":0.0,"h":[["台積電",7.66],["輝達",6.24],["ALPHABET 公司",5.64]],"hd":"2026/09/30","nh":36}]};
+const ETFS2=TW.etfs||[];
+// 主動型 ETF 不一定都在理專選股的 ETF 清單裡，補進來讓自己下單和定期定額也能買（不給理專排名）
+const ACT_EXTRA=ACTIVE.list.filter(a=>!ETFS2.some(e=>e.c===a.c)).map(a=>({c:a.c,n:a.n,p:a.p,chg:a.chg,tv:a.tv,i:"ETF",t:"主動式",d:ACTIVE.asof}));
+const pxDate=s=>s.d||TW.asof;
+const ALL2=[...TW.stocks,...ETFS2,...ACT_EXTRA];
 const $=id=>document.getElementById(id);
 const byCode=c=>ALL2.find(s=>s.c===c);
 const label=s=>`${s.c} ${s.n}`;
@@ -428,7 +471,7 @@ const feeOf=(amt,sh)=>Math.max(sh>=1000?20:1,Math.round(amt*FEE));
 const taxRate=s=>!isETF(s)?0.003:s.t==="債券"?0:0.001;
 
 // ---------- 狀態：登入時存在雲端（只有你看得到），否則存在這台裝置 ----------
-const fresh=()=>({cash:START,pos:{},log:[],costs:0,since:TW.asof});
+const fresh=()=>({cash:START,pos:{},log:[],costs:0,since:TW.asof,dca:[]});
 let S=fresh(),saveRemote=null;
 const local={get(){try{return JSON.parse(localStorage.getItem("sim")||"null")}catch(e){return null}},set(v){try{localStorage.setItem("sim",JSON.stringify(v))}catch(e){}}};
 {const v=local.get();if(v&&v.pos)S=v}
@@ -488,7 +531,7 @@ function renderManual(){const s=resolve($("mCode").value),sh=Math.floor(+$("mSh"
  const amt=s.p*sh,fee=feeOf(amt,sh),tax=Math.round(amt*taxRate(s)),have=S.pos[s.c]?.sh||0;
  $("mPrev").innerHTML=`<table><tr><td>${label(s)}（收盤 ${fmt(s.p)}，${s.chg>=0?"+":""}${s.chg.toFixed(2)}%）</td><td class="mono">持有 ${money(have)} 股</td></tr><tr><td>買進：股款 ${money(amt)} ＋ 手續費 ${money(fee)}</td><td class="mono">${money(amt+fee)} 元</td></tr><tr><td>賣出：股款 − 手續費 − 證交稅 ${money(tax)}</td><td class="mono">${money(amt-fee-tax)} 元</td></tr></table>`}
 const resolve=v=>{v=(v||"").trim();if(!v)return null;return byCode(v.split(" ")[0])||ALL2.find(x=>x.n===v)||ALL2.find(x=>x.n.includes(v))};
-function renderAll(){renderSummary();renderPos();renderLog();renderFollow();renderManual()}
+function renderAll(){runDCA();renderSummary();renderPos();renderLog();renderFollow();renderManual();renderPlans()}
 
 let toastT;function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2000)}
 $("advs").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;adv=b.dataset.a;renderFollow()});
@@ -545,7 +588,45 @@ function renderBT(){const runs=[backtest("tech"),backtest("mom"),backtest("quant
  $("btT").innerHTML=all.map(r=>{const e=r.curve[6],ret=e/START-1;return `<tr><td>${r.emoji} ${r.name}</td><td class="mono">${money(e)}</td><td class="mono ${cls(ret)}">${pctS(ret)}</td><td class="mono">${(maxDD(r.curve)*100).toFixed(1)}%</td></tr>`}).join("");
  $("btPicks").innerHTML=M.slice(0,6).map((m,i)=>`<tr><td class="mono">${m}</td>${runs.map(r=>`<td style="text-align:left;white-space:normal">${r.picks[i].join("、")||"空手"}</td>`).join("")}</tr>`).join("")}
 
-renderAll();renderBT();
+// ---------- 主動型 ETF 練習區 ----------
+const histOf=c=>{const t=ETFS2.find(e=>e.c===c);return t&&t.m&&t.m.length?[...t.m,t.p]:null};
+const zeroSh=(amt,px)=>{let sh=Math.floor(amt/(px*(1+FEE)));while(sh>0&&px*sh+feeOf(px*sh,sh)>amt)sh--;return sh};
+function renderActive(){
+ $("actN").textContent=ACTIVE.list.length;$("actAsof").textContent=ACTIVE.asof===TW.asof?ACTIVE.asof:`${TW.asof}～${ACTIVE.asof}`;
+ $("actT").innerHTML=ACTIVE.list.map(a=>{const s=byCode(a.c),h=histOf(a.c),y=h&&h[0]?h[12]/h[0]-1:null;
+  return `<tr><td>${label(s)}<div class="muted" style="font-size:12px">${a.mk}</div></td><td class="mono">${fmt(s.p)}<div class="muted" style="font-size:11px">${pxDate(s).slice(5)}</div></td><td class="mono ${cls(s.chg)}">${s.chg>=0?"+":""}${s.chg.toFixed(2)}%</td><td class="mono">${a.tv.toFixed(2)}</td><td class="mono ${y==null?"":cls(y)}">${y==null?"—":pctS(y)}</td><td class="hold">${a.h.length?a.h.map(([n,w])=>`${n} ${w}%`).join("、")+`<div class="muted" style="font-size:12px">${a.hd} 公告，共 ${a.nh} 檔</div>`:"—"}</td><td><button class="mini" type="button" data-try="${a.c}">練習買進</button></td></tr>`}).join("");
+ const opts=ACTIVE.list.map(a=>`<option value="${a.c}">${a.c} ${a.n}</option>`).join("");
+ $("pEtf").innerHTML=opts;
+ const withH=ACTIVE.list.filter(a=>histOf(a.c));
+ $("dEtf").innerHTML=withH.map(a=>`<option value="${a.c}">${a.c} ${a.n}</option>`).join("");
+ renderDCA()}
+function simDCA(ser,amt){let sh=0,paid=0,fee=0,n=0;for(let i=0;i<12;i++){const px=ser[i];if(!px)continue;const k=zeroSh(amt,px);if(!k)continue;const f=feeOf(px*k,k);sh+=k;paid+=px*k+f;fee+=f;n++}
+ const mv=sh*ser[12];return {sh,paid,fee,n,mv,ret:paid?mv/paid-1:0}}
+function renderDCA(){const c=$("dEtf").value,amt=+$("dAmt").value||0,h=histOf(c),b=histOf("0050");
+ if(!h){$("dPrev").innerHTML=`<span class="muted">目前沒有可試算的歷史資料。</span>`;return}
+ if(amt<100){$("dPrev").innerHTML=`<span class="muted">每月金額至少 100 元。</span>`;return}
+ const r=simDCA(h,amt),r0=b&&simDCA(b,amt),d=TW.dates,ym=x=>`${x.slice(0,4)}/${+x.slice(4,6)}`,s=byCode(c);
+ const row=(nm,r)=>`<tr><td>${nm}</td><td class="mono">${r.n} 次・${money(r.paid)} 元</td><td class="mono">${money(r.sh)} 股</td><td class="mono">${money(r.mv)} 元</td><td class="mono ${cls(r.ret)}">${pctS(r.ret)}</td></tr>`;
+ $("dPrev").innerHTML=`<p style="margin:0 0 8px;font-weight:700">從 ${ym(d[0])} 到 ${ym(d[11])} 每月買 ${money(amt)} 元的 ${label(s)}，到 ${TW.asof} 收盤${r.ret>=0?"賺":"賠"} ${money(Math.abs(r.mv-r.paid))} 元（${pctS(r.ret)}）${r0?`；同樣方式買 0050 是 ${pctS(r0.ret)}，${r.ret>r0.ret?"這段期間贏過大盤":"這段期間沒贏過大盤"}`:""}。</p>
+  <div class="tbl-box" style="margin-top:0"><table class="tbl" style="min-width:520px"><thead><tr><th>標的</th><th>扣款次數・投入（含手續費）</th><th>累積股數</th><th>期末市值</th><th>報酬率</th></tr></thead><tbody>${row(label(s),r)}${r0?row("0050 元大台灣50",r0):""}</tbody></table></div>
+  <p class="note" style="margin:8px 0 0">每月用當月的月收盤價買零股，價格已還原除權息（等於配息再投入），市值還沒扣賣出的手續費與證交稅。只有一年、而且是過去的表現，不代表未來。</p>`}
+function runDCA(){if(!S.dca||!S.dca.length)return;let changed=false;
+ S.dca.forEach(p=>{const s=byCode(p.c);if(!s)return;const mo=pxDate(s).slice(0,7);if(p.last&&p.last.slice(0,7)>=mo)return;const sh=zeroSh(Math.min(p.amt,S.cash),s.p);
+  if(!sh){if(p.err!==mo){p.err=mo;changed=true}return}
+  if(!trade(p.c,"buy",sh,"定期定額")){p.last=pxDate(s);p.err="";changed=true}});if(changed)save()}
+function renderPlans(){const L=S.dca||[];
+ $("pT").innerHTML=L.length?L.map((p,i)=>{const s=byCode(p.c);return `<tr><td>${s?label(s):p.c}</td><td class="mono">${money(p.amt)} 元</td><td class="mono">${p.last||"—"}${p.err?`<div class="down" style="font-size:12px">${p.err} 現金不足，這個月沒扣款</div>`:""}</td><td><button class="mini" type="button" data-stop="${i}">停止扣款</button></td></tr>`}).join(""):`<tr><td colspan="4" class="muted" style="text-align:left">還沒有定期定額。選一檔主動型 ETF 試試看。</td></tr>`}
+$("actT").addEventListener("click",e=>{const b=e.target.closest("[data-try]");if(!b)return;const s=byCode(b.dataset.try);
+ $("mCode").value=label(s);$("mSh").value=1000;renderManual();$("mCode").scrollIntoView({behavior:"smooth",block:"center"});$("mCode").focus({preventScroll:true})});
+$("dEtf").addEventListener("change",renderDCA);$("dAmt").addEventListener("input",renderDCA);
+$("pGo").addEventListener("click",()=>{const c=$("pEtf").value,amt=Math.floor(+$("pAmt").value||0);
+ if(amt<100){$("pMsg").textContent="每月金額至少 100 元";return}
+ S.dca=S.dca||[];if(S.dca.some(p=>p.c===c)){$("pMsg").textContent="這檔已經在定期定額了，要改金額請先停止再重設";return}
+ if(!S.log.length){S.since=TW.asof;S.b0050=byCode("0050").p}
+ S.dca.push({c,amt,last:"",err:""});$("pMsg").textContent="";renderAll();toast("已開始定期定額 🌱")});
+$("pT").addEventListener("click",e=>{const b=e.target.closest("[data-stop]");if(!b)return;S.dca.splice(+b.dataset.stop,1);save();renderAll();toast("已停止扣款，持股保留")});
+
+renderActive();renderAll();renderBT();
 {const h=decodeURIComponent(location.hash.slice(1)),s=h&&byCode(h);if(s){$("mCode").value=label(s);renderManual()}}
 </script>
 <footer class="sitefoot">示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。 <a href="about.html">關於本站與資料來源</a></footer>
