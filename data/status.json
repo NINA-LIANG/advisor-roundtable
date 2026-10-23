@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-24 00:22",
+ "checked": "2026-10-24 03:55",
  "ok": true,
  "datasets": [
   {
@@ -12,7 +12,7 @@
    "age": 2,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "universe",
@@ -24,7 +24,7 @@
    "age": 1,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "dividends",
@@ -36,7 +36,7 @@
    "age": 1,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "rates",
@@ -48,7 +48,7 @@
    "age": 2,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "etf_holdings",
@@ -60,7 +60,7 @@
    "age": 2,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "popular",
@@ -81,11 +81,11 @@
  "errors": [],
  "warnings": [],
  "steps": {
-  "twse": "skipped",
-  "rates": "skipped",
-  "universe": "skipped",
-  "dividends": "skipped",
-  "holdings": "skipped"
+  "twse": "success",
+  "rates": "success",
+  "universe": "success",
+  "dividends": "success",
+  "holdings": "success"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/39986205947"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40014737393"
 }
