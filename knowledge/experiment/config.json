@@ -10,7 +10,7 @@
  "study": {
   "app_version": "1.0.0",
   "datapipe_experiment_id": "fY4jbKM2bLQT",
-  "datapipe_condition_assignment": false,
+  "datapipe_condition_assignment": true,
   "researcher": "梁瑜庭",
   "contact": "ninaliang0521@gmail.com",
   "advisor_professor": "",
