@@ -92,6 +92,8 @@ tbody tr{cursor:pointer}
 tbody tr:hover{background:#fff4e8}
 tbody tr[aria-selected="true"]{background:#e8f3fc}
 .code{font-family:var(--f-mono);color:var(--ink-soft)}
+/* 手機上先收起產業／類型欄，讓收盤與漲跌不用左右滑就看得到 */
+@media (max-width:520px){#tbl th:nth-child(3),#tbl td:nth-child(3){display:none}}
 .up{color:var(--up)} .down{color:var(--down)}
 .tag{display:inline-block;font-size:12px;border-radius:999px;padding:0 8px;background:var(--lilac)}
 .tag.has{background:var(--matcha)}
