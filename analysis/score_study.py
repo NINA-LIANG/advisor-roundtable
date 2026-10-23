@@ -19,7 +19,7 @@ PHASE = {"pre": 1, "task": 2, "final": 3}
 
 
 def latest(folder):
-    """每位受試者只留進度最多的一份；預覽模式的資料不收"""
+    """每位受試者只留進度最多的一份；預覽模式與 TEST 開頭的測試資料不收"""
     best = {}
     for f in sorted(Path(folder).glob("*.json")):
         try:
@@ -30,6 +30,9 @@ def latest(folder):
         if isinstance(s, list) and len(s) == 1:  # DataPipe 版本包成一筆的陣列
             s = s[0]
         if not isinstance(s, dict) or "pid" not in s or s.get("preview"):
+            continue
+        if str(s["pid"]).startswith("TEST"):  # 研究者自己的測試代號
+            print(f"skip  {f.name}（測試資料）", file=sys.stderr)
             continue
         rank = (len(s.get("trials", [])), bool(s.get("post")), PHASE.get(f.stem.rsplit("_", 1)[-1], 0))
         if s["pid"] not in best or rank > best[s["pid"]][0]:
