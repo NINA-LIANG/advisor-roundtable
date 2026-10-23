@@ -25,7 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      # 取分支最新的 commit（而不是觸發時那一個），排隊中的重跑才看得到前一次提交的 panel.json
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -52,4 +55,5 @@ jobs:
           git add knowledge/experiment web/study.html web/study-key.json
           if git diff --cached --quiet; then echo "沒有變動"; exit 0; fi
           git commit -m "experiment: 建立實驗題庫（$(python -c 'import json;d=json.load(open("knowledge/experiment/items.v1.json"));print("草稿" if d["draft"] else "正式版")')）"
-          git push
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
