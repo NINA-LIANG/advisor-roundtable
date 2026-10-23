@@ -11,8 +11,9 @@ import json
 import re
 import sys
 import time
-import urllib.request
 from pathlib import Path
+
+from net import fetch
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "etf_holdings.json"
@@ -84,8 +85,7 @@ def main():
         ok = 0
         for code in codes:
             try:
-                req = urllib.request.Request(URL.format(code), headers={"User-Agent": "Mozilla/5.0"})
-                page = urllib.request.urlopen(req, timeout=30).read().decode("utf-8", "replace")
+                page = fetch(URL.format(code), timeout=30, waits=(3,)).decode("utf-8", "replace")
                 r = parse(page)
                 if r.get("h") or r.get("sec"):
                     etfs[code] = r

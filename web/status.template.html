@@ -1,0 +1,98 @@
+<title>資料狀態｜理專圓桌</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 網站的後台儀表板。總結一句 → 每份資料的日期、筆數、狀態（表格）→ 怎麼手動更新 → 公開資料與歷史快照。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --ok:#2f6b3a; --ok-bg:#e3f1d8; --warn:#8a4b00; --warn-bg:#ffe9c7; --bad:#a3263f; --bad-bg:#fde0e6; --sky-deep:#3d6f94;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f4f0ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:22px;margin-bottom:8px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px}
+.muted{color:var(--ink-soft)}
+a{color:var(--sky-deep)}
+.lead{font-size:17px}
+.sum{border-radius:20px;padding:12px 16px;font-size:17px}
+.sum.ok{background:var(--ok-bg);color:var(--ok)}.sum.warn{background:var(--warn-bg);color:var(--warn)}.sum.error{background:var(--bad-bg);color:var(--bad)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1.5px dashed var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--ink-soft)}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+.tag{display:inline-block;border-radius:999px;padding:0 10px;font-size:13px;white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok)}.tag.warn{background:var(--warn-bg);color:var(--warn)}.tag.error{background:var(--bad-bg);color:var(--bad)}
+ol,ul{margin:0;padding-left:1.3em}
+li{margin-bottom:4px}
+code{background:#f6eee6;border-radius:6px;padding:0 5px;font-size:13.5px}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header>
+    <h1>資料狀態 🩺</h1>
+    <p class="muted">這一頁是網站的後台儀表板：每份資料是哪一天的、有幾筆、今天有沒有更新成功。</p>
+  </header>
+
+  <section class="box">
+    <p class="sum" id="sum"></p>
+    <p class="muted" id="when"></p>
+    <div class="scroll"><table>
+      <thead><tr><th>資料</th><th>用在</th><th>資料日期</th><th>筆數</th><th>狀態</th><th>說明</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <p class="muted" style="margin-top:10px">知識庫（理專背景、名詞、內行筆記）格式檢查：<span id="kb"></span></p>
+  </section>
+
+  <section class="box">
+    <h2>怎麼更新</h2>
+    <ul>
+      <li><b>自動</b>：每個交易日台灣時間 18:30 抓證交所、櫃買中心、央行資料，檢查通過才發佈。證交所公告的休市日（國定假日等）自動跳過。</li>
+      <li><b>手動立即更新</b>：到 <a href="https://github.com/NINA-LIANG/advisor-roundtable/actions/workflows/daily-update.yml" target="_blank" rel="noopener">GitHub Actions 的 daily-update</a>，按「Run workflow」，可以選只更新某一份資料。手機 GitHub App 也能按。</li>
+      <li><b>改內容</b>：理專背景、名詞、內行筆記在 <code>knowledge/</code> 資料夾，可以直接在 GitHub 網頁上改，或用 <a href="https://app.pagescms.org/" target="_blank" rel="noopener">Pages CMS</a> 的表單編輯。存檔後自動檢查格式，寫錯不會上線。</li>
+      <li><b>出問題時</b>：抓取失敗或檢查沒過，會自動在 <a href="https://github.com/NINA-LIANG/advisor-roundtable/issues?q=label%3Adata-update" target="_blank" rel="noopener">Issues</a> 開一張單通知；下一次成功會自動關閉。</li>
+    </ul>
+  </section>
+
+  <section class="box">
+    <h2>公開資料與歷史快照</h2>
+    <p>網站用到的資料都可以直接下載（JSON，與網頁同一份），歡迎拿去做研究：</p>
+    <ul id="api"></ul>
+    <p style="margin-top:10px">每天的資料也會壓縮保存一份到 <a href="https://github.com/NINA-LIANG/advisor-roundtable/tree/data-history" target="_blank" rel="noopener">data-history 分支</a>（依日期分資料夾），之後的回測和「某一天理專推薦了什麼」都從這裡查。</p>
+  </section>
+</div>
+
+<script>
+const S=/*STATUS*/;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LABEL={ok:"✅ 正常",warn:"⚠️ 注意",error:"❌ 錯誤"};
+const worst=S.datasets.some(d=>d.state==="error")||!S.ok?"error":S.datasets.some(d=>d.state==="warn")?"warn":"ok";
+const sum=document.getElementById("sum");
+sum.className="sum "+worst;
+sum.textContent={ok:"✅ 全部資料都正常，最近一次更新成功。",
+  warn:"⚠️ 網站正常運作，但有資料沒更新到，正在沿用上一份。",
+  error:"❌ 最近一次更新的資料沒通過檢查，網站目前顯示上一份好資料。"}[worst];
+document.getElementById("when").innerHTML=`最後檢查：${esc(S.checked)}（台灣時間）`+
+  (S.run?`・<a href="${esc(S.run)}" target="_blank" rel="noopener">這次更新的執行紀錄</a>`:"");
+document.getElementById("rows").innerHTML=S.datasets.map(d=>`<tr>
+  <td>${esc(d.name)}</td><td>${esc(d.page)}</td><td>${esc(d.asof||"—")}</td>
+  <td class="n">${Number(d.count||0).toLocaleString("zh-TW")}</td>
+  <td><span class="tag ${d.state}">${LABEL[d.state]}</span></td><td>${esc(d.note||(d.age!=null?`${d.age} 天前`:""))}</td></tr>`).join("");
+document.getElementById("kb").textContent=S.knowledge.join("；");
+document.getElementById("api").innerHTML=S.datasets.map(d=>{const f=d.file.replace(/^data\//,"");
+  return `<li><a href="data/${esc(f)}">${esc(f)}</a>：${esc(d.name)}</li>`}).join("")+
+  `<li><a href="data/status.json">status.json</a>：這一頁的狀態資料</li>`;
+</script>
+<!--SITE-FOOT-->

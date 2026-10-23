@@ -7,8 +7,11 @@
 import json
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
+
+from validate_data import DATASETS, validate
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
@@ -26,6 +29,9 @@ ABOUT_URL = "https://claude.ai/artifact/4yrjpspWAKxAFJ6zeodjpA"
 ARTIFACT_URLS[ABOUT_URL] = "about.html"
 LAB_URL = "https://claude.ai/artifact/2mfKRYx1SjgSHwN6w67Eu9"
 ARTIFACT_URLS[LAB_URL] = "lab.html"
+SITE_URL = "https://nina-liang.github.io/advisor-roundtable/"
+# 資料狀態頁只在 GitHub Pages 上（要讀每日更新的結果），Artifact 版連到那裡
+ARTIFACT_URLS[SITE_URL + "status.html"] = "status.html"
 PAGE_URL = {rel: url for url, rel in ARTIFACT_URLS.items()}
 # 全站導覽：依使用者要做的事分三組
 NAV = [("學", [("learn.html", "入門教室"), ("news.html", "人氣小報")]),
@@ -37,11 +43,10 @@ DRAWER = [("學", "打好基本功", [("learn.html", "🌱", "入門教室"), ("
                              ("rates.html", "🏦", "存款利率")]),
           ("做", "練習自己判斷", [("index.html", "✨", "理專圓桌"), ("sim.html", "🐷", "百萬模擬倉"),
                              ("lab.html", "🧪", "理專考場")]),
-          ("站", "認識這個網站", [("about.html", "📖", "關於本站")])]
+          ("站", "認識這個網站", [("about.html", "📖", "關於本站"), ("status.html", "🩺", "資料狀態")])]
 DISCLAIMER = ("示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。"
               "理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；"
               "依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。")
-SITE_URL = "https://nina-liang.github.io/advisor-roundtable/"
 SITE_NAME = "理專圓桌"
 # 每頁的分頁標題與搜尋／分享摘要（只用在 GitHub Pages 版）
 META = {
@@ -55,6 +60,7 @@ META = {
     "dividend.html": ("除權息行事曆｜理專圓桌", "台股與 ETF 除權息預告、結果與殖利率，依證交所、櫃買中心資料每個交易日更新。"),
     "about.html": ("關於本站｜理專圓桌", "理專圓桌是探討「人在迴圈中／迴圈上」的研究原型：六位虛構 AI 理專的規則、資料來源、隱私說明與限制。"),
     "lab.html": ("理專考場｜理專圓桌", "參考 AIOpsLab 的故障注入評測：在台股資料裡埋入 48 種錯誤，看 AI 理專與看門狗能不能抓出來。"),
+    "status.html": ("資料狀態｜理專圓桌", "理專圓桌每份資料的日期、筆數與更新狀態，以及公開資料下載與歷史快照。"),
     "404.html": ("找不到這一頁｜理專圓桌", "這個網址沒有內容，從這裡回到理專圓桌的各個頁面。"),
 }
 # 選用：GoatCounter 流量分析（不設 cookie）。在 repo 的 Actions 變數設定 GOATCOUNTER_CODE 才會啟用
@@ -202,21 +208,46 @@ def pages():
     about = (read(WEB / "about.template.html").replace("/*PROFILES*/", profiles).replace("<!--ANALYTICS-NOTE-->", note)
              .replace("/*ADVISORS*/", json.dumps(adv, ensure_ascii=False)))
     basics = json.loads(read(ROOT / "knowledge" / "basics.zh.json"))
+    st = status()
+    status_page = read(WEB / "status.template.html").replace("/*STATUS*/", json.dumps(st, ensure_ascii=False, separators=(",", ":")))
     asof = {"index.html": json.loads(tw)["asof"], "sim.html": json.loads(tw)["asof"],
             "rates.html": json.loads(read(ROOT / "data" / "rates.json")).get("asof", ""),
             "news.html": "",
             "learn.html": "", "market.html": uni["asof"],
             "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": "", "lab.html": json.loads(tw)["asof"],
-            "404.html": ""}
+            "status.html": "", "404.html": ""}
     out = {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
            "market.html": market, "dividend.html": dividend, "about.html": about, "lab.html": lab,
-           "404.html": read(WEB / "404.template.html")}
+           "status.html": status_page, "404.html": read(WEB / "404.template.html")}
     div = json.loads(read(ROOT / "data" / "dividends.json"))
     counts = {"learn.html": len(basics["terms"]), "news.html": "月刊",
               "market.html": f'{len(uni["stock"]) + len(uni["etf"]):,}',
               "dividend.html": sum(1 for e in div["up"] if e[0] >= div["asof"]),
-              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題"}
+              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題",
+              "status.html": {"ok": "✅", "warn": "⚠️", "error": "❌"}[worst(st)]}
     return {k: chrome(v, k, asof[k], basics, counts) for k, v in out.items()}, asof
+
+
+def status():
+    """每日更新時由 validate_data.py --status 寫出（含各抓取步驟成敗）；本機建置沒有這個檔就當場檢查"""
+    path = ROOT / "data" / "status.json"
+    return json.loads(read(path)) if path.exists() else validate()[2]
+
+
+def worst(st):
+    states = {d["state"] for d in st["datasets"]}
+    return "error" if "error" in states or not st["ok"] else "warn" if "warn" in states else "ok"
+
+
+def publish_data():
+    """把網頁用到的資料也放上 Pages（web/data/），當成公開的唯讀 API；不進 git，每次建置重新複製"""
+    dest = WEB / "data"
+    shutil.rmtree(dest, ignore_errors=True)
+    dest.mkdir()
+    for _, fname, *_ in DATASETS:
+        shutil.copy2(ROOT / "data" / fname, dest / fname)
+    (dest / "status.json").write_text(json.dumps(status(), ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"ok  web/data/（{len(DATASETS) + 1} 個 JSON）")
 
 
 def main():
@@ -224,7 +255,7 @@ def main():
     if len(sys.argv) == 3 and sys.argv[1] == "--bare":
         dest = Path(sys.argv[2])
         for name, html in out.items():
-            if name == "404.html":
+            if name in ("404.html", "status.html"):
                 continue
             (dest / name).write_text(html, encoding="utf-8")
             print(f"ok  {dest / name}")
@@ -240,6 +271,7 @@ def main():
     (WEB / "sitemap.xml").write_text(sitemap(pub, asof), encoding="utf-8")
     (WEB / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8")
     print("ok  web/sitemap.xml, web/robots.txt")
+    publish_data()
 
 if __name__ == "__main__":
     main()

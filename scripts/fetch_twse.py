@@ -21,21 +21,23 @@ ETF：代號 00 開頭、成交值超過 3000 萬元，另存在 "etfs"，多了
 import datetime as dt
 import json
 import re
+import sys
 import time
-import urllib.request
 from pathlib import Path
+
+from net import fetch
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "tw.json"
 OPENAPI = "https://openapi.twse.com.tw/v1"
 MIN_TV = 1e8
 MIN_TV_ETF = 3e7
+MIN_STOCKS = 200  # 平常約 320 檔
+MIN_ETFS = 20  # 平常約 80 檔
 
 
 def get(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "advisor-roundtable/0.1 (research)"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return json.loads(r.read().decode("utf-8"))
+    return json.loads(fetch(url).decode("utf-8"))
 
 
 def num(x):
@@ -172,6 +174,12 @@ def main():
             stocks.append(row)
     stocks.sort(key=lambda s: -s["tv"])
     etfs.sort(key=lambda s: -s["tv"])
+    # 證交所偶爾回空表或欄位改名；筆數不對或日期倒退就不覆蓋，網站繼續用上一份好資料
+    prev = json.loads(OUT.read_text(encoding="utf-8")).get("asof", "") if OUT.exists() else ""
+    if len(stocks) < MIN_STOCKS or len(etfs) < MIN_ETFS:
+        sys.exit(f"fail  筆數太少（個股 {len(stocks)}、ETF {len(etfs)}），保留舊檔 {prev}")
+    if f"{asof:%Y-%m-%d}" < prev:
+        sys.exit(f"fail  資料日 {asof} 比舊檔 {prev} 還舊，保留舊檔")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({"asof": f"{asof:%Y-%m-%d}", "dates": dates, "stocks": stocks, "etfs": etfs},
                               ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

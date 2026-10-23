@@ -17,8 +17,9 @@ import json
 import re
 import sys
 import time
-import urllib.request
 from pathlib import Path
+
+from net import fetch
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "dividends.json"
@@ -26,8 +27,7 @@ KEEP_DAYS = 60
 
 
 def get(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    return json.loads(urllib.request.urlopen(req, timeout=60).read())
+    return json.loads(fetch(url))
 
 
 def f(s):

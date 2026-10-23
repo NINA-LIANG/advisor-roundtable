@@ -1,0 +1,85 @@
+{
+ "checked": "2026-10-23 21:05",
+ "ok": true,
+ "datasets": [
+  {
+   "key": "tw",
+   "file": "data/tw.json",
+   "name": "上市股票與 ETF 收盤",
+   "page": "理專圓桌、模擬倉、考場",
+   "asof": "2026-10-21",
+   "count": 403,
+   "age": 2,
+   "state": "ok",
+   "note": "",
+   "step": ""
+  },
+  {
+   "key": "universe",
+   "file": "data/universe.json",
+   "name": "上市櫃全部股票與 ETF",
+   "page": "台股全覽",
+   "asof": "2026-10-22",
+   "count": 2352,
+   "age": 1,
+   "state": "ok",
+   "note": "",
+   "step": ""
+  },
+  {
+   "key": "dividends",
+   "file": "data/dividends.json",
+   "name": "除權息與殖利率",
+   "page": "除權息行事曆",
+   "asof": "2026-10-22",
+   "count": 1979,
+   "age": 1,
+   "state": "ok",
+   "note": "",
+   "step": ""
+  },
+  {
+   "key": "rates",
+   "file": "data/rates.json",
+   "name": "銀行牌告利率",
+   "page": "存款利率",
+   "asof": "2026-10-22",
+   "count": 37,
+   "age": 1,
+   "state": "ok",
+   "note": "",
+   "step": ""
+  },
+  {
+   "key": "etf_holdings",
+   "file": "data/etf_holdings.json",
+   "name": "ETF 持股明細",
+   "page": "台股全覽",
+   "asof": "2026-10-22",
+   "count": 64,
+   "age": 1,
+   "state": "ok",
+   "note": "",
+   "step": ""
+  },
+  {
+   "key": "popular",
+   "file": "data/popular.json",
+   "name": "人氣小報（人工整理）",
+   "page": "人氣小報",
+   "asof": "2026-10-22",
+   "count": 20,
+   "age": 1,
+   "state": "ok",
+   "note": "",
+   "step": ""
+  }
+ ],
+ "knowledge": [
+  "全部通過"
+ ],
+ "errors": [],
+ "warnings": [],
+ "steps": {},
+ "run": ""
+}

@@ -1,0 +1,32 @@
+# Pages CMS（https://pagescms.org）表單式後台設定：用 GitHub 帳號登入 app.pagescms.org，選這個 repo 就能用表單改內容。
+# 存檔＝一次 commit；每日更新與 PR 檢查都會跑 scripts/validate_data.py，欄位寫錯不會上線。
+# 只開放「每個欄位都有定義」的檔案，避免表單存檔時漏掉沒列出的欄位。
+content:
+  - name: advisors
+    label: 六位理專的背景
+    description: 經歷、在意的風險、評判標準、盲點與適合客群，會顯示在理專圓桌與關於本站
+    type: file
+    path: knowledge/advisors.zh.json
+    format: json
+    fields:
+      - name: tech
+        label: 陳怡君（技術分析）
+        type: object
+        fields: &advisor
+          - { name: career, label: 學經歷, type: string, list: true, required: true }
+          - { name: risk, label: 最在意的風險, type: string, list: true, required: true }
+          - { name: criteria, label: 評判標準, type: string, list: true, required: true }
+          - { name: db, label: 看的資料（給人看的說明）, type: string, list: true, required: true }
+          - name: fields
+            label: 拿得到的資料欄位代碼
+            description: 例如 p 收盤、m 月收盤、tv 成交值、pe 本益比、dy 殖利率、pb 淨值比。改這裡會改變這位理專實際能用的資料，請小心
+            type: string
+            list: true
+            required: true
+          - { name: blind, label: 盲點, type: text, required: true }
+          - { name: client, label: 適合客群, type: text, required: true }
+      - { name: macro, label: 林思遠（總經景氣）, type: object, fields: *advisor }
+      - { name: value, label: 王建明（價值本益比）, type: object, fields: *advisor }
+      - { name: mom, label: 周以恆（動能）, type: object, fields: *advisor }
+      - { name: quant, label: 張雅雯（統計均值回歸）, type: object, fields: *advisor }
+      - { name: div, label: 劉淑芬（存股殖利率）, type: object, fields: *advisor }

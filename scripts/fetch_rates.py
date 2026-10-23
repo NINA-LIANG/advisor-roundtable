@@ -20,8 +20,9 @@ import datetime as dt
 import json
 import re
 import sys
-import urllib.request
 from pathlib import Path
+
+from net import fetch
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "rates.json"
@@ -50,11 +51,9 @@ PUBLIC = {"臺灣銀行", "臺灣土地銀行", "合作金庫", "第一銀行", 
 
 
 def post(path, body):
-    req = urllib.request.Request(f"{BASE}/{path}", data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
-                                 headers={"Content-Type": "application/json",
-                                          "User-Agent": "advisor-roundtable/0.1 (research)"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return json.loads(r.read().decode("utf-8"))
+    raw = fetch(f"{BASE}/{path}", data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+                headers={"Content-Type": "application/json"})
+    return json.loads(raw.decode("utf-8"))
 
 
 def num(x):

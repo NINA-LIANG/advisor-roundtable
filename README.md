@@ -56,3 +56,31 @@ python scripts/fetch_twse.py && python scripts/build_site.py
 另外會產生 `web/404.html`（GitHub Pages 找不到網址時自動顯示）、`web/sitemap.xml` 與 `web/robots.txt`。專案網站的 robots.txt 不在網域根目錄，搜尋引擎不一定會讀；sitemap 請到 [Google Search Console](https://search.google.com/search-console) 手動提交。
 
 選用的流量分析：到 [GoatCounter](https://www.goatcounter.com/) 註冊（不設 cookie，不需同意橫幅），把站台代碼填進 repo 的 Settings → Secrets and variables → Actions → Variables，名稱 `GOATCOUNTER_CODE`。設定後下一次每日更新就會啟用，CSP 與關於本站的隱私說明也會自動跟著改。
+
+## 後台與資料管線（2026-10-23 新增）
+
+網站維持「靜態網站＋GitHub Actions」：不用租主機、沒有資料庫要顧。GitHub 本身就是後台。
+
+| 想做的事 | 怎麼做 |
+| --- | --- |
+| 看今天資料有沒有更新成功 | 網站的「資料狀態」頁 `status.html`（每份資料的日期、筆數、狀態） |
+| 立刻重抓資料 | Actions → daily-update → Run workflow，可選只更新某一份；手動執行不看休市日 |
+| 改理專背景等內容 | 直接在 GitHub 網頁改 `knowledge/*.json`，或登入 [Pages CMS](https://app.pagescms.org/) 用表單改（設定在 `.pages.yml`，目前開放六位理專背景） |
+| 出問題時收到通知 | 任何一步失敗會自動開一張 `data-update` 標籤的 Issue（GitHub 會寄信），之後成功一次自動關閉 |
+| 拿資料做研究 | 網站上的 `data/*.json`（與網頁同一份），每天的歷史快照在 `data-history` 分支 |
+
+每日更新的流程（`.github/workflows/daily-update.yml`）：
+
+1. `scripts/market_open.py`：查證交所休市表，休市日跳過（抓不到休市表就照跑）
+2. 五支 `scripts/fetch_*.py`：網路請求都經過 `scripts/net.py`，連不上會等 2、4、8 秒重試；任何一支失敗只沿用舊資料，不中斷
+3. `scripts/validate_data.py`：發佈前的品質關卡。格式壞、筆數太少、價格不合理、知識庫欄位缺漏 → 這次不提交、不發佈，網站繼續顯示上一份好資料；只是資料太舊或某支抓取失敗 → 照常發佈並開 Issue。結果寫到 `data/status.json`
+4. `scripts/build_site.py`：重建網頁、產生資料狀態頁，並把資料複製到 `web/data/` 一起發佈
+5. `scripts/snapshot_history.py`：把當天資料壓縮存到 `data-history` 分支的 `YYYY/MM/YYYY-MM-DD/`，主分支不會越來越大
+6. `scripts/run_report.py`：整理各步驟成敗，開或關 Issue
+
+PR 與推到 main 時，`.github/workflows/ci.yml` 會跑 `tests/` 的單元測試、資料檢查與建置。本機執行：
+
+```bash
+pip install pytest && python -m pytest -q
+python scripts/validate_data.py --status data/status.json && python scripts/build_site.py
+```
