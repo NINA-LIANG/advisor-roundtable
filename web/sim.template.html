@@ -85,6 +85,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-top:6px}
 .legend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:4px}
 .note{font-size:13px;color:var(--ink-soft);max-width:80ch}
+.how{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;counter-reset:h}
+.how li{counter-increment:h;border:2px solid var(--line);border-radius:18px;padding:10px 12px 10px 48px;position:relative;background:#fff9f4;font-size:14px}
+.how li::before{content:counter(h);position:absolute;left:12px;top:10px;width:26px;height:26px;border-radius:50%;background:var(--apricot);display:grid;place-items:center;font-family:var(--f-mono)}
+.how b{display:block;font-family:var(--f-display);font-weight:400;font-size:16px}
+.act h3{font-size:18px;margin-top:18px}
+.tbl td.hold{white-space:normal;text-align:left;min-width:180px;font-size:13px}
 .note li{margin-bottom:4px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:999px;padding:9px 18px;font-size:14px;z-index:20}
 @media (prefers-reduced-motion:reduce){.btn:active{transform:none}}
@@ -140,6 +146,38 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
     </div>
   </section>
 
+  <section class="box act" aria-labelledby="h-act" id="active">
+    <h2 id="h-act">🎯 主動型 ETF 練習區</h2>
+    <p class="muted" style="margin:6px 0 0;font-size:14px">主動型 ETF 和共同基金一樣由經理人主動選股，但像股票一樣在證交所買賣。下面列出全部 <b id="actN"></b> 檔，價格都是證交所 <span id="actAsof"></span> 的真實收盤價，持股是投信公告的資料。沒買過也沒關係，先用模擬倉的 100 萬練習。</p>
+    <ol class="how">
+      <li><b>看策略與持股</b>主動型 ETF 的表現取決於經理人。先看它買了哪些股票、集中在哪些產業，確認你看得懂。</li>
+      <li><b>比費用</b>主動型的經理費通常比追蹤指數的被動型 ETF 高，買之前到投信官網或公開說明書查清楚。</li>
+      <li><b>決定怎麼買</b>沒把握抓時機，就用定期定額或分批買。很多券商提供 ETF 定期定額（可買零股），每月幾千元就能開始，可選的標的各家不同。</li>
+      <li><b>定期檢查</b>每季比一次它和 0050（大盤）的報酬。如果長期落後、費用又比較高，就該想想要不要換。</li>
+    </ol>
+
+    <h3>① 挑一檔：全部主動型 ETF</h3>
+    <div class="tbl-box"><table class="tbl" style="min-width:760px"><thead><tr><th>ETF</th><th>收盤</th><th>漲跌</th><th>成交值（億）</th><th>近一年</th><th style="text-align:left">前三大持股</th><th></th></tr></thead><tbody id="actT"></tbody></table></div>
+    <p class="note" style="margin-top:6px">「近一年」用還原除權息的月收盤計算，只有本站有一年歷史資料的幾檔才有；上市不到一年或還沒收錄的顯示「—」。按「練習買進」會帶到上面的「自己下單」。</p>
+
+    <h3>② 試算：如果一年前就開始每月定期定額</h3>
+    <div class="row" style="margin-top:10px">
+      <div class="field"><label for="dEtf">主動型 ETF</label><select id="dEtf"></select></div>
+      <div class="field"><label for="dAmt">每月投入（元）</label><input id="dAmt" type="number" min="1000" step="1000" value="5000" inputmode="numeric"></div>
+    </div>
+    <div class="preview" id="dPrev" style="margin-top:12px"></div>
+
+    <h3>③ 開始練習：在模擬倉每月自動定期定額</h3>
+    <p class="muted" style="margin:6px 0 0;font-size:13.5px">設定後馬上用今天收盤價買第一次（零股，手續費最低 1 元）。之後每個月第一次打開這頁、網站也更新到新月份的收盤價時，會自動再扣款買進一次。</p>
+    <div class="row" style="margin-top:10px">
+      <div class="field"><label for="pEtf">主動型 ETF</label><select id="pEtf"></select></div>
+      <div class="field"><label for="pAmt">每月投入（元）</label><input id="pAmt" type="number" min="1000" step="1000" value="5000" inputmode="numeric"></div>
+      <button class="btn" type="button" id="pGo">開始定期定額</button>
+    </div>
+    <div class="msg" id="pMsg"></div>
+    <div class="tbl-box"><table class="tbl" style="min-width:520px"><thead><tr><th>定期定額</th><th>每月</th><th>最近一次扣款</th><th></th></tr></thead><tbody id="pT"></tbody></table></div>
+  </section>
+
   <section class="box" aria-label="持股">
     <h2>📒 我的持股</h2>
     <div class="tbl-box"><table class="tbl"><thead><tr><th>標的</th><th>股數</th><th>平均成本</th><th>現價</th><th>市值</th><th>未實現損益</th><th>報酬率</th><th>跟單來源</th><th></th></tr></thead><tbody id="posT"></tbody></table></div>
@@ -174,7 +212,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
 /*SHARED*/
 // ---------- 模擬倉 ----------
 const START=1000000,FEE=0.001425,DEPOSIT=0.017; // 定存年利率假設 1.7%
-const ETFS2=TW.etfs||[],ALL2=[...TW.stocks,...ETFS2];
+const ACTIVE=/*ACTIVE*/;
+const ETFS2=TW.etfs||[];
+// 主動型 ETF 不一定都在理專選股的 ETF 清單裡，補進來讓自己下單和定期定額也能買（不給理專排名）
+const ACT_EXTRA=ACTIVE.list.filter(a=>!ETFS2.some(e=>e.c===a.c)).map(a=>({c:a.c,n:a.n,p:a.p,chg:a.chg,tv:a.tv,i:"ETF",t:"主動式",d:ACTIVE.asof}));
+const pxDate=s=>s.d||TW.asof;
+const ALL2=[...TW.stocks,...ETFS2,...ACT_EXTRA];
 const $=id=>document.getElementById(id);
 const byCode=c=>ALL2.find(s=>s.c===c);
 const label=s=>`${s.c} ${s.n}`;
@@ -193,7 +236,7 @@ const feeOf=(amt,sh)=>Math.max(sh>=1000?20:1,Math.round(amt*FEE));
 const taxRate=s=>!isETF(s)?0.003:s.t==="債券"?0:0.001;
 
 // ---------- 狀態：登入時存在雲端（只有你看得到），否則存在這台裝置 ----------
-const fresh=()=>({cash:START,pos:{},log:[],costs:0,since:TW.asof});
+const fresh=()=>({cash:START,pos:{},log:[],costs:0,since:TW.asof,dca:[]});
 let S=fresh(),saveRemote=null;
 const local={get(){try{return JSON.parse(localStorage.getItem("sim")||"null")}catch(e){return null}},set(v){try{localStorage.setItem("sim",JSON.stringify(v))}catch(e){}}};
 {const v=local.get();if(v&&v.pos)S=v}
@@ -253,7 +296,7 @@ function renderManual(){const s=resolve($("mCode").value),sh=Math.floor(+$("mSh"
  const amt=s.p*sh,fee=feeOf(amt,sh),tax=Math.round(amt*taxRate(s)),have=S.pos[s.c]?.sh||0;
  $("mPrev").innerHTML=`<table><tr><td>${label(s)}（收盤 ${fmt(s.p)}，${s.chg>=0?"+":""}${s.chg.toFixed(2)}%）</td><td class="mono">持有 ${money(have)} 股</td></tr><tr><td>買進：股款 ${money(amt)} ＋ 手續費 ${money(fee)}</td><td class="mono">${money(amt+fee)} 元</td></tr><tr><td>賣出：股款 − 手續費 − 證交稅 ${money(tax)}</td><td class="mono">${money(amt-fee-tax)} 元</td></tr></table>`}
 const resolve=v=>{v=(v||"").trim();if(!v)return null;return byCode(v.split(" ")[0])||ALL2.find(x=>x.n===v)||ALL2.find(x=>x.n.includes(v))};
-function renderAll(){renderSummary();renderPos();renderLog();renderFollow();renderManual()}
+function renderAll(){runDCA();renderSummary();renderPos();renderLog();renderFollow();renderManual();renderPlans()}
 
 let toastT;function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2000)}
 $("advs").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;adv=b.dataset.a;renderFollow()});
@@ -310,7 +353,45 @@ function renderBT(){const runs=[backtest("tech"),backtest("mom"),backtest("quant
  $("btT").innerHTML=all.map(r=>{const e=r.curve[6],ret=e/START-1;return `<tr><td>${r.emoji} ${r.name}</td><td class="mono">${money(e)}</td><td class="mono ${cls(ret)}">${pctS(ret)}</td><td class="mono">${(maxDD(r.curve)*100).toFixed(1)}%</td></tr>`}).join("");
  $("btPicks").innerHTML=M.slice(0,6).map((m,i)=>`<tr><td class="mono">${m}</td>${runs.map(r=>`<td style="text-align:left;white-space:normal">${r.picks[i].join("、")||"空手"}</td>`).join("")}</tr>`).join("")}
 
-renderAll();renderBT();
+// ---------- 主動型 ETF 練習區 ----------
+const histOf=c=>{const t=ETFS2.find(e=>e.c===c);return t&&t.m&&t.m.length?[...t.m,t.p]:null};
+const zeroSh=(amt,px)=>{let sh=Math.floor(amt/(px*(1+FEE)));while(sh>0&&px*sh+feeOf(px*sh,sh)>amt)sh--;return sh};
+function renderActive(){
+ $("actN").textContent=ACTIVE.list.length;$("actAsof").textContent=ACTIVE.asof===TW.asof?ACTIVE.asof:`${TW.asof}～${ACTIVE.asof}`;
+ $("actT").innerHTML=ACTIVE.list.map(a=>{const s=byCode(a.c),h=histOf(a.c),y=h&&h[0]?h[12]/h[0]-1:null;
+  return `<tr><td>${label(s)}<div class="muted" style="font-size:12px">${a.mk}</div></td><td class="mono">${fmt(s.p)}<div class="muted" style="font-size:11px">${pxDate(s).slice(5)}</div></td><td class="mono ${cls(s.chg)}">${s.chg>=0?"+":""}${s.chg.toFixed(2)}%</td><td class="mono">${a.tv.toFixed(2)}</td><td class="mono ${y==null?"":cls(y)}">${y==null?"—":pctS(y)}</td><td class="hold">${a.h.length?a.h.map(([n,w])=>`${n} ${w}%`).join("、")+`<div class="muted" style="font-size:12px">${a.hd} 公告，共 ${a.nh} 檔</div>`:"—"}</td><td><button class="mini" type="button" data-try="${a.c}">練習買進</button></td></tr>`}).join("");
+ const opts=ACTIVE.list.map(a=>`<option value="${a.c}">${a.c} ${a.n}</option>`).join("");
+ $("pEtf").innerHTML=opts;
+ const withH=ACTIVE.list.filter(a=>histOf(a.c));
+ $("dEtf").innerHTML=withH.map(a=>`<option value="${a.c}">${a.c} ${a.n}</option>`).join("");
+ renderDCA()}
+function simDCA(ser,amt){let sh=0,paid=0,fee=0,n=0;for(let i=0;i<12;i++){const px=ser[i];if(!px)continue;const k=zeroSh(amt,px);if(!k)continue;const f=feeOf(px*k,k);sh+=k;paid+=px*k+f;fee+=f;n++}
+ const mv=sh*ser[12];return {sh,paid,fee,n,mv,ret:paid?mv/paid-1:0}}
+function renderDCA(){const c=$("dEtf").value,amt=+$("dAmt").value||0,h=histOf(c),b=histOf("0050");
+ if(!h){$("dPrev").innerHTML=`<span class="muted">目前沒有可試算的歷史資料。</span>`;return}
+ if(amt<100){$("dPrev").innerHTML=`<span class="muted">每月金額至少 100 元。</span>`;return}
+ const r=simDCA(h,amt),r0=b&&simDCA(b,amt),d=TW.dates,ym=x=>`${x.slice(0,4)}/${+x.slice(4,6)}`,s=byCode(c);
+ const row=(nm,r)=>`<tr><td>${nm}</td><td class="mono">${r.n} 次・${money(r.paid)} 元</td><td class="mono">${money(r.sh)} 股</td><td class="mono">${money(r.mv)} 元</td><td class="mono ${cls(r.ret)}">${pctS(r.ret)}</td></tr>`;
+ $("dPrev").innerHTML=`<p style="margin:0 0 8px;font-weight:700">從 ${ym(d[0])} 到 ${ym(d[11])} 每月買 ${money(amt)} 元的 ${label(s)}，到 ${TW.asof} 收盤${r.ret>=0?"賺":"賠"} ${money(Math.abs(r.mv-r.paid))} 元（${pctS(r.ret)}）${r0?`；同樣方式買 0050 是 ${pctS(r0.ret)}，${r.ret>r0.ret?"這段期間贏過大盤":"這段期間沒贏過大盤"}`:""}。</p>
+  <div class="tbl-box" style="margin-top:0"><table class="tbl" style="min-width:520px"><thead><tr><th>標的</th><th>扣款次數・投入（含手續費）</th><th>累積股數</th><th>期末市值</th><th>報酬率</th></tr></thead><tbody>${row(label(s),r)}${r0?row("0050 元大台灣50",r0):""}</tbody></table></div>
+  <p class="note" style="margin:8px 0 0">每月用當月的月收盤價買零股，價格已還原除權息（等於配息再投入），市值還沒扣賣出的手續費與證交稅。只有一年、而且是過去的表現，不代表未來。</p>`}
+function runDCA(){if(!S.dca||!S.dca.length)return;let changed=false;
+ S.dca.forEach(p=>{const s=byCode(p.c);if(!s)return;const mo=pxDate(s).slice(0,7);if(p.last&&p.last.slice(0,7)>=mo)return;const sh=zeroSh(Math.min(p.amt,S.cash),s.p);
+  if(!sh){if(p.err!==mo){p.err=mo;changed=true}return}
+  if(!trade(p.c,"buy",sh,"定期定額")){p.last=pxDate(s);p.err="";changed=true}});if(changed)save()}
+function renderPlans(){const L=S.dca||[];
+ $("pT").innerHTML=L.length?L.map((p,i)=>{const s=byCode(p.c);return `<tr><td>${s?label(s):p.c}</td><td class="mono">${money(p.amt)} 元</td><td class="mono">${p.last||"—"}${p.err?`<div class="down" style="font-size:12px">${p.err} 現金不足，這個月沒扣款</div>`:""}</td><td><button class="mini" type="button" data-stop="${i}">停止扣款</button></td></tr>`}).join(""):`<tr><td colspan="4" class="muted" style="text-align:left">還沒有定期定額。選一檔主動型 ETF 試試看。</td></tr>`}
+$("actT").addEventListener("click",e=>{const b=e.target.closest("[data-try]");if(!b)return;const s=byCode(b.dataset.try);
+ $("mCode").value=label(s);$("mSh").value=1000;renderManual();$("mCode").scrollIntoView({behavior:"smooth",block:"center"});$("mCode").focus({preventScroll:true})});
+$("dEtf").addEventListener("change",renderDCA);$("dAmt").addEventListener("input",renderDCA);
+$("pGo").addEventListener("click",()=>{const c=$("pEtf").value,amt=Math.floor(+$("pAmt").value||0);
+ if(amt<100){$("pMsg").textContent="每月金額至少 100 元";return}
+ S.dca=S.dca||[];if(S.dca.some(p=>p.c===c)){$("pMsg").textContent="這檔已經在定期定額了，要改金額請先停止再重設";return}
+ if(!S.log.length){S.since=TW.asof;S.b0050=byCode("0050").p}
+ S.dca.push({c,amt,last:"",err:""});$("pMsg").textContent="";renderAll();toast("已開始定期定額 🌱")});
+$("pT").addEventListener("click",e=>{const b=e.target.closest("[data-stop]");if(!b)return;S.dca.splice(+b.dataset.stop,1);save();renderAll();toast("已停止扣款，持股保留")});
+
+renderActive();renderAll();renderBT();
 {const h=decodeURIComponent(location.hash.slice(1)),s=h&&byCode(h);if(s){$("mCode").value=label(s);renderManual()}}
 </script>
 <!--SITE-FOOT-->

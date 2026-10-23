@@ -68,6 +68,22 @@ GOATCOUNTER = os.environ.get("GOATCOUNTER_CODE", "").strip()
 SHELL = '<!doctype html>\n<html lang="zh-Hant">\n<head>\n{head}\n</head>\n<body>\n{body}\n</body>\n</html>\n'
 
 
+
+def active_etfs():
+    """模擬倉的主動型 ETF 練習區：全部主動式 ETF 的收盤（universe.json）＋前三大持股（etf_holdings.json）"""
+    uni = json.loads(read(ROOT / "data" / "universe.json"))
+    hold = json.loads(read(ROOT / "data" / "etf_holdings.json"))["etfs"]
+    rows = []
+    for c, n, mk, kind, close, chg, tv in uni["etf"]:
+        if kind != "主動式" or not close:
+            continue
+        prev = close - chg
+        h = hold.get(c, {})
+        rows.append({"c": c, "n": n, "mk": mk, "p": close, "chg": round(chg / prev * 100, 2) if prev else 0.0,
+                     "tv": tv, "h": h.get("h", [])[:3], "hd": h.get("hd", ""), "nh": h.get("n", 0)})
+    rows.sort(key=lambda r: -r["tv"])
+    return json.dumps({"asof": uni["asof"], "list": rows}, ensure_ascii=False, separators=(",", ":"))
+
 def head(name, top):
     """GitHub Pages 版的 <head>：基本設定、搜尋與分享資訊、圖示、安全設定，再接模板自己的字型與樣式"""
     title, desc = META[name]
@@ -181,7 +197,8 @@ def pages():
     # 模擬倉共用理專圓桌的資料與六位理專的規則
     shared = src[src.index("// ---------- 台股資料"):src.index("const TABS=")]
     sim = (read(WEB / "sim.template.html").replace("/*SHARED*/", shared)
-           .replace("/*TW*/", tw).replace("/*PROFILES*/", profiles).replace("/*SHELF*/", shelf))
+           .replace("/*TW*/", tw).replace("/*PROFILES*/", profiles).replace("/*SHELF*/", shelf)
+           .replace("/*ACTIVE*/", active_etfs()))
     rates = read(WEB / "rates.template.html").replace("/*RATES*/", json.dumps(
         json.loads(read(ROOT / "data" / "rates.json")), ensure_ascii=False, separators=(",", ":")))
     news = read(WEB / "news.template.html").replace("/*NEWS*/", json.dumps(
