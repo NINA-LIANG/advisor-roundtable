@@ -17,6 +17,7 @@
   "advisor_professor": "（填入指導教授）",
   "rec_contact": "（填入學校倫理審查委員會聯絡方式）",
   "minutes": "30–40",
-  "reward": "（填入謝禮與獎勵規則，例如：完成可得 100 元禮券，正式題每答對 1 題再加 10 元）"
+  "has_reward": false,
+  "reward": "本研究沒有提供謝禮。"
  }
 }
