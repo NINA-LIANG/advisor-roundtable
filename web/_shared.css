@@ -6,8 +6,8 @@
 .sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
 .sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
 .sitenav .grp{display:flex;align-items:center;gap:2px}
-.sitenav .grp>span{font-size:11.5px;color:#8a7566;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
-.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#5f9147;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.sitenav .grp>span{font-size:11.5px;color:#7a675a;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
+.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#4c7439;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
 .sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
 @media (max-width:760px){
   .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
@@ -16,11 +16,11 @@
 }
 
 /* 名詞提示 */
-.gl-term{text-decoration:underline dotted #8a7566;text-underline-offset:3px;cursor:help}
+.gl-term{text-decoration:underline dotted #7a675a;text-underline-offset:3px;cursor:help}
 .gl-pop{position:absolute;z-index:50;max-width:min(320px,calc(100vw - 32px));background:#fffdfa;color:#4a3b32;border:2px solid #f1e2d6;border-radius:18px;
   box-shadow:0 10px 30px rgba(74,59,50,.18);padding:10px 14px;font:14px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-align:left;white-space:normal}
 .gl-pop b{display:block;font-size:15px;margin-bottom:2px}
-.gl-pop a{display:inline-block;margin-top:4px;color:#4a87b5;font-weight:700}
+.gl-pop a{display:inline-block;margin-top:4px;color:#3d6f94;font-weight:700}
 
 /* 漲跌：顏色之外再加符號 */
 .pc.up::before{content:"▲ ";font-size:.8em}
@@ -42,9 +42,9 @@
   .chip,.tab,.pager button,.more,select,.sitenav a{min-height:44px;display:inline-flex;align-items:center}
 }
 
-.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#8a7566;text-align:center;
+.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#7a675a;text-align:center;
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
-.sitefoot a{color:#4a87b5}
+.sitefoot a{color:#3d6f94}
 .paper>.sitenav{margin-bottom:14px}
 
 /* 左側目錄：從左邊滑出，分組、圖示、右側數字 */
@@ -59,15 +59,30 @@
 .dhead{display:flex;align-items:center;gap:10px;padding:2px 4px 14px;border-bottom:2px dashed #f1e2d6;margin-bottom:6px}
 .dlogo{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffd9a0,#f7b7c5);display:grid;place-items:center;font-size:22px;flex:none}
 .dhead b{display:block;font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-weight:400;font-size:20px;line-height:1.2}
-.dhead small{color:#8a7566;font-size:12.5px;letter-spacing:.04em}
-.dclose{margin-left:auto;border:none;background:none;font-size:20px;color:#8a7566;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.dhead small{color:#7a675a;font-size:12.5px;letter-spacing:.04em}
+.dclose{margin-left:auto;border:none;background:none;font-size:20px;color:#7a675a;width:40px;height:40px;border-radius:12px;cursor:pointer}
 .dclose:hover{background:#fff1e3}
 .dgrp{padding:10px 0 4px}
-.dgrp h4{margin:0 6px 4px;font-size:13px;font-weight:700;color:#8a7566;display:flex;gap:8px;align-items:baseline}
+.dgrp h4{margin:0 6px 4px;font-size:13px;font-weight:700;color:#7a675a;display:flex;gap:8px;align-items:baseline}
 .dgrp h4 small{font-weight:400;font-size:12px}
 .drawer a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:46px;padding:6px 10px;border-radius:14px;color:#4a3b32;text-decoration:none;font-size:16px}
 .drawer a:hover{background:#fff1e3}
 .drawer a[aria-current="page"]{background:#ffd9a0;font-weight:700}
 .drawer a i{font-style:normal;font-size:18px;text-align:center}
-.drawer a small{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;color:#8a7566}
-.dnote{margin:14px 8px 0;font-size:12px;color:#8a7566}
+.drawer a small{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;color:#7a675a}
+.dnote{margin:14px 8px 0;font-size:12px;color:#7a675a}
+
+/* 跳到主要內容：平常藏起來，按 Tab 第一下出現 */
+.skip{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:-60px;z-index:100;background:#4a3b32;color:#fffdfa;border-radius:12px;padding:10px 16px;
+  font:700 15px "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-decoration:none}
+.skip:focus{top:calc(8px + env(safe-area-inset-top,0px))}
+main:focus{outline:none}
+
+/* 點擊目標至少 24×24 像素（WCAG 2.2 · 2.5.8） */
+button,select,[role="button"],input[type="checkbox"],input[type="radio"]{min-height:24px;min-width:24px}
+
+/* 系統設定「減少動態效果」時，全站關掉動畫與平滑捲動 */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+.wrap>main{display:flex;flex-direction:column;gap:inherit;min-width:0}

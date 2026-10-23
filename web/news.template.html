@@ -171,8 +171,8 @@ const $=id=>document.getElementById(id);
 const wan=n=>n>=1e8?(n/1e8).toFixed(n>=1e10?0:1)+" 億":n>=1e4?(n/1e4).toFixed(n>=1e6?0:1)+" 萬":n.toLocaleString("zh-TW");
 const zhao=n=>(n/1e12).toFixed(2)+" 兆";
 const ym=s=>{const [y,m]=s.split("-");return `${y} 年 ${+m} 月`};
-const TYPE_C={"市值型":"#3f7aa6","高股息":"#c45d78","主動式":"#8a6fc4","主題型":"#d79a3a","海外":"#5f9147"};
-const IND_C={"金融":"#5f9147","半導體":"#3f7aa6","電子":"#8a6fc4","電信":"#d79a3a","航運":"#c45d78"};
+const TYPE_C={"市值型":"#3f7aa6","高股息":"#c45d78","主動式":"#8a6fc4","主題型":"#d79a3a","海外":"#4c7439"};
+const IND_C={"金融":"#4c7439","半導體":"#3f7aa6","電子":"#8a6fc4","電信":"#d79a3a","航運":"#c45d78"};
 function bars(el,rows,colorOf,fmt,max){
   max=max||Math.max(...rows.map(r=>r[2]));
   el.innerHTML=rows.map((r,i)=>`<li><span class="n">${i+1}</span><span class="nm"><small>${r[0]}</small>${r[1]}</span>
@@ -217,7 +217,7 @@ const w=D.wealth;
 $("wealthH").textContent=`人均金融資產全球第 ${w.rank}，證券占三成五`;
 $("wealthBig").innerHTML=`${(w.per_capita_twd/1e4).toFixed(0)}<small>萬元／人</small>`;
 $("wealthP").textContent=`${w.src}估算，2025 年台灣人均金融資產淨值約 ${(w.per_capita_twd/1e4).toFixed(0)} 萬元，排名全球第 ${w.rank}。證券類資產占家庭金融資產 ${w.securities_share}%，高於亞洲平均 ${w.asia_avg}%，但仍低於全球平均 ${w.global_avg}%。`;
-const g=Object.entries(w.growth), gmax=Math.max(...g.map(x=>x[1])), gc=["#3f7aa6","#d79a3a","#5f9147"];
+const g=Object.entries(w.growth), gmax=Math.max(...g.map(x=>x[1])), gc=["#3f7aa6","#d79a3a","#4c7439"];
 $("growthSplit").style.cssText+="height:auto;display:grid;gap:4px;background:none";
 $("growthSplit").innerHTML=g.map(([k,v],i)=>`<div style="display:grid;grid-template-columns:7em 1fr 3.5em;gap:6px;align-items:center;font-size:13px"><span>${k}</span><span style="height:10px;background:var(--hair);border-radius:2px;overflow:hidden"><i style="display:block;height:100%;width:${v/gmax*100}%;background:${gc[i]}"></i></span><span class="mono">+${v}%</span></div>`).join("");
 $("growthSplit").removeAttribute("aria-hidden");

@@ -6,9 +6,9 @@
 /* Layout: 理專圓桌的姊妹頁，像一本手帳。十條心法 → 複利試算 → 新手六步 → 名詞小抄 → 交易成本 → 常見迷思。只做淺色主題，與其他頁一致。 */
 :root{
   color-scheme:light;
-  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
-  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
-  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#c13357; --apricot:#ffd9a0; --apricot-deep:#8f621f;
+  --matcha:#c5ddb0; --matcha-deep:#4c7439; --sky:#b5d8f2; --sky-deep:#3d6f94; --lilac:#d9cdf2;
   --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
   --f-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
   --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
@@ -185,10 +185,10 @@ function calc(){
   $("s-g").textContent=money(G);$("s-p").textContent=money(B);
   $("s-f").textContent=money(Math.max(0,G-N))+(G>0?`（${Math.round((G-N)/G*100)}%）`:"");
   const max=Math.max(G,1);
-  let ax="";for(let k=0;k<=4;k++){const v=max*k/4,yy=230-k/4*210;ax+=`<line x1="40" x2="590" y1="${yy}" y2="${yy}" stroke="#f1e2d6" stroke-dasharray="3 4"/><text x="34" y="${yy+4}" text-anchor="end" font-size="11" fill="#8a7566">${k?money(v).replace(" ",""):"0"}</text>`}
-  const ticks=[0,Math.round(y/2),y].map(t=>`<text x="${40+t*(550/y)}" y="252" text-anchor="middle" font-size="11" fill="#8a7566">第 ${t} 年</text>`).join("");
+  let ax="";for(let k=0;k<=4;k++){const v=max*k/4,yy=230-k/4*210;ax+=`<line x1="40" x2="590" y1="${yy}" y2="${yy}" stroke="#f1e2d6" stroke-dasharray="3 4"/><text x="34" y="${yy+4}" text-anchor="end" font-size="11" fill="#7a675a">${k?money(v).replace(" ",""):"0"}</text>`}
+  const ticks=[0,Math.round(y/2),y].map(t=>`<text x="${40+t*(550/y)}" y="252" text-anchor="middle" font-size="11" fill="#7a675a">第 ${t} 年</text>`).join("");
   $("chartSay").textContent=`投入 ${money(B)}，${y} 年後扣費約變成 ${money(N)}；每年 ${f.toFixed(2)}% 的費用吃掉其中 ${money(Math.max(0,G-N))}。`;
-  $("chart").innerHTML=ax+ticks+line(b,max,"#8a7566",2)+line(n,max,"#d9708a",3)+line(g,max,"#5f9147",3);
+  $("chart").innerHTML=ax+ticks+line(b,max,"#7a675a",2)+line(n,max,"#c13357",3)+line(g,max,"#4c7439",3);
   $("tip72").innerHTML=r>0?`📏 <b>72 法則</b>：72 ÷ 年報酬 ${r}% ≈ <b class="mono">${(72/r).toFixed(1)}</b> 年，錢會翻一倍。扣掉 ${f.toFixed(2)}% 費用後，要 <b class="mono">${r-f>0?(72/(r-f)).toFixed(1):"∞"}</b> 年。`:"📏 年報酬 0% 時，錢不會長大，還會被通膨慢慢吃掉。";
 }
 ["c-m","c-p","c-y","c-r","c-f"].forEach(id=>$(id).addEventListener("input",calc));calc();

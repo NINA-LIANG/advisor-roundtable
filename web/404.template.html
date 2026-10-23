@@ -1,0 +1,54 @@
+<title>找不到這一頁</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 找不到頁面。一句話說明 → 回首頁按鈕 → 全站各頁的入口。只做淺色主題，配色同關於本站。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --apricot:#ffd9a0; --sky-deep:#3d6f94;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f4f0ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:20px}
+p{margin:0}
+a{color:var(--sky-deep)}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.code{font-family:var(--f-display);font-size:64px;line-height:1;color:var(--ink-soft)}
+.home{display:inline-flex;align-items:center;min-height:44px;padding:8px 20px;border-radius:999px;background:var(--apricot);color:var(--ink);font-weight:700;text-decoration:none}
+.go{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px 16px;margin:0;padding:0;list-style:none;width:100%}
+.go a{display:flex;align-items:center;min-height:44px}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <section class="box">
+    <span class="code" aria-hidden="true">404</span>
+    <h1>找不到這一頁</h1>
+    <p>網址可能打錯了，或這一頁已經搬家。可以回首頁，或直接從下面挑一頁。</p>
+    <a class="home" href="index.html">回到理專圓桌首頁</a>
+    <h2>全站頁面</h2>
+    <ul class="go">
+      <li><a href="learn.html">🌱 投資入門教室</a></li>
+      <li><a href="news.html">📰 投資人氣小報</a></li>
+      <li><a href="market.html">📇 台股全覽</a></li>
+      <li><a href="dividend.html">💰 除權息行事曆</a></li>
+      <li><a href="rates.html">🏦 存款利率比較</a></li>
+      <li><a href="sim.html">🐷 百萬模擬倉</a></li>
+      <li><a href="lab.html">🧪 理專考場</a></li>
+      <li><a href="about.html">📖 關於本站</a></li>
+    </ul>
+  </section>
+</div>
+
+<!--SITE-FOOT-->
