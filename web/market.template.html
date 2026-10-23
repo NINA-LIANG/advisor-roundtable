@@ -221,7 +221,7 @@ function finBlock(code){
   const sg=x=>x==null?"—":`<span class="${x>0?"up":x<0?"down":""}">${x>0?"+":""}${x.toFixed(1)}%</span>`;
   const [y,q]=(FIN.quarter||"").split(" Q");
   return `<h3>財務報表 <small class="muted">${y?`${y} 年第 1～${q} 季累計`:""}</small></h3>
-    ${r?`<div class="kv"><div><small>營收</small><b>${yi(v.rev)}</b></div><div><small>毛利率</small><b>${ratio(v.gp,v.rev)}</b></div><div><small>營業利益率</small><b>${ratio(v.op,v.rev)}</b></div>
+    ${r?`<div class="kv"><div><small>${v.gp==null&&v.ca==null?"淨收益":"營收"}</small><b>${yi(v.rev)}</b></div><div><small>毛利率</small><b>${ratio(v.gp,v.rev)}</b></div><div><small>營業利益率</small><b>${ratio(v.op,v.rev)}</b></div>
     <div><small>稅後淨利</small><b>${yi(v.np??v.net)}</b></div><div><small>EPS</small><b>${v.eps==null?"—":fmt(v.eps)+" 元"}</b></div><div><small>ROE（累計）</small><b>${ratio(v.np??v.net,v.eqp??v.eq)}</b></div>
     <div><small>總資產</small><b>${yi(v.assets)}</b></div><div><small>負債比</small><b>${ratio(v.liab,v.assets)}</b></div><div><small>流動比</small><b>${ratio(v.ca,v.cl)}</b></div>
     <div><small>每股淨值</small><b>${v.bvps==null?"—":fmt(v.bvps)+" 元"}</b></div></div>`:""}

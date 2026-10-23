@@ -12,13 +12,14 @@ BS = [{"年度": "115", "季別": "2", "公司代號": "2330", "資產總計": "
        "流動負債": "1200000000.00", "每股參考淨值": "185.10"}]
 FH = [{"年度": "115", "季別": "2", "公司代號": "2881", "淨收益": "120000000.00", "繼續營業單位稅前損益": "80000000.00",
        "本期稅後淨利（淨損）": "70000000.00", "基本每股盈餘（元）": "5.10"}]
+FH_BS = [{"年度": "115", "季別": "2", "公司代號": "2881", "資產總額": "900000000.00", "歸屬於母公司業主之權益": "80000000.00"}]
 OTC = [{"SecuritiesCompanyCode": "6488", "年度": "115", "季別": "2", "營業收入": "", "本期淨利（淨損）": "-"}]
 REV = [{"資料年月": "11509", "公司代號": "2330", "營業收入-當月營收": "330000000", "營業收入-上月比較增減(%)": "-2.345",
         "營業收入-去年同月增減(%)": "31.4", "累計營業收入-當月累計營收": "2800000000", "累計營業收入-前期比較增減(%)": "36.0"}]
 
 
 def parse():
-    return ff.parse([("ci", "is", CI), ("bs", "bs", BS), ("fh", "is", FH), ("otc", "is", OTC), ("rev", "rev", REV)])
+    return ff.parse([("ci", "is", CI), ("bs", "bs", BS), ("fh", "is", FH), ("fhbs", "bs", FH_BS), ("otc", "is", OTC), ("rev", "rev", REV)])
 
 
 def test_parse_merges_tables_and_converts_units():
@@ -34,6 +35,7 @@ def test_financial_industry_uses_its_own_column_names():
     fin, *_ = parse()
     row = dict(zip(ff.COLS, fin["2881"]))
     assert row["rev"] == 1200 and row["pre"] == 800 and row["net"] == 700 and row["gp"] is None
+    assert row["assets"] == 9000 and row["eqp"] == 800
 
 
 def test_otc_english_code_and_blank_values():
