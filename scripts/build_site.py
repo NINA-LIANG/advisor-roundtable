@@ -62,7 +62,13 @@ META = {
     "lab.html": ("理專考場｜理專圓桌", "參考 AIOpsLab 的故障注入評測：在台股資料裡埋入 48 種錯誤，看 AI 理專與看門狗能不能抓出來。"),
     "status.html": ("資料狀態｜理專圓桌", "理專圓桌每份資料的日期、筆數與更新狀態，以及公開資料下載與歷史快照。"),
     "404.html": ("找不到這一頁｜理專圓桌", "這個網址沒有內容，從這裡回到理專圓桌的各個頁面。"),
+    "study.html": ("理專圓桌研究｜投資判斷實驗", "論文使用者實驗：用歷史股市資料判斷要不要買，研究人如何使用 AI 理專的建議。"),
 }
+# 不放進 sitemap、不給搜尋引擎收錄的頁面；實驗頁只透過研究者發的連結進入
+UNLISTED = ("404.html", "study.html")
+# 實驗頁把作答資料送到 DataPipe（免費的線上實驗資料收集服務，資料存到研究者的 Google 雲端硬碟）
+DATAPIPE = "https://pipe.jspsych.org"
+EXP = ROOT / "knowledge" / "experiment"
 # 選用：GoatCounter 流量分析（不設 cookie）。在 repo 的 Actions 變數設定 GOATCOUNTER_CODE 才會啟用
 GOATCOUNTER = os.environ.get("GOATCOUNTER_CODE", "").strip()
 SHELL = '<!doctype html>\n<html lang="zh-Hant">\n<head>\n{head}\n</head>\n<body>\n{body}\n</body>\n</html>\n'
@@ -92,7 +98,7 @@ def head(name, top):
     gcd = f" https://{GOATCOUNTER}.goatcounter.com" if GOATCOUNTER else ""
     csp = (f"default-src 'self'; script-src 'self' 'unsafe-inline'{gc}"
            "; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com"
-           f"; img-src 'self' data:{gcd}; connect-src 'self'{gcd}"
+           f"; img-src 'self' data:{gcd}; connect-src 'self'{gcd}{' ' + DATAPIPE if name == 'study.html' else ''}"
            f"; base-uri 'self' {SITE_URL}; form-action 'none'; object-src 'none'")
     ld = {"@context": "https://schema.org", "@type": "WebSite", "name": SITE_NAME, "url": SITE_URL, "inLanguage": "zh-Hant",
           "description": META["index.html"][1],
@@ -104,7 +110,7 @@ def head(name, top):
         '<meta name="referrer" content="strict-origin-when-cross-origin">',
         f"<title>{title}</title>",
         f'<meta name="description" content="{desc}">',
-        f'<link rel="canonical" href="{url}">' if name != "404.html" else '<meta name="robots" content="noindex">',
+        f'<link rel="canonical" href="{url}">' if name not in UNLISTED else '<meta name="robots" content="noindex">',
         f'<base href="{SITE_URL}">' if name == "404.html" else "",
         '<link rel="icon" href="favicon.svg" type="image/svg+xml">',
         '<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">',
@@ -232,8 +238,8 @@ def pages():
             "news.html": "",
             "learn.html": "", "market.html": uni["asof"],
             "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": "", "lab.html": json.loads(tw)["asof"],
-            "status.html": "", "404.html": ""}
-    out = {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
+            "status.html": "", "404.html": "", "study.html": ""}
+    out = {"study.html": study(), "index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
            "market.html": market, "dividend.html": dividend, "about.html": about, "lab.html": lab,
            "status.html": status_page, "404.html": read(WEB / "404.template.html")}
     div = json.loads(read(ROOT / "data" / "dividends.json"))
@@ -242,7 +248,19 @@ def pages():
               "dividend.html": sum(1 for e in div["up"] if e[0] >= div["asof"]),
               "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題",
               "status.html": {"ok": "✅", "warn": "⚠️", "error": "❌"}[worst(st)]}
-    return {k: chrome(v, k, asof[k], basics, counts) for k, v in out.items()}, asof
+    # 實驗頁不套導覽列與頁尾：受試者不該在作答中跑去看理專圓桌的其他頁面
+    return {k: v if k == "study.html" else chrome(v, k, asof[k], basics, counts) for k, v in out.items()}, asof
+
+
+def study():
+    """論文實驗頁：嵌入凍結題庫（正式題不含答案）、問卷與研究設定；題庫還沒產生時 ITEMS 是 null"""
+    items_path = EXP / "items.v1.json"
+    items = read(items_path) if items_path.exists() else "null"
+    cfg = json.loads(read(EXP / "config.json"))["study"]
+    manifest = json.loads(read(EXP / "manifest.json")) if (EXP / "manifest.json").exists() else {}
+    data = {"config": cfg, "surveys": json.loads(read(EXP / "surveys.zh.json")), "items_sha": manifest.get("items.v1.json", "")}
+    return (read(WEB / "study.template.html").replace("/*ITEMS*/", json.dumps(json.loads(items), ensure_ascii=False, separators=(",", ":")))
+            .replace("/*STUDY*/", json.dumps(data, ensure_ascii=False, separators=(",", ":"))))
 
 
 def status():
@@ -272,7 +290,7 @@ def main():
     if len(sys.argv) == 3 and sys.argv[1] == "--bare":
         dest = Path(sys.argv[2])
         for name, html in out.items():
-            if name in ("404.html", "status.html"):
+            if name in ("404.html", "status.html", "study.html"):
                 continue
             (dest / name).write_text(html, encoding="utf-8")
             print(f"ok  {dest / name}")
@@ -284,11 +302,16 @@ def main():
         k = html.index("</style>") + len("</style>")
         (WEB / name).write_text(SHELL.format(head=head(name, html[:k]), body=html[k:].lstrip("\n")), encoding="utf-8")
         print(f"ok  web/{name}")
-    pub = [n for n in out if n != "404.html"]
+    pub = [n for n in out if n not in UNLISTED]
     (WEB / "sitemap.xml").write_text(sitemap(pub, asof), encoding="utf-8")
     (WEB / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8")
     print("ok  web/sitemap.xml, web/robots.txt")
     publish_data()
+    # 實驗結束時的揭曉頁會讀這份（真實股票、日期與答案）；放在網站上而不是嵌進實驗頁，作答中看原始碼也看不到
+    key = EXP / "key.v1.json"
+    if key.exists():
+        shutil.copy2(key, WEB / "study-key.json")
+        print("ok  web/study-key.json")
 
 if __name__ == "__main__":
     main()

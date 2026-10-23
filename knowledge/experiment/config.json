@@ -1,0 +1,22 @@
+{
+ "items": {
+  "seed": 20261023,
+  "horizon_months": 3,
+  "min_tv_e8": 1,
+  "ambiguous_band": 0.02,
+  "buy_threshold": 0.5,
+  "quota": {"correct_buy": 6, "correct_no": 5, "wrong_buy": 2, "wrong_no": 3}
+ },
+ "study": {
+  "app_version": "1.0.0",
+  "datapipe_experiment_id": "",
+  "datapipe_condition_assignment": false,
+  "rec_approval": "（審查通過後填入倫理審查編號）",
+  "researcher": "梁瑜庭",
+  "contact": "（填入聯絡 email）",
+  "advisor_professor": "（填入指導教授）",
+  "rec_contact": "（填入學校倫理審查委員會聯絡方式）",
+  "minutes": "30–40",
+  "reward": "（填入謝禮與獎勵規則，例如：完成可得 100 元禮券，正式題每答對 1 題再加 10 元）"
+ }
+}

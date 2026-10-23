@@ -84,3 +84,31 @@ PR 與推到 main 時，`.github/workflows/ci.yml` 會跑 `tests/` 的單元測�
 pip install pytest && python -m pytest -q
 python scripts/validate_data.py --status data/status.json && python scripts/build_site.py
 ```
+
+## 論文使用者實驗（2026-10-23 新增）
+
+四組受試者間實驗：1 單一理專、2 只顯示共識、3 完整圓桌（分歧與理由）、4 自己調權重。實驗頁 `study.html` 不在導覽列與 sitemap 裡、不給搜尋引擎收錄，只透過研究者發的連結進入。
+
+| 檔案 | 內容 |
+| --- | --- |
+| `scripts/fetch_experiment_panel.py` | 抓 2022-07～2025-03 證交所歷史資料 → `knowledge/experiment/panel.json`（只抓一次） |
+| `scripts/advisor_engine.mjs` | 在 Node 裡跑首頁同一份六位理專規則（直接從 `web/index.template.html` 切出來執行） |
+| `scripts/build_experiment_items.py` | 算正確答案（3 個月報酬是否勝過 0050）、分層抽 16＋2 題、遮蔽股名日期 → `items.v1.json`（實驗頁用）、`key.v1.json`（答案）、`manifest.json`（SHA-256） |
+| `knowledge/experiment/macro_2023_2024.csv` | 景氣燈號、PMI（說明與出處見 `macro_README.md`） |
+| `knowledge/experiment/config.json` | 抽題設定（種子、名額）與研究資訊（同意書欄位、DataPipe 實驗代號） |
+| `knowledge/experiment/surveys.zh.json` | 前測、後測題目（金融素養、信任量表、操弄檢核、注意力檢核） |
+| `web/study.template.html` | 實驗流程與四組畫面 |
+| `scripts/make_assignments.py` | 產生受試者編號與連結（置換區塊隨機化，組別由編號算出） |
+| `analysis/score_study.py` | 合併 DataPipe 資料，算 RAIR、RSR、過度依賴、正確率、Brier、信任等指標 |
+| `.github/workflows/build-experiment.yml` | 在 GitHub Actions 抓資料並建題庫（這個開發環境連不到證交所） |
+
+上線前要做的事：
+
+1. **題庫**：推送後 build-experiment 會自動跑（約 25 分鐘）並把題庫提交回分支。PMI 還沒補齊時題庫是草稿（`draft: true`），補完 `macro_2023_2024.csv` 再跑一次就是正式版，之後不會再被覆寫。
+2. **DataPipe**：到 [pipe.jspsych.org](https://pipe.jspsych.org/) 註冊、連 Google 雲端硬碟、建一個實驗並開啟資料收集，把實驗代號填進 `config.json` 的 `datapipe_experiment_id`。公開招募想讓 DataPipe 輪流分組，就在後台開「condition assignment」設 4 組，並把 `datapipe_condition_assignment` 改成 `true`。送資料的網址寫在 `study.template.html` 的 `send()`，請和 DataPipe 後台 Code Samples 對一次。沒設定時，受試者在最後可以下載作答檔交給你。
+3. **同意書**：審查通過後，把 `config.json` 的審查編號、聯絡方式、指導教授、謝禮規則填好；同意書文字在 `study.template.html` 的 `consent()`。
+4. **預覽**：`study.html?preview=1&cond=1`（1～4 組），預覽不會送資料。
+5. **發連結**：`python scripts/make_assignments.py 120 > experiment-private/pids.csv`，依報名順序發。`experiment-private/` 不會提交。
+6. **分析**：從雲端硬碟下載 `DataPipe` 資料夾，`python analysis/score_study.py 下載的資料夾` → `experiment-private/trials.csv`、`participants.csv`。
+
+注意：repo 是公開的，`key.v1.json` 裡有答案。實驗頁本身不嵌入正式題答案，結束時才讀 `study-key.json` 揭曉；但有心人仍可從 repo 找到答案，按答對題數發獎金時請把這點寫進論文的限制。
