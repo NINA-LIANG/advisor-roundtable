@@ -38,8 +38,7 @@ PAGE_URL = {rel: url for url, rel in ARTIFACT_URLS.items()}
 # 全站導覽：依使用者要做的事分三組
 NAV = [("學", [("learn.html", "入門教室"), ("news.html", "人氣小報")]),
        ("查", [("market.html", "台股全覽"), ("dividend.html", "除權息"), ("rates.html", "存款利率")]),
-       ("做", [("index.html", "理專圓桌"), ("sim.html", "百萬模擬倉"), ("lab.html", "理專考場"),
-              ("study.html", "參加研究")])]
+       ("做", [("sim.html", "百萬模擬倉"), ("lab.html", "理專考場"), ("study.html", "參加研究")])]  # 理專圓桌（首頁）就是左邊的站名
 # 左側目錄：分組標題、副標，每項的圖示（數字由 pages() 依資料算）
 DRAWER = [("學", "打好基本功", [("learn.html", "🌱", "入門教室"), ("news.html", "📰", "人氣小報")]),
           ("查", "看懂市場資料", [("market.html", "📇", "台股全覽"), ("dividend.html", "💰", "除權息行事曆"),
@@ -175,10 +174,10 @@ def chrome(html, cur, asof, basics, counts):
     css = read(WEB / "_shared.css")
     groups = "".join(f'<div class="grp"><span>{g}</span>{"".join(link(r, t, cur) for r, t in items)}</div>'
                      for g, items in NAV)
-    badge = f'<span class="asofb" data-asof="{asof}">資料日期 {asof}</span>' if asof else ""
+    badge = f'<span class="asofb" data-asof="{asof}" title="資料日期 {asof}">資料 {asof[5:]}</span>' if asof else ""
     nav = (f"<style>{css}</style>\n<a class=\"skip\" href=\"#main\">跳到主要內容</a>\n{drawer(cur, counts)}\n<nav class=\"sitenav\" aria-label=\"網站導覽\">"
            '<button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button>'
-           f'<a class="brand" href="{PAGE_URL["index.html"]}" target="_blank" rel="noopener">✨ 理專圓桌</a>'
+           f'<a class="brand" href="{PAGE_URL["index.html"]}" target="_blank" rel="noopener"{' aria-current="page"' if cur == "index.html" else ""}>✨ 理專圓桌</a>'
            f'{groups}{link("about.html", "關於本站", cur)}{badge}</nav>')
     gl = {"terms": basics["terms"], "url": PAGE_URL["learn.html"]}
     foot = (f'<footer class="sitefoot">{DISCLAIMER} <a href="{PAGE_URL["about.html"]}" target="_blank" rel="noopener">關於本站與資料來源</a></footer>\n'

@@ -1,17 +1,17 @@
 /* 全站共用：導覽列、資料日期、名詞提示、表格、漲跌符號、觸控大小、頁尾聲明。由 build_site.py 嵌入每一頁。 */
-.sitenav{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
+.sitenav{display:flex;align-items:center;gap:6px 10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;font-size:14px;line-height:1.4;color:#4a3b32;box-shadow:0 4px 0 rgba(74,59,50,.05)}
-.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 8px;white-space:nowrap}
 .sitenav a:hover{background:#fff1e3}
 .sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
 .sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
-.sitenav .grp{display:flex;align-items:center;gap:2px}
+.sitenav .grp{display:flex;align-items:center;gap:0;flex:none}
+.sitenav::-webkit-scrollbar{display:none}
 .sitenav .grp>span{font-size:11.5px;color:#7a675a;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
 .sitenav .asofb{margin-left:auto;font-size:12.5px;color:#4c7439;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
 .sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
 @media (max-width:760px){
-  .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
-  .sitenav::-webkit-scrollbar{display:none}
+  .sitenav{border-radius:18px}
   .sitenav .asofb{margin-left:0}
 }
 
