@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-/* Layout: 理專圓桌的姊妹頁，像一本手帳。十條心法 → 複利試算 → 新手六步 → 名詞小抄 → 交易成本 → 常見迷思。只做淺色主題，與其他頁一致。 */
+/* Layout: 理專圓桌的姊妹頁，像一本手帳。十條心法 → 複利試算 → 新手六步 → 交給專業代操 → 名詞小抄 → 交易成本 → 常見迷思。只做淺色主題，與其他頁一致。 */
 :root{
   color-scheme:light;
   --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
@@ -110,6 +110,10 @@ details.myth{border:2px solid var(--line);border-radius:18px;background:#fff9f4;
 details.myth summary{cursor:pointer;font-weight:700}
 details.myth p{margin-top:6px;font-size:14.5px}
 .foot{font-size:13px;color:var(--ink-soft);text-align:center}
+.pro{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.pro .pc dl{margin:0;font-size:14.5px}
+.pro .pc dt{font-weight:700;display:inline}
+.pro .pc dd{margin:0;display:inline}
 </style>
 </head>
 <body>
@@ -248,6 +252,17 @@ button,select,[role="button"],input[type="checkbox"],input[type="radio"]{min-hei
   <section class="box" aria-labelledby="h-steps">
     <h2 id="h-steps">新手六步：照順序來</h2>
     <ol class="steps" id="steps"></ol>
+  </section>
+
+  <section class="box" aria-labelledby="h-pro">
+    <h2 id="h-pro">交給專業團隊：代操與資產配置 🤝</h2>
+    <p>適合不想自行挑選單一標的、希望由專業團隊代操或進行資產配置的投資人。</p>
+    <div class="pro">
+      <article class="pc">
+        <h3>共同基金（主動型基金）</h3>
+        <dl><dt>特色：</dt><dd>由基金經理人主動選股與操作。可在國內基金平台（如基富通、鉅亨買基金）或銀行定期定額申購。</dd></dl>
+      </article>
+    </div>
   </section>
 
   <section class="box" aria-labelledby="h-terms">
