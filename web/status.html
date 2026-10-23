@@ -66,19 +66,19 @@ code{background:#f6eee6;border-radius:6px;padding:0 5px;font-size:13.5px}
 <body>
 <div class="wrap">
   <style>/* 全站共用：導覽列、資料日期、名詞提示、表格、漲跌符號、觸控大小、頁尾聲明。由 build_site.py 嵌入每一頁。 */
-.sitenav{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
+.sitenav{display:flex;align-items:center;gap:6px 10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;font-size:14px;line-height:1.4;color:#4a3b32;box-shadow:0 4px 0 rgba(74,59,50,.05)}
-.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 8px;white-space:nowrap}
 .sitenav a:hover{background:#fff1e3}
 .sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
 .sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
-.sitenav .grp{display:flex;align-items:center;gap:2px}
+.sitenav .grp{display:flex;align-items:center;gap:0;flex:none}
+.sitenav::-webkit-scrollbar{display:none}
 .sitenav .grp>span{font-size:11.5px;color:#7a675a;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
 .sitenav .asofb{margin-left:auto;font-size:12.5px;color:#4c7439;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
 .sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
 @media (max-width:760px){
-  .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
-  .sitenav::-webkit-scrollbar{display:none}
+  .sitenav{border-radius:18px}
   .sitenav .asofb{margin-left:0}
 }
 
@@ -156,7 +156,7 @@ button,select,[role="button"],input[type="checkbox"],input[type="radio"]{min-hei
 </style>
 <a class="skip" href="#main">跳到主要內容</a>
 <div class="drawer-bg" hidden></div><aside class="drawer" id="sitedrawer" aria-label="網站目錄" hidden><div class="dhead"><span class="dlogo" aria-hidden="true">✨</span><div><b>理專圓桌</b><small>Advisor Roundtable</small></div><button class="dclose" type="button" aria-label="關閉目錄">✕</button></div><div class="dgrp"><h4>學<small>打好基本功</small></h4><a href="learn.html"><i aria-hidden="true">🌱</i><span>入門教室</span><small>27</small></a><a href="news.html"><i aria-hidden="true">📰</i><span>人氣小報</span><small>月刊</small></a></div><div class="dgrp"><h4>查<small>看懂市場資料</small></h4><a href="market.html"><i aria-hidden="true">📇</i><span>台股全覽</span><small>2,354</small></a><a href="dividend.html"><i aria-hidden="true">💰</i><span>除權息行事曆</span><small>36</small></a><a href="rates.html"><i aria-hidden="true">🏦</i><span>存款利率</span><small>37</small></a></div><div class="dgrp"><h4>做<small>練習自己判斷</small></h4><a href="index.html"><i aria-hidden="true">✨</i><span>理專圓桌</span><small>6</small></a><a href="sim.html"><i aria-hidden="true">🐷</i><span>百萬模擬倉</span><small>100萬</small></a><a href="lab.html"><i aria-hidden="true">🧪</i><span>理專考場</span><small>48 題</small></a><a href="study.html"><i aria-hidden="true">🎓</i><span>參加研究</span><small>30 分鐘</small></a></div><div class="dgrp"><h4>站<small>認識這個網站</small></h4><a href="about.html"><i aria-hidden="true">📖</i><span>關於本站</span><small></small></a><a href="status.html" aria-current="page"><i aria-hidden="true">🩺</i><span>資料狀態</span><small>✅</small></a></div><p class="dnote">示範與教育用途，非投資建議</p></aside>
-<nav class="sitenav" aria-label="網站導覽"><button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html">存款利率</a></div><div class="grp"><span>做</span><a href="index.html">理專圓桌</a><a href="sim.html">百萬模擬倉</a><a href="lab.html">理專考場</a><a href="study.html">參加研究</a></div><a href="about.html">關於本站</a></nav>
+<nav class="sitenav" aria-label="網站導覽"><button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html">存款利率</a></div><div class="grp"><span>做</span><a href="sim.html">百萬模擬倉</a><a href="lab.html">理專考場</a><a href="study.html">參加研究</a></div><a href="about.html">關於本站</a></nav>
 <main id="main" tabindex="-1">
   <header>
     <h1>資料狀態 🩺</h1>
