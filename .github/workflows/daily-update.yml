@@ -76,7 +76,7 @@ jobs:
         if: env.ONLY == 'all' || env.ONLY == 'dividends'
         run: python scripts/fetch_dividends.py
         continue-on-error: true
-      - name: 抓 ETF 持股明細（每週一次，約 6 分鐘）
+      - name: 抓 ETF 持股明細（每週全部重抓，約 6～12 分鐘）
         id: holdings
         if: env.ONLY == 'all' || env.ONLY == 'holdings'
         run: python scripts/fetch_etf_holdings.py
@@ -109,7 +109,8 @@ jobs:
           cd history
           git add -A
           git diff --cached --quiet || { git commit -qm "history: $(date -u +%F)" && git push origin data-history; }
-      - uses: actions/configure-pages@v5
+      - id: pages
+        uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
@@ -125,7 +126,8 @@ jobs:
         run: |
           open=$(gh issue list --label data-update --state open --json number -q '.[0].number' 2>/dev/null || true)
           body=$(python scripts/run_report.py)
-          if [ "${{ contains(steps.*.outcome, 'failure') }}" = "true" ]; then
+          # job.status 涵蓋沒有 id 的步驟；steps.*.outcome 涵蓋 continue-on-error 的抓取步驟
+          if [ "${{ job.status == 'failure' || contains(steps.*.outcome, 'failure') }}" = "true" ]; then
             if [ -n "$open" ]; then
               gh issue comment "$open" --body "$body"
             else

@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 NAMES = {"twse": "證交所收盤（tw.json）", "rates": "央行牌告利率（rates.json）", "universe": "上市櫃清單（universe.json）",
          "dividends": "除權息與殖利率（dividends.json）", "holdings": "ETF 持股（etf_holdings.json）",
-         "validate": "資料品質檢查", "deploy": "發佈到 GitHub Pages"}
+         "validate": "資料品質檢查", "pages": "GitHub Pages 設定", "deploy": "發佈到 GitHub Pages"}
 MARK = {"success": "✅", "failure": "❌", "skipped": "⏭️", "cancelled": "⏹️"}
 
 
@@ -25,6 +25,8 @@ def report(steps, status=None, run_url=""):
             lines += ["", "**資料狀態**", ""] + [f"- {d['file']}（{d['asof'] or '無日期'}）：{d['note']}" for d in bad]
         if status.get("errors"):
             lines += ["", "**品質檢查錯誤**", ""] + [f"- {e}" for e in status["errors"][:20]]
+    if steps.get("pages", {}).get("outcome") == "failure":
+        lines += ["", "**網站沒有發佈**：repo 還沒開啟 GitHub Pages。到 Settings → Pages，把 Source 選成「GitHub Actions」，再手動 Run workflow 一次。"]
     lines += ["", f"執行紀錄：{run_url}" if run_url else "",
               "處理方式：看執行紀錄裡失敗那一步的訊息；證交所暫時連不上通常隔天就好，也可以到 Actions 手動 Run workflow 重跑。"]
     return "\n".join(lines)
