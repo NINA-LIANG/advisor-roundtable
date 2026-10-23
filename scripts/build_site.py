@@ -32,17 +32,20 @@ ARTIFACT_URLS[LAB_URL] = "lab.html"
 SITE_URL = "https://nina-liang.github.io/advisor-roundtable/"
 # 資料狀態頁只在 GitHub Pages 上（要讀每日更新的結果），Artifact 版連到那裡
 ARTIFACT_URLS[SITE_URL + "status.html"] = "status.html"
+# 論文實驗頁也只在 GitHub Pages 上（要送資料到 DataPipe）
+ARTIFACT_URLS[SITE_URL + "study.html"] = "study.html"
 PAGE_URL = {rel: url for url, rel in ARTIFACT_URLS.items()}
 # 全站導覽：依使用者要做的事分三組
 NAV = [("學", [("learn.html", "入門教室"), ("news.html", "人氣小報")]),
        ("查", [("market.html", "台股全覽"), ("dividend.html", "除權息"), ("rates.html", "存款利率")]),
-       ("做", [("index.html", "理專圓桌"), ("sim.html", "百萬模擬倉"), ("lab.html", "理專考場")])]
+       ("做", [("index.html", "理專圓桌"), ("sim.html", "百萬模擬倉"), ("lab.html", "理專考場"),
+              ("study.html", "參加研究")])]
 # 左側目錄：分組標題、副標，每項的圖示（數字由 pages() 依資料算）
 DRAWER = [("學", "打好基本功", [("learn.html", "🌱", "入門教室"), ("news.html", "📰", "人氣小報")]),
           ("查", "看懂市場資料", [("market.html", "📇", "台股全覽"), ("dividend.html", "💰", "除權息行事曆"),
                              ("rates.html", "🏦", "存款利率")]),
           ("做", "練習自己判斷", [("index.html", "✨", "理專圓桌"), ("sim.html", "🐷", "百萬模擬倉"),
-                             ("lab.html", "🧪", "理專考場")]),
+                             ("lab.html", "🧪", "理專考場"), ("study.html", "🎓", "參加研究")]),
           ("站", "認識這個網站", [("about.html", "📖", "關於本站"), ("status.html", "🩺", "資料狀態")])]
 DISCLAIMER = ("示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。"
               "理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；"
@@ -246,7 +249,7 @@ def pages():
     counts = {"learn.html": len(basics["terms"]), "news.html": "月刊",
               "market.html": f'{len(uni["stock"]) + len(uni["etf"]):,}',
               "dividend.html": sum(1 for e in div["up"] if e[0] >= div["asof"]),
-              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題",
+              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題", "study.html": "30 分鐘",
               "status.html": {"ok": "✅", "warn": "⚠️", "error": "❌"}[worst(st)]}
     # 實驗頁不套導覽列與頁尾：受試者不該在作答中跑去看理專圓桌的其他頁面
     return {k: v if k == "study.html" else chrome(v, k, asof[k], basics, counts) for k, v in out.items()}, asof
