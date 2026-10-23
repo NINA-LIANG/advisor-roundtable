@@ -5,6 +5,8 @@
 """
 
 import json
+import os
+import re
 import sys
 from pathlib import Path
 
@@ -39,8 +41,79 @@ DRAWER = [("學", "打好基本功", [("learn.html", "🌱", "入門教室"), ("
 DISCLAIMER = ("示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。"
               "理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；"
               "依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。")
-SHELL = ('<!doctype html>\n<html lang="zh-Hant">\n<head>\n<meta charset="utf-8">\n'
-         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n</head>\n<body>\n{}\n</body>\n</html>\n')
+SITE_URL = "https://nina-liang.github.io/advisor-roundtable/"
+SITE_NAME = "理專圓桌"
+# 每頁的分頁標題與搜尋／分享摘要（只用在 GitHub Pages 版）
+META = {
+    "index.html": ("理專圓桌｜六位 AI 理專的台股 ETF 推薦",
+                   "六位方法不同的 AI 理專，每個交易日依證交所收盤資料從台股與 ETF 挑標的、互相質疑，理由與數字全部攤開。示範與教育用途，非投資建議。"),
+    "sim.html": ("百萬模擬倉｜理專圓桌", "用 100 萬虛擬資金跟著六位 AI 理專買賣台股，看哪一套方法績效好、回檔多深。資料存在你的瀏覽器，不需註冊。"),
+    "rates.html": ("存款利率比較｜理專圓桌", "台灣各銀行活存、定存牌告利率一次比較，依中央銀行資料每個交易日更新，附存款保險與試算。"),
+    "news.html": ("投資人氣小報｜理專圓桌", "台股定期定額排行、ETF 受益人數與熱門話題的每月整理，看大家在買什麼、為什麼。"),
+    "learn.html": ("投資入門教室｜理專圓桌", "十分鐘看懂殖利率、本益比、內扣費用、除權息與稅費，附白話名詞表，給剛開始投資台股與 ETF 的人。"),
+    "market.html": ("台股全覽｜理專圓桌", "上市、上櫃全部股票與 ETF 一覽，可依產業、殖利率、本益比篩選，並查看 ETF 持股與產業分布。"),
+    "dividend.html": ("除權息行事曆｜理專圓桌", "台股與 ETF 除權息預告、結果與殖利率，依證交所、櫃買中心資料每個交易日更新。"),
+    "about.html": ("關於本站｜理專圓桌", "理專圓桌是探討「人在迴圈中／迴圈上」的研究原型：六位虛構 AI 理專的規則、資料來源、隱私說明與限制。"),
+    "lab.html": ("理專考場｜理專圓桌", "參考 AIOpsLab 的故障注入評測：在台股資料裡埋入 48 種錯誤，看 AI 理專與看門狗能不能抓出來。"),
+    "404.html": ("找不到這一頁｜理專圓桌", "這個網址沒有內容，從這裡回到理專圓桌的各個頁面。"),
+}
+# 選用：GoatCounter 流量分析（不設 cookie）。在 repo 的 Actions 變數設定 GOATCOUNTER_CODE 才會啟用
+GOATCOUNTER = os.environ.get("GOATCOUNTER_CODE", "").strip()
+SHELL = '<!doctype html>\n<html lang="zh-Hant">\n<head>\n{head}\n</head>\n<body>\n{body}\n</body>\n</html>\n'
+
+
+def head(name, top):
+    """GitHub Pages 版的 <head>：基本設定、搜尋與分享資訊、圖示、安全設定，再接模板自己的字型與樣式"""
+    title, desc = META[name]
+    url = SITE_URL + ("" if name == "index.html" else name)
+    gc = " https://gc.zgo.at" if GOATCOUNTER else ""
+    gcd = f" https://{GOATCOUNTER}.goatcounter.com" if GOATCOUNTER else ""
+    csp = (f"default-src 'self'; script-src 'self' 'unsafe-inline'{gc}"
+           "; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com"
+           f"; img-src 'self' data:{gcd}; connect-src 'self'{gcd}"
+           f"; base-uri 'self' {SITE_URL}; form-action 'none'; object-src 'none'")
+    ld = {"@context": "https://schema.org", "@type": "WebSite", "name": SITE_NAME, "url": SITE_URL, "inLanguage": "zh-Hant",
+          "description": META["index.html"][1],
+          "author": {"@type": "Person", "name": "梁瑜庭", "url": "https://github.com/NINA-LIANG"}}
+    rows = [
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">',
+        f'<meta http-equiv="Content-Security-Policy" content="{csp}">',
+        '<meta name="referrer" content="strict-origin-when-cross-origin">',
+        f"<title>{title}</title>",
+        f'<meta name="description" content="{desc}">',
+        f'<link rel="canonical" href="{url}">' if name != "404.html" else '<meta name="robots" content="noindex">',
+        f'<base href="{SITE_URL}">' if name == "404.html" else "",
+        '<link rel="icon" href="favicon.svg" type="image/svg+xml">',
+        '<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">',
+        '<link rel="apple-touch-icon" href="apple-touch-icon.png">',
+        '<meta name="theme-color" content="#fff7ef">',
+        '<meta property="og:type" content="website">',
+        f'<meta property="og:site_name" content="{SITE_NAME}">',
+        f'<meta property="og:title" content="{title}">',
+        f'<meta property="og:description" content="{desc}">',
+        f'<meta property="og:url" content="{url}">',
+        f'<meta property="og:image" content="{SITE_URL}og.png">',
+        '<meta property="og:image:width" content="1200">',
+        '<meta property="og:image:height" content="630">',
+        f'<meta property="og:image:alt" content="{SITE_NAME}：六位 AI 理專的台股 ETF 推薦">',
+        '<meta property="og:locale" content="zh_TW">',
+        '<meta name="twitter:card" content="summary_large_image">',
+        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+        f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>' if name == "index.html" else "",
+        (f'<script data-goatcounter="https://{GOATCOUNTER}.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>'
+         if GOATCOUNTER else ""),
+        # 模板開頭的 <title>、Artifact 專用 meta 換掉，其餘字型與樣式照搬
+        re.sub(r"<title>.*?</title>\n?|<meta name=\"claude:[^>]*>\n?", "", top),
+    ]
+    return "\n".join(r for r in rows if r)
+
+
+def sitemap(names, asof):
+    urls = "".join(f"<url><loc>{SITE_URL}{'' if n == 'index.html' else n}</loc>"
+                   f"{f'<lastmod>{asof[n]}</lastmod>' if asof.get(n) else ''}</url>\n" for n in names)
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f"{urls}</urlset>\n")
 
 
 def read(path):
@@ -72,7 +145,7 @@ def chrome(html, cur, asof, basics, counts):
     groups = "".join(f'<div class="grp"><span>{g}</span>{"".join(link(r, t, cur) for r, t in items)}</div>'
                      for g, items in NAV)
     badge = f'<span class="asofb" data-asof="{asof}">資料日期 {asof}</span>' if asof else ""
-    nav = (f"<style>{css}</style>\n{drawer(cur, counts)}\n<nav class=\"sitenav\" aria-label=\"網站導覽\">"
+    nav = (f"<style>{css}</style>\n<a class=\"skip\" href=\"#main\">跳到主要內容</a>\n{drawer(cur, counts)}\n<nav class=\"sitenav\" aria-label=\"網站導覽\">"
            '<button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button>'
            f'<a class="brand" href="{PAGE_URL["index.html"]}" target="_blank" rel="noopener">✨ 理專圓桌</a>'
            f'{groups}{link("about.html", "關於本站", cur)}{badge}</nav>')
@@ -80,6 +153,10 @@ def chrome(html, cur, asof, basics, counts):
     foot = (f'<footer class="sitefoot">{DISCLAIMER} <a href="{PAGE_URL["about.html"]}" target="_blank" rel="noopener">關於本站與資料來源</a></footer>\n'
             f"<script>window.__GL__={json.dumps(gl, ensure_ascii=False, separators=(',', ':'))};\n{read(WEB / '_shared.js')}</script>")
     assert "<!--SITE-NAV-->" in html and "<!--SITE-FOOT-->" in html, cur
+    # 主內容地標：導覽列之後到外層容器結束（模板第一個頂層 </div>）
+    i = html.index("<!--SITE-NAV-->")
+    j = html.index("\n</div>", i)
+    html = html[:i] + "<!--SITE-NAV-->\n<main id=\"main\" tabindex=\"-1\">" + html[i + 15:j] + "\n</main>" + html[j:]
     return html.replace("<!--SITE-NAV-->", nav, 1).replace("<!--SITE-FOOT-->", foot, 1)
 
 
@@ -115,44 +192,54 @@ def pages():
     dividend = (read(WEB / "dividend.template.html").replace("/*DIVIDENDS*/", compact("dividends.json"))
                 .replace("/*PX*/", json.dumps(px, ensure_ascii=False, separators=(",", ":"))))
     # 關於本站：理專的名字、樣式從首頁的 ADVISORS 抓
-    import re
     adv = [dict(zip(("key", "name", "emoji", "tape", "style"), m)) for m in re.findall(
         r'\{key:"(\w+)",name:"([^"]+)",emoji:"([^"]+)",tape:"([^"]+)".*?style:"([^"]+)"', src)]
     # 理專考場：跟模擬倉一樣共用首頁的資料與六位理專
     lab = (read(WEB / "lab.template.html").replace("/*SHARED*/", shared)
            .replace("/*TW*/", tw).replace("/*PROFILES*/", profiles).replace("/*SHELF*/", shelf))
-    about = (read(WEB / "about.template.html").replace("/*PROFILES*/", profiles)
+    note = ("本站用 GoatCounter 計算瀏覽次數：不設 cookie、不追蹤個人，只記錄頁面、來源網站與裝置類型的總數。"
+            if GOATCOUNTER else "本站目前沒有任何流量分析或追蹤程式。")
+    about = (read(WEB / "about.template.html").replace("/*PROFILES*/", profiles).replace("<!--ANALYTICS-NOTE-->", note)
              .replace("/*ADVISORS*/", json.dumps(adv, ensure_ascii=False)))
     basics = json.loads(read(ROOT / "knowledge" / "basics.zh.json"))
     asof = {"index.html": json.loads(tw)["asof"], "sim.html": json.loads(tw)["asof"],
             "rates.html": json.loads(read(ROOT / "data" / "rates.json")).get("asof", ""),
             "news.html": "",
             "learn.html": "", "market.html": uni["asof"],
-            "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": "", "lab.html": json.loads(tw)["asof"]}
+            "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": "", "lab.html": json.loads(tw)["asof"],
+            "404.html": ""}
     out = {"index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
-           "market.html": market, "dividend.html": dividend, "about.html": about, "lab.html": lab}
+           "market.html": market, "dividend.html": dividend, "about.html": about, "lab.html": lab,
+           "404.html": read(WEB / "404.template.html")}
     div = json.loads(read(ROOT / "data" / "dividends.json"))
     counts = {"learn.html": len(basics["terms"]), "news.html": "月刊",
               "market.html": f'{len(uni["stock"]) + len(uni["etf"]):,}',
               "dividend.html": sum(1 for e in div["up"] if e[0] >= div["asof"]),
               "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題"}
-    return {k: chrome(v, k, asof[k], basics, counts) for k, v in out.items()}
+    return {k: chrome(v, k, asof[k], basics, counts) for k, v in out.items()}, asof
 
 
 def main():
-    out = pages()
+    out, asof = pages()
     if len(sys.argv) == 3 and sys.argv[1] == "--bare":
         dest = Path(sys.argv[2])
         for name, html in out.items():
+            if name == "404.html":
+                continue
             (dest / name).write_text(html, encoding="utf-8")
             print(f"ok  {dest / name}")
         return
     for name, html in out.items():
         for url, rel in ARTIFACT_URLS.items():
             html = html.replace(f'href="{url}" target="_blank" rel="noopener"', f'href="{rel}"').replace(url, rel)
-        (WEB / name).write_text(SHELL.format(html), encoding="utf-8")
+        # 模板開頭到第一個 </style> 是字型與樣式，搬進 <head>
+        k = html.index("</style>") + len("</style>")
+        (WEB / name).write_text(SHELL.format(head=head(name, html[:k]), body=html[k:].lstrip("\n")), encoding="utf-8")
         print(f"ok  web/{name}")
-
+    pub = [n for n in out if n != "404.html"]
+    (WEB / "sitemap.xml").write_text(sitemap(pub, asof), encoding="utf-8")
+    (WEB / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8")
+    print("ok  web/sitemap.xml, web/robots.txt")
 
 if __name__ == "__main__":
     main()

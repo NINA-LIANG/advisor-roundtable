@@ -3,19 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-</head>
-<body>
-<title>投資入門教室</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self' https://nina-liang.github.io/advisor-roundtable/; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>投資入門教室｜理專圓桌</title>
+<meta name="description" content="十分鐘看懂殖利率、本益比、內扣費用、除權息與稅費，附白話名詞表，給剛開始投資台股與 ETF 的人。">
+<link rel="canonical" href="https://nina-liang.github.io/advisor-roundtable/learn.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#fff7ef">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="理專圓桌">
+<meta property="og:title" content="投資入門教室｜理專圓桌">
+<meta property="og:description" content="十分鐘看懂殖利率、本益比、內扣費用、除權息與稅費，附白話名詞表，給剛開始投資台股與 ETF 的人。">
+<meta property="og:url" content="https://nina-liang.github.io/advisor-roundtable/learn.html">
+<meta property="og:image" content="https://nina-liang.github.io/advisor-roundtable/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="理專圓桌：六位 AI 理專的台股 ETF 推薦">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
 <style>
 /* Layout: 理專圓桌的姊妹頁，像一本手帳。十條心法 → 複利試算 → 新手六步 → 名詞小抄 → 交易成本 → 常見迷思。只做淺色主題，與其他頁一致。 */
 :root{
   color-scheme:light;
-  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
-  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
-  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#c13357; --apricot:#ffd9a0; --apricot-deep:#8f621f;
+  --matcha:#c5ddb0; --matcha-deep:#4c7439; --sky:#b5d8f2; --sky-deep:#3d6f94; --lilac:#d9cdf2;
   --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
   --f-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
   --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
@@ -94,7 +111,8 @@ details.myth summary{cursor:pointer;font-weight:700}
 details.myth p{margin-top:6px;font-size:14.5px}
 .foot{font-size:13px;color:var(--ink-soft);text-align:center}
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <style>/* 全站共用：導覽列、資料日期、名詞提示、表格、漲跌符號、觸控大小、頁尾聲明。由 build_site.py 嵌入每一頁。 */
 .sitenav{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
@@ -104,8 +122,8 @@ details.myth p{margin-top:6px;font-size:14.5px}
 .sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
 .sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
 .sitenav .grp{display:flex;align-items:center;gap:2px}
-.sitenav .grp>span{font-size:11.5px;color:#8a7566;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
-.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#5f9147;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.sitenav .grp>span{font-size:11.5px;color:#7a675a;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
+.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#4c7439;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
 .sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
 @media (max-width:760px){
   .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
@@ -114,11 +132,11 @@ details.myth p{margin-top:6px;font-size:14.5px}
 }
 
 /* 名詞提示 */
-.gl-term{text-decoration:underline dotted #8a7566;text-underline-offset:3px;cursor:help}
+.gl-term{text-decoration:underline dotted #7a675a;text-underline-offset:3px;cursor:help}
 .gl-pop{position:absolute;z-index:50;max-width:min(320px,calc(100vw - 32px));background:#fffdfa;color:#4a3b32;border:2px solid #f1e2d6;border-radius:18px;
   box-shadow:0 10px 30px rgba(74,59,50,.18);padding:10px 14px;font:14px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-align:left;white-space:normal}
 .gl-pop b{display:block;font-size:15px;margin-bottom:2px}
-.gl-pop a{display:inline-block;margin-top:4px;color:#4a87b5;font-weight:700}
+.gl-pop a{display:inline-block;margin-top:4px;color:#3d6f94;font-weight:700}
 
 /* 漲跌：顏色之外再加符號 */
 .pc.up::before{content:"▲ ";font-size:.8em}
@@ -140,9 +158,9 @@ details.myth p{margin-top:6px;font-size:14.5px}
   .chip,.tab,.pager button,.more,select,.sitenav a{min-height:44px;display:inline-flex;align-items:center}
 }
 
-.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#8a7566;text-align:center;
+.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#7a675a;text-align:center;
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
-.sitefoot a{color:#4a87b5}
+.sitefoot a{color:#3d6f94}
 .paper>.sitenav{margin-bottom:14px}
 
 /* 左側目錄：從左邊滑出，分組、圖示、右側數字 */
@@ -157,21 +175,38 @@ details.myth p{margin-top:6px;font-size:14.5px}
 .dhead{display:flex;align-items:center;gap:10px;padding:2px 4px 14px;border-bottom:2px dashed #f1e2d6;margin-bottom:6px}
 .dlogo{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffd9a0,#f7b7c5);display:grid;place-items:center;font-size:22px;flex:none}
 .dhead b{display:block;font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-weight:400;font-size:20px;line-height:1.2}
-.dhead small{color:#8a7566;font-size:12.5px;letter-spacing:.04em}
-.dclose{margin-left:auto;border:none;background:none;font-size:20px;color:#8a7566;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.dhead small{color:#7a675a;font-size:12.5px;letter-spacing:.04em}
+.dclose{margin-left:auto;border:none;background:none;font-size:20px;color:#7a675a;width:40px;height:40px;border-radius:12px;cursor:pointer}
 .dclose:hover{background:#fff1e3}
 .dgrp{padding:10px 0 4px}
-.dgrp h4{margin:0 6px 4px;font-size:13px;font-weight:700;color:#8a7566;display:flex;gap:8px;align-items:baseline}
+.dgrp h4{margin:0 6px 4px;font-size:13px;font-weight:700;color:#7a675a;display:flex;gap:8px;align-items:baseline}
 .dgrp h4 small{font-weight:400;font-size:12px}
 .drawer a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:46px;padding:6px 10px;border-radius:14px;color:#4a3b32;text-decoration:none;font-size:16px}
 .drawer a:hover{background:#fff1e3}
 .drawer a[aria-current="page"]{background:#ffd9a0;font-weight:700}
 .drawer a i{font-style:normal;font-size:18px;text-align:center}
-.drawer a small{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;color:#8a7566}
-.dnote{margin:14px 8px 0;font-size:12px;color:#8a7566}
+.drawer a small{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;color:#7a675a}
+.dnote{margin:14px 8px 0;font-size:12px;color:#7a675a}
+
+/* 跳到主要內容：平常藏起來，按 Tab 第一下出現 */
+.skip{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:-60px;z-index:100;background:#4a3b32;color:#fffdfa;border-radius:12px;padding:10px 16px;
+  font:700 15px "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-decoration:none}
+.skip:focus{top:calc(8px + env(safe-area-inset-top,0px))}
+main:focus{outline:none}
+
+/* 點擊目標至少 24×24 像素（WCAG 2.2 · 2.5.8） */
+button,select,[role="button"],input[type="checkbox"],input[type="radio"]{min-height:24px;min-width:24px}
+
+/* 系統設定「減少動態效果」時，全站關掉動畫與平滑捲動 */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+.wrap>main{display:flex;flex-direction:column;gap:inherit;min-width:0}
 </style>
+<a class="skip" href="#main">跳到主要內容</a>
 <div class="drawer-bg" hidden></div><aside class="drawer" id="sitedrawer" aria-label="網站目錄" hidden><div class="dhead"><span class="dlogo" aria-hidden="true">✨</span><div><b>理專圓桌</b><small>Advisor Roundtable</small></div><button class="dclose" type="button" aria-label="關閉目錄">✕</button></div><div class="dgrp"><h4>學<small>打好基本功</small></h4><a href="learn.html" aria-current="page"><i aria-hidden="true">🌱</i><span>入門教室</span><small>27</small></a><a href="news.html"><i aria-hidden="true">📰</i><span>人氣小報</span><small>月刊</small></a></div><div class="dgrp"><h4>查<small>看懂市場資料</small></h4><a href="market.html"><i aria-hidden="true">📇</i><span>台股全覽</span><small>2,352</small></a><a href="dividend.html"><i aria-hidden="true">💰</i><span>除權息行事曆</span><small>45</small></a><a href="rates.html"><i aria-hidden="true">🏦</i><span>存款利率</span><small>37</small></a></div><div class="dgrp"><h4>做<small>練習自己判斷</small></h4><a href="index.html"><i aria-hidden="true">✨</i><span>理專圓桌</span><small>6</small></a><a href="sim.html"><i aria-hidden="true">🐷</i><span>百萬模擬倉</span><small>100萬</small></a><a href="lab.html"><i aria-hidden="true">🧪</i><span>理專考場</span><small>48 題</small></a></div><div class="dgrp"><h4>站<small>認識這個網站</small></h4><a href="about.html"><i aria-hidden="true">📖</i><span>關於本站</span><small></small></a></div><p class="dnote">示範與教育用途，非投資建議</p></aside>
 <nav class="sitenav" aria-label="網站導覽"><button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html" aria-current="page">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html">存款利率</a></div><div class="grp"><span>做</span><a href="index.html">理專圓桌</a><a href="sim.html">百萬模擬倉</a><a href="lab.html">理專考場</a></div><a href="about.html">關於本站</a></nav>
+<main id="main" tabindex="-1">
   <header>
     <div>
       <div class="eyebrow">理專圓桌・姊妹頁</div>
@@ -234,6 +269,7 @@ details.myth p{margin-top:6px;font-size:14.5px}
   </section>
 
   <p class="foot">本頁是一般性的投資知識整理，非投資建議。理專都是虛構角色。</p>
+</main>
 </div>
 
 <script>
@@ -267,10 +303,10 @@ function calc(){
   $("s-g").textContent=money(G);$("s-p").textContent=money(B);
   $("s-f").textContent=money(Math.max(0,G-N))+(G>0?`（${Math.round((G-N)/G*100)}%）`:"");
   const max=Math.max(G,1);
-  let ax="";for(let k=0;k<=4;k++){const v=max*k/4,yy=230-k/4*210;ax+=`<line x1="40" x2="590" y1="${yy}" y2="${yy}" stroke="#f1e2d6" stroke-dasharray="3 4"/><text x="34" y="${yy+4}" text-anchor="end" font-size="11" fill="#8a7566">${k?money(v).replace(" ",""):"0"}</text>`}
-  const ticks=[0,Math.round(y/2),y].map(t=>`<text x="${40+t*(550/y)}" y="252" text-anchor="middle" font-size="11" fill="#8a7566">第 ${t} 年</text>`).join("");
+  let ax="";for(let k=0;k<=4;k++){const v=max*k/4,yy=230-k/4*210;ax+=`<line x1="40" x2="590" y1="${yy}" y2="${yy}" stroke="#f1e2d6" stroke-dasharray="3 4"/><text x="34" y="${yy+4}" text-anchor="end" font-size="11" fill="#7a675a">${k?money(v).replace(" ",""):"0"}</text>`}
+  const ticks=[0,Math.round(y/2),y].map(t=>`<text x="${40+t*(550/y)}" y="252" text-anchor="middle" font-size="11" fill="#7a675a">第 ${t} 年</text>`).join("");
   $("chartSay").textContent=`投入 ${money(B)}，${y} 年後扣費約變成 ${money(N)}；每年 ${f.toFixed(2)}% 的費用吃掉其中 ${money(Math.max(0,G-N))}。`;
-  $("chart").innerHTML=ax+ticks+line(b,max,"#8a7566",2)+line(n,max,"#d9708a",3)+line(g,max,"#5f9147",3);
+  $("chart").innerHTML=ax+ticks+line(b,max,"#7a675a",2)+line(n,max,"#c13357",3)+line(g,max,"#4c7439",3);
   $("tip72").innerHTML=r>0?`📏 <b>72 法則</b>：72 ÷ 年報酬 ${r}% ≈ <b class="mono">${(72/r).toFixed(1)}</b> 年，錢會翻一倍。扣掉 ${f.toFixed(2)}% 費用後，要 <b class="mono">${r-f>0?(72/(r-f)).toFixed(1):"∞"}</b> 年。`:"📏 年報酬 0% 時，錢不會長大，還會被通膨慢慢吃掉。";
 }
 ["c-m","c-p","c-y","c-r","c-f"].forEach(id=>$(id).addEventListener("input",calc));calc();
