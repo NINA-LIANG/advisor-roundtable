@@ -1,0 +1,21 @@
+{
+ "items": {
+  "seed": 20261023,
+  "horizon_months": 3,
+  "min_tv_e8": 1,
+  "ambiguous_band": 0.02,
+  "buy_threshold": 0.5,
+  "quota": {"correct_buy": 6, "correct_no": 5, "wrong_buy": 2, "wrong_no": 3}
+ },
+ "study": {
+  "app_version": "1.0.0",
+  "datapipe_experiment_id": "fY4jbKM2bLQT",
+  "datapipe_condition_assignment": false,
+  "researcher": "梁瑜庭",
+  "contact": "ninaliang0521@gmail.com",
+  "advisor_professor": "",
+  "minutes": "30–40",
+  "has_reward": false,
+  "reward": "本研究沒有提供謝禮。"
+ }
+}

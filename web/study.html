@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://pipe.jspsych.org; base-uri 'self' https://nina-liang.github.io/advisor-roundtable/; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>理專圓桌研究｜投資判斷實驗</title>
+<meta name="description" content="論文使用者實驗：用歷史股市資料判斷要不要買，研究人如何使用 AI 理專的建議。">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#fff7ef">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="理專圓桌">
+<meta property="og:title" content="理專圓桌研究｜投資判斷實驗">
+<meta property="og:description" content="論文使用者實驗：用歷史股市資料判斷要不要買，研究人如何使用 AI 理專的建議。">
+<meta property="og:url" content="https://nina-liang.github.io/advisor-roundtable/study.html">
+<meta property="og:image" content="https://nina-liang.github.io/advisor-roundtable/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="理專圓桌：六位 AI 理專的台股 ETF 推薦">
+<meta property="og:locale" content="zh_TW">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* 論文使用者實驗（受試者間四組）。刻意不放導覽列、倒數、排行榜，按鈕「買進／不買」同大小同顏色、沒有預設選項。
+   流程：同意書 → 前測 → 說明與 2 題練習 → 16 題正式題（先自己答、再看理專、最後再答＋信心）→ 後測 → 揭曉與完成碼。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#c13357; --apricot:#ffd9a0; --matcha:#c5ddb0; --matcha-deep:#4c7439;
+  --sky:#b5d8f2; --sky-deep:#3d6f94; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#eef4ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(26px,5vw,36px)} h2{font-size:21px;margin-bottom:6px} h3{font-size:16.5px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:20px;min-width:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+.muted{color:var(--ink-soft)} .num{font-variant-numeric:tabular-nums} .mono{font-family:var(--f-mono)}
+.eyebrow{font-size:12.5px;letter-spacing:.08em;color:var(--ink-soft)}
+.btn{border:none;border-radius:999px;padding:10px 22px;font-family:var(--f-display);font-size:16px;background:linear-gradient(135deg,var(--sky),var(--lilac));box-shadow:0 4px 0 #94b6d3}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:#fff;border:2px solid var(--line);box-shadow:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.progress{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--ink-soft)}
+/* 兩個決策按鈕外觀完全一樣，避免介面替受試者做選擇 */
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0}
+.choice button{border:2px solid var(--line);background:#fff;border-radius:18px;padding:14px 10px;font-family:var(--f-display);font-size:18px}
+.choice button[aria-pressed="true"]{border-color:var(--sky-deep);background:#eef6fd;box-shadow:inset 0 0 0 2px var(--sky-deep)}
+.conf{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.conf button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:5px 13px;font-size:14px;min-width:58px}
+.conf button[aria-pressed="true"]{border-color:var(--sky-deep);background:#eef6fd;font-weight:700}
+.data{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:720px){.data{grid-template-columns:1fr}}
+table.kv{border-collapse:collapse;width:100%;font-size:14px}
+table.kv td{padding:5px 6px;border-bottom:1px dashed var(--line)}
+table.kv td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.chart svg{width:100%;height:auto;display:block}
+.ai{border-radius:20px;background:#f6f2ff;padding:14px 16px;margin-top:4px}
+.verdict{font-family:var(--f-display);font-size:19px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:10px}
+.card{background:#fff;border:2px solid var(--line);border-top:6px solid var(--tape,var(--line));border-radius:18px;padding:12px 14px;font-size:14px}
+.card ul{margin:6px 0 4px;padding-left:18px}
+.card details{margin-top:4px}
+.card summary{cursor:pointer;color:var(--sky-deep);font-weight:700}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:700;background:var(--line)}
+.weight{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px}
+.weight input{flex:1;accent-color:var(--pink-deep)}
+.q{margin:14px 0;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.q legend{font-weight:700;margin-bottom:6px}
+.q fieldset{border:none;margin:0;padding:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{border:2px solid var(--line);background:#fff;border-radius:14px;padding:6px 12px;cursor:pointer}
+.opts input{margin-right:6px}
+.likert{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.likert label{text-align:center;font-size:12.5px;padding:6px 2px}
+textarea{width:100%;min-height:70px;border:2px solid var(--line);border-radius:14px;padding:8px}
+.consent{max-height:420px;overflow:auto;background:#fff;border:2px solid var(--line);border-radius:18px;padding:12px 16px}
+.consent li{margin-bottom:6px}
+.feedback{border-radius:18px;background:#eef7e8;padding:12px 16px}
+.warn{border-radius:18px;background:#fff1e0;padding:10px 14px}
+table.res{border-collapse:collapse;width:100%;font-size:13.5px}
+table.res th,table.res td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}
+.code{font-family:var(--f-mono);font-size:26px;letter-spacing:.15em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="box">
+    <div class="eyebrow">研究參與</div>
+    <h1>理專圓桌：投資判斷研究</h1>
+    <p class="muted" id="sub">用過去的股市資料做判斷，看人怎麼使用 AI 理專的建議。全程不計時，也不涉及真實金錢。</p>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <p class="muted" style="font-size:12.5px;text-align:center">研究用途，非投資建議。題目使用臺灣證券交易所公開的歷史資料。</p>
+</div>
+
+<script>
+const ITEMS={"version":1,"draft":false,"engine_sha":"b675af8c6f9214a3","seed":20261023,"panel_sha":"afadeae668fb12408f3f76cb024f04a65008db82c197ca98158fb818c6a9c3ef","horizon_months":3,"pool":{"n":4858,"ai_accuracy":0.696,"truth_buy_share":0.284,"rec_buy_share":0.087,"sigma_median":1.247,"ai_accuracy_sigma_high":0.687,"ai_accuracy_sigma_low":0.704,"corr_sigma_ai_wrong":0.032},"advisors":[{"key":"tech","name":"陳怡君","emoji":"📈","tape":"var(--sky)","horizon":"short","school":"中原大學 財務金融學系","bg":"券商自營部 8 年・技術分析","style":"技術分析・波段（2–8 週）","critique":"價值派王建明：均線是落後指標，等趨勢確認時便宜的價格通常已經過了。"},{"key":"macro","name":"林思遠","emoji":"🌏","tape":"var(--matcha)","horizon":"long","school":"Stanford University 經濟學系","bg":"前央行研究員・總經策略","style":"總體經濟循環・長期（1–2 年）","critique":"技術派陳怡君：總經訊號可能提早一年以上，股價在這段時間可能再跌 30%。"},{"key":"value","name":"王建明","emoji":"📒","tape":"var(--apricot)","horizon":"long","school":"國立臺灣大學 會計學系・CFA","bg":"投信研究員 12 年・基本面","style":"價值投資・長期（1–3 年）","critique":"動能派周以恆：便宜可以更便宜，價值陷阱常出現在獲利正在衰退的公司。"},{"key":"mom","name":"周以恆","emoji":"🚀","tape":"var(--pink)","horizon":"mid","school":"Columbia Business School MBA","bg":"前紐約避險基金分析師・動能策略","style":"動能趨勢・中期（3–6 個月）","critique":"存股派劉淑芬：追高需要紀律停損，一般投資人很難做到，常常買在最高點。"},{"key":"quant","name":"張雅雯","emoji":"🎲","tape":"var(--lilac)","horizon":"short","school":"國立政治大學 統計學系碩士","bg":"金控量化交易員・統計套利","style":"均值回歸・短期（數日–4 週）","critique":"動能派周以恆：在強趨勢裡，「過度延伸」可以持續好幾個月，逆勢放空會受傷。"},{"key":"div","name":"劉淑芬","emoji":"🍵","tape":"#ffe0c4","horizon":"long","school":"國立高雄科技大學 財務管理系","bg":"銀行理專 20 年・存股教練","style":"存股・定期定額（5 年以上）","critique":"總經派林思遠：高殖利率常出現在景氣循環股的高峰，之後股利可能腰斬。"}],"practice":[{"id":"練習1","label":"股票 練習1","industry":"金融保險","p":140.61,"ma":137.82,"m":[100.0,99.58,95.36,107.17,105.91,101.69,105.91,117.72,115.19,118.99,127.43,140.61],"pe":11.5,"dy":3.11,"pb":0.99,"macro":{"light":"黃紅","rate":1,"pmi":52.2},"advisors":{"tech":{"s":2,"why":["月均價 137.8 高於近三個月均價 129.0，趨勢向上","股價拉回到月均價附近（+2.0%），多頭中的買點"],"entry":"月均價 <b>137.8</b> 附近分批買，跌破三個月均價 129.0 停損","metrics":{"月線乖離":"+2.0%","月均價":"137.8"}},"macro":{"s":0,"why":["「黃紅燈」：景氣過熱，轉向防禦型產業","金融保險是這個階段偏好的類型","升息循環，壓抑估值"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"金融保險","燈號":"黃紅"}},"value":{"s":1,"why":["本益比 11.5 倍，金融保險同業中位數 13.8 倍","略低於同業，價格合理偏低","股價淨值比 0.99，低於帳面價值"],"entry":"同業本益比八折價 <b>135.1</b> 以下積極買（現價 140.6）","metrics":{"本益比":"11.5","同業比":"83%","淨值比":0.99}},"mom":{"s":2,"why":["近 6 個月上漲 +32.8%，動能強","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 140.6 附近進場，跌破 <b>126.5</b>（高點回落 10%）出場","metrics":{"6月報酬":"+32.8%","距高點":"+0.0%"}},"quant":{"s":-2,"why":["現價相對一年月收盤平均 111.3 的 z 分數為 2.32","遠高於一年均值，過度延伸"],"entry":"低於 <b>98.64</b>（均值減一個標準差）分批買，回到均值 111.3 獲利了結","metrics":{"z":"2.32","一年均值":"111.3"}},"div":{"s":0,"why":["現金殖利率 3.11%，月報酬波動 5.9%","殖利率普通，維持定期定額即可"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>72.88</b>）時加碼","metrics":{"殖利率":"3.11%","本益比":11.5}}},"alerts":[],"avg":0.5,"sigma":1.384,"rec":"buy","truth":"buy","r_stock":0.0683,"r_bench":0.0325},{"id":"練習2","label":"股票 練習2","industry":"光電","p":106.0,"ma":101.6,"m":[100.0,95.6,89.2,87.2,92.0,86.0,87.2,97.2,108.0,103.6,101.2,98.8],"pe":17.67,"dy":5.13,"pb":0.76,"macro":{"light":"黃紅","rate":1,"pmi":52.2},"advisors":{"tech":{"s":1,"why":["月均價 101.6 高於近三個月均價 101.2，趨勢向上","股價與月均價乖離 +4.3%"],"entry":"月均價 <b>101.6</b> 附近分批買，跌破三個月均價 101.2 停損","metrics":{"月線乖離":"+4.3%","月均價":"101.6"}},"macro":{"s":-2,"why":["「黃紅燈」：景氣過熱，轉向防禦型產業","光電不在這個階段的偏好類型","升息循環，壓抑估值"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"光電","燈號":"黃紅"}},"value":{"s":2,"why":["本益比 17.7 倍，光電同業中位數 30.5 倍","比同業便宜三成以上，具安全邊際","股價淨值比 0.76，低於帳面價值"],"entry":"現價 106.0 已低於同業本益比八折價 146.5，可分批買；先確認獲利不是一次性的","metrics":{"本益比":"17.7","同業比":"58%","淨值比":0.76}},"mom":{"s":2,"why":["近 6 個月上漲 +21.6%，動能強","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 106.0 附近進場，跌破 <b>97.20</b>（高點回落 10%）出場","metrics":{"6月報酬":"+21.6%","距高點":"-1.9%"}},"quant":{"s":-1,"why":["現價相對一年月收盤平均 95.50 的 z 分數為 1.53","偏高，不追"],"entry":"低於 <b>88.62</b>（均值減一個標準差）分批買，回到均值 95.50 獲利了結","metrics":{"z":"1.53","一年均值":"95.50"}},"div":{"s":1,"why":["現金殖利率 5.13%，月報酬波動 6.2%","殖利率 4.5% 以上，適合定期定額"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>90.63</b>）時加碼","metrics":{"殖利率":"5.13%","本益比":17.67}}},"alerts":[{"by":"macro","on":"div","msg":"殖利率吸引人，但景氣在「黃紅燈」，高峰期股利可能縮水"}],"avg":0.5,"sigma":1.5,"rec":"buy","truth":"no","r_stock":-0.1037,"r_bench":0.0325}],"items":[{"id":"A","label":"股票 A","industry":"電機機械","p":172.58,"ma":173.06,"m":[100.0,98.42,97.1,110.29,120.32,130.34,121.37,166.23,148.68,208.95,184.53,169.66],"pe":null,"dy":0.62,"pb":1.67,"macro":{"light":"黃紅","rate":1,"pmi":50.0},"advisors":{"tech":{"s":-1,"why":["月均價 173.1 低於近三個月均價 187.7，趨勢向下","股價與月均價乖離 -0.3%"],"entry":"等月均價重新站上三個月均價（約 <b>187.7</b>）再進場","metrics":{"月線乖離":"-0.3%","月均價":"173.1"}},"macro":{"s":-2,"why":["「黃紅燈」：景氣過熱，轉向防禦型產業","電機機械不在這個階段的偏好類型","升息循環，壓抑估值"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電機機械","燈號":"黃紅"}},"value":{"s":-1,"why":["沒有本益比（近四季虧損或無資料），無法估值，先不碰"],"entry":"等公司恢復獲利再評估","metrics":{"本益比":"—"}},"mom":{"s":1,"why":["近 6 個月上漲 +42.2%，動能強","距一年高點 -17.4%"],"entry":"趨勢成立，現價 172.6 附近進場，跌破 <b>188.1</b>（高點回落 10%）出場","metrics":{"6月報酬":"+42.2%","距高點":"-17.4%"}},"quant":{"s":0,"why":["現價相對一年月收盤平均 138.0 的 z 分數為 0.97","在正常範圍內，沒有統計優勢"],"entry":"低於 <b>102.4</b>（均值減一個標準差）分批買，回到均值 138.0 獲利了結","metrics":{"z":"0.97","一年均值":"138.0"}},"div":{"s":-1,"why":["現金殖利率 0.62%，月報酬波動 17.3%","近四季沒有獲利，股利恐難維持","股價波動偏大，不適合當存股核心"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>17.83</b>）時加碼","metrics":{"殖利率":"0.62%","本益比":"—"}}},"alerts":[],"avg":-0.667,"sigma":0.943,"rec":"no"},{"id":"B","label":"股票 B","industry":"電子零組件","p":205.49,"ma":195.54,"m":[100.0,86.96,88.51,103.09,94.51,98.63,102.92,116.12,115.95,134.31,157.46,185.59],"pe":10.78,"dy":4.61,"pb":1.46,"macro":{"light":"藍","rate":1,"pmi":46.1},"advisors":{"tech":{"s":1,"why":["月均價 195.5 高於近三個月均價 159.1，趨勢向上","股價與月均價乖離 +5.1%"],"entry":"月均價 <b>195.5</b> 附近分批買，跌破三個月均價 159.1 停損","metrics":{"月線乖離":"+5.1%","月均價":"195.5"}},"macro":{"s":0,"why":["「藍燈」：景氣低迷，布局景氣循環股","電子零組件是這個階段偏好的類型","升息循環，壓抑估值","PMI 46.1 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電子零組件","燈號":"藍"}},"value":{"s":2,"why":["本益比 10.8 倍，電子零組件同業中位數 19.9 倍","比同業便宜三成以上，具安全邊際"],"entry":"現價 205.5 已低於同業本益比八折價 303.5，可分批買；先確認獲利不是一次性的","metrics":{"本益比":"10.8","同業比":"54%","淨值比":1.46}},"mom":{"s":2,"why":["近 6 個月上漲 +99.7%，動能強","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 205.5 附近進場，跌破 <b>184.9</b>（高點回落 10%）出場","metrics":{"6月報酬":"+99.7%","距高點":"+0.0%"}},"quant":{"s":-2,"why":["現價相對一年月收盤平均 115.3 的 z 分數為 3.15","遠高於一年均值，過度延伸"],"entry":"低於 <b>86.69</b>（均值減一個標準差）分批買，回到均值 115.3 獲利了結","metrics":{"z":"3.15","一年均值":"115.3"}},"div":{"s":1,"why":["現金殖利率 4.61%，月報酬波動 10.2%","殖利率 4.5% 以上，適合定期定額"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>157.9</b>）時加碼","metrics":{"殖利率":"4.61%","本益比":10.78}}},"alerts":[],"avg":0.667,"sigma":1.374,"rec":"buy"},{"id":"C","label":"股票 C","industry":"電子零組件","p":129.63,"ma":123.79,"m":[100.0,101.17,100.5,108.21,110.22,114.85,118.06,123.22,122.87,114.85,120.55,116.99],"pe":13.56,"dy":5.49,"pb":1.98,"macro":{"light":"綠","rate":1,"pmi":48.0},"advisors":{"tech":{"s":1,"why":["月均價 123.8 高於近三個月均價 117.5，趨勢向上","股價與月均價乖離 +4.7%"],"entry":"月均價 <b>123.8</b> 附近分批買，跌破三個月均價 117.5 停損","metrics":{"月線乖離":"+4.7%","月均價":"123.8"}},"macro":{"s":0,"why":["「綠燈」：景氣穩定，偏好成長型電子與金融","電子零組件是這個階段偏好的類型","升息循環，壓抑估值","PMI 48 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電子零組件","燈號":"綠"}},"value":{"s":2,"why":["本益比 13.6 倍，電子零組件同業中位數 22.4 倍","比同業便宜三成以上，具安全邊際"],"entry":"現價 129.6 已低於同業本益比八折價 171.6，可分批買；先確認獲利不是一次性的","metrics":{"本益比":"13.6","同業比":"60%","淨值比":1.98}},"mom":{"s":1,"why":["近 6 個月 +9.8%，動能普通","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 129.6 附近進場，跌破 <b>116.7</b>（高點回落 10%）出場","metrics":{"6月報酬":"+9.8%","距高點":"+0.0%"}},"quant":{"s":-2,"why":["現價相對一年月收盤平均 112.6 的 z 分數為 2.08","遠高於一年均值，過度延伸"],"entry":"低於 <b>104.5</b>（均值減一個標準差）分批買，回到均值 112.6 獲利了結","metrics":{"z":"2.08","一年均值":"112.6"}},"div":{"s":1,"why":["現金殖利率 5.49%，月報酬波動 3.8%","殖利率 4.5% 以上，適合定期定額"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>118.6</b>）時加碼","metrics":{"殖利率":"5.49%","本益比":13.56}}},"alerts":[],"avg":0.5,"sigma":1.258,"rec":"buy"},{"id":"D","label":"股票 D","industry":"半導體","p":273.95,"ma":273.12,"m":[100.0,122.0,180.97,169.27,155.38,233.23,252.69,257.42,229.87,214.91,225.93,259.78],"pe":56.29,"dy":0.8,"pb":25.95,"macro":{"light":"黃藍","rate":1,"pmi":46.8},"advisors":{"tech":{"s":2,"why":["月均價 273.1 高於近三個月均價 233.5，趨勢向上","股價拉回到月均價附近（+0.3%），多頭中的買點"],"entry":"月均價 <b>273.1</b> 附近分批買，跌破三個月均價 233.5 停損","metrics":{"月線乖離":"+0.3%","月均價":"273.1"}},"macro":{"s":0,"why":["「黃藍燈」：景氣低迷，布局景氣循環股","半導體是這個階段偏好的類型","升息循環，壓抑估值","PMI 46.8 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"半導體","燈號":"黃藍"}},"value":{"s":-2,"why":["本益比 56.3 倍，半導體同業中位數 31.2 倍","比同業貴很多，估值偏高"],"entry":"同業本益比八折價 <b>121.3</b> 以下積極買（現價 273.9）","metrics":{"本益比":"56.3","同業比":"181%","淨值比":25.95}},"mom":{"s":1,"why":["近 6 個月 +8.4%，動能普通","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 273.9 附近進場，跌破 <b>246.6</b>（高點回落 10%）出場","metrics":{"6月報酬":"+8.4%","距高點":"+0.0%"}},"quant":{"s":-1,"why":["現價相對一年月收盤平均 200.1 的 z 分數為 1.43","偏高，不追"],"entry":"低於 <b>148.5</b>（均值減一個標準差）分批買，回到均值 200.1 獲利了結","metrics":{"z":"1.43","一年均值":"200.1"}},"div":{"s":-1,"why":["現金殖利率 0.80%，月報酬波動 20.5%","殖利率低於 3%，不是存股標的","股價波動偏大，不適合當存股核心"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>36.53</b>）時加碼","metrics":{"殖利率":"0.80%","本益比":56.29}}},"alerts":[{"by":"value","on":"tech","msg":"技術面看多，但本益比是同業的 181%，追價空間有限"}],"avg":-0.167,"sigma":1.344,"rec":"no"},{"id":"E","label":"股票 E","industry":"電腦及週邊","p":131.94,"ma":129.81,"m":[100.0,110.16,142.07,127.81,130.12,133.23,131.76,136.36,127.71,115.75,122.19,122.56],"pe":17.4,"dy":3.35,"pb":1.23,"macro":{"light":"黃紅","rate":1,"pmi":49.2},"advisors":{"tech":{"s":2,"why":["月均價 129.8 高於近三個月均價 120.2，趨勢向上","股價拉回到月均價附近（+1.6%），多頭中的買點"],"entry":"月均價 <b>129.8</b> 附近分批買，跌破三個月均價 120.2 停損","metrics":{"月線乖離":"+1.6%","月均價":"129.8"}},"macro":{"s":-2,"why":["「黃紅燈」：景氣過熱，轉向防禦型產業","電腦及週邊不在這個階段的偏好類型","升息循環，壓抑估值","PMI 49.2 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電腦及週邊","燈號":"黃紅"}},"value":{"s":1,"why":["本益比 17.4 倍，電腦及週邊同業中位數 21.4 倍","略低於同業，價格合理偏低"],"entry":"同業本益比八折價 <b>130.1</b> 以下積極買（現價 131.9）","metrics":{"本益比":"17.4","同業比":"81%","淨值比":1.23}},"mom":{"s":0,"why":["近 6 個月 +0.1%，動能普通","距一年高點 -7.1%"],"entry":"等股價突破一年高點 <b>142.1</b> 再追進","metrics":{"6月報酬":"+0.1%","距高點":"-7.1%"}},"quant":{"s":0,"why":["現價相對一年月收盤平均 125.0 的 z 分數為 0.62","在正常範圍內，沒有統計優勢"],"entry":"低於 <b>113.7</b>（均值減一個標準差）分批買，回到均值 125.0 獲利了結","metrics":{"z":"0.62","一年均值":"125.0"}},"div":{"s":0,"why":["現金殖利率 3.35%，月報酬波動 10.3%","殖利率普通，維持定期定額即可"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>73.67</b>）時加碼","metrics":{"殖利率":"3.35%","本益比":17.4}}},"alerts":[],"avg":0.167,"sigma":1.213,"rec":"no"},{"id":"F","label":"股票 F","industry":"觀光餐旅","p":79.99,"ma":78.68,"m":[100.0,112.51,81.0,73.0,66.42,67.43,75.23,74.42,69.25,62.47,69.25,78.67],"pe":21.94,"dy":3.8,"pb":3.79,"macro":{"light":"黃紅","rate":1,"pmi":49.4},"advisors":{"tech":{"s":2,"why":["月均價 78.68 高於近三個月均價 70.13，趨勢向上","股價拉回到月均價附近（+1.7%），多頭中的買點"],"entry":"月均價 <b>78.68</b> 附近分批買，跌破三個月均價 70.13 停損","metrics":{"月線乖離":"+1.7%","月均價":"78.68"}},"macro":{"s":-2,"why":["「黃紅燈」：景氣過熱，轉向防禦型產業","觀光餐旅不在這個階段的偏好類型","升息循環，壓抑估值","PMI 49.4 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"觀光餐旅","燈號":"黃紅"}},"value":{"s":0,"why":["本益比 21.9 倍，觀光餐旅同業中位數 19.1 倍","和同業差不多，合理價"],"entry":"同業本益比八折價 <b>55.65</b> 以下積極買（現價 79.99）","metrics":{"本益比":"21.9","同業比":"115%","淨值比":3.79}},"mom":{"s":-1,"why":["近 6 個月 +6.3%，動能普通","距一年高點 -28.9%，趨勢已破"],"entry":"等股價突破一年高點 <b>112.5</b> 再追進","metrics":{"6月報酬":"+6.3%","距高點":"-28.9%"}},"quant":{"s":0,"why":["現價相對一年月收盤平均 77.47 的 z 分數為 0.18","在正常範圍內，沒有統計優勢"],"entry":"低於 <b>63.43</b>（均值減一個標準差）分批買，回到均值 77.47 獲利了結","metrics":{"z":"0.18","一年均值":"77.47"}},"div":{"s":0,"why":["現金殖利率 3.80%，月報酬波動 12.4%","殖利率普通，維持定期定額即可","股價波動偏大，不適合當存股核心"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>50.66</b>）時加碼","metrics":{"殖利率":"3.80%","本益比":21.94}}},"alerts":[],"avg":-0.167,"sigma":1.213,"rec":"no"},{"id":"G","label":"股票 G","industry":"航運","p":94.72,"ma":96.39,"m":[100.0,112.03,105.77,105.6,94.17,90.11,84.11,84.75,89.46,77.0,89.55,96.02],"pe":13.12,"dy":12.67,"pb":0.81,"macro":{"light":"黃藍","rate":1,"pmi":46.8},"advisors":{"tech":{"s":2,"why":["月均價 96.39 高於近三個月均價 87.52，趨勢向上","股價拉回到月均價附近（-1.7%），多頭中的買點"],"entry":"月均價 <b>96.39</b> 附近分批買，跌破三個月均價 87.52 停損","metrics":{"月線乖離":"-1.7%","月均價":"96.39"}},"macro":{"s":0,"why":["「黃藍燈」：景氣低迷，布局景氣循環股","航運是這個階段偏好的類型","升息循環，壓抑估值","PMI 46.8 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"航運","燈號":"黃藍"}},"value":{"s":0,"why":["本益比 13.1 倍，航運同業中位數 13.1 倍","和同業差不多，合理價","股價淨值比 0.81，低於帳面價值"],"entry":"同業本益比八折價 <b>75.78</b> 以下積極買（現價 94.72）","metrics":{"本益比":"13.1","同業比":"100%","淨值比":0.81}},"mom":{"s":0,"why":["近 6 個月 +12.6%，動能普通","距一年高點 -15.5%"],"entry":"等股價突破一年高點 <b>112.0</b> 再追進","metrics":{"6月報酬":"+12.6%","距高點":"-15.5%"}},"quant":{"s":0,"why":["現價相對一年月收盤平均 94.05 的 z 分數為 0.07","在正常範圍內，沒有統計優勢"],"entry":"低於 <b>84.19</b>（均值減一個標準差）分批買，回到均值 94.05 獲利了結","metrics":{"z":"0.07","一年均值":"94.05"}},"div":{"s":1,"why":["現金殖利率 12.67%，月報酬波動 9.0%","殖利率 6% 以上且本益比合理，加碼買進","殖利率異常高，配息可能含收益平準金或資本利得，未必能持續"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>200.0</b>）時加碼","metrics":{"殖利率":"12.67%","本益比":13.12}}},"alerts":[],"avg":0.5,"sigma":0.764,"rec":"buy"},{"id":"H","label":"股票 H","industry":"電子零組件","p":280.9,"ma":267.51,"m":[100.0,96.98,111.85,148.73,149.33,180.17,204.35,224.3,210.4,239.42,296.25,262.25],"pe":35.09,"dy":1.77,"pb":2.71,"macro":{"light":"黃紅","rate":1,"pmi":52.2},"advisors":{"tech":{"s":1,"why":["月均價 267.5 高於近三個月均價 266.0，趨勢向上","股價與月均價乖離 +5.0%"],"entry":"月均價 <b>267.5</b> 附近分批買，跌破三個月均價 266.0 停損","metrics":{"月線乖離":"+5.0%","月均價":"267.5"}},"macro":{"s":-2,"why":["「黃紅燈」：景氣過熱，轉向防禦型產業","電子零組件不在這個階段的偏好類型","升息循環，壓抑估值"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電子零組件","燈號":"黃紅"}},"value":{"s":-2,"why":["本益比 35.1 倍，電子零組件同業中位數 21.4 倍","比同業貴很多，估值偏高"],"entry":"同業本益比八折價 <b>137.3</b> 以下積極買（現價 280.9）","metrics":{"本益比":"35.1","同業比":"164%","淨值比":2.71}},"mom":{"s":1,"why":["近 6 個月上漲 +37.5%，動能強","距一年高點 -5.2%"],"entry":"趨勢成立，現價 280.9 附近進場，跌破 <b>266.6</b>（高點回落 10%）出場","metrics":{"6月報酬":"+37.5%","距高點":"-5.2%"}},"quant":{"s":-1,"why":["現價相對一年月收盤平均 185.3 的 z 分數為 1.53","偏高，不追"],"entry":"低於 <b>122.9</b>（均值減一個標準差）分批買，回到均值 185.3 獲利了結","metrics":{"z":"1.53","一年均值":"185.3"}},"div":{"s":-1,"why":["現金殖利率 1.77%，月報酬波動 13.0%","殖利率低於 3%，不是存股標的","股價波動偏大，不適合當存股核心"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>82.87</b>）時加碼","metrics":{"殖利率":"1.77%","本益比":35.09}}},"alerts":[{"by":"value","on":"tech","msg":"技術面看多，但本益比是同業的 164%，追價空間有限"}],"avg":-0.667,"sigma":1.247,"rec":"no"},{"id":"I","label":"股票 I","industry":"汽車","p":182.72,"ma":187.22,"m":[100.0,91.9,80.34,82.51,114.62,101.78,119.37,113.04,126.28,156.13,189.33,183.79],"pe":null,"dy":4.52,"pb":1.57,"macro":{"light":"藍","rate":1,"pmi":48.3},"advisors":{"tech":{"s":2,"why":["月均價 187.2 高於近三個月均價 176.4，趨勢向上","股價拉回到月均價附近（-2.4%），多頭中的買點"],"entry":"月均價 <b>187.2</b> 附近分批買，跌破三個月均價 176.4 停損","metrics":{"月線乖離":"-2.4%","月均價":"187.2"}},"macro":{"s":-2,"why":["「藍燈」：景氣低迷，布局景氣循環股","汽車不在這個階段的偏好類型","升息循環，壓抑估值","PMI 48.3 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"汽車","燈號":"藍"}},"value":{"s":-1,"why":["沒有本益比（近四季虧損或無資料），無法估值，先不碰"],"entry":"等公司恢復獲利再評估","metrics":{"本益比":"—"}},"mom":{"s":2,"why":["近 6 個月上漲 +53.1%，動能強","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 182.7 附近進場，跌破 <b>170.4</b>（高點回落 10%）出場","metrics":{"6月報酬":"+53.1%","距高點":"-3.5%"}},"quant":{"s":-1,"why":["現價相對一年月收盤平均 121.6 的 z 分數為 1.74","偏高，不追"],"entry":"低於 <b>86.51</b>（均值減一個標準差）分批買，回到均值 121.6 獲利了結","metrics":{"z":"1.74","一年均值":"121.6"}},"div":{"s":-1,"why":["現金殖利率 4.52%，月報酬波動 16.1%","近四季沒有獲利，股利恐難維持","股價波動偏大，不適合當存股核心"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>137.6</b>）時加碼","metrics":{"殖利率":"4.52%","本益比":"—"}}},"alerts":[{"by":"value","on":"tech","msg":"技術面看多，但本益比是同業的 undefined，追價空間有限"}],"avg":-0.167,"sigma":1.572,"rec":"no"},{"id":"J","label":"股票 J","industry":"電子零組件","p":206.21,"ma":191.48,"m":[100.0,103.6,104.2,110.44,114.41,116.45,127.25,126.7,135.1,133.81,149.32,160.96],"pe":16.24,"dy":4.7,"pb":3.08,"macro":{"light":"藍","rate":1,"pmi":47.1},"advisors":{"tech":{"s":1,"why":["月均價 191.5 高於近三個月均價 148.0，趨勢向上","股價與月均價乖離 +7.7%"],"entry":"月均價 <b>191.5</b> 附近分批買，跌破三個月均價 148.0 停損","metrics":{"月線乖離":"+7.7%","月均價":"191.5"}},"macro":{"s":0,"why":["「藍燈」：景氣低迷，布局景氣循環股","電子零組件是這個階段偏好的類型","升息循環，壓抑估值","PMI 47.1 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電子零組件","燈號":"藍"}},"value":{"s":1,"why":["本益比 16.2 倍，電子零組件同業中位數 18.3 倍","略低於同業，價格合理偏低"],"entry":"同業本益比八折價 <b>185.5</b> 以下積極買（現價 206.2）","metrics":{"本益比":"16.2","同業比":"89%","淨值比":3.08}},"mom":{"s":2,"why":["近 6 個月上漲 +62.1%，動能強","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 206.2 附近進場，跌破 <b>185.6</b>（高點回落 10%）出場","metrics":{"6月報酬":"+62.1%","距高點":"+0.0%"}},"quant":{"s":-2,"why":["現價相對一年月收盤平均 123.5 的 z 分數為 4.55","遠高於一年均值，過度延伸"],"entry":"低於 <b>105.4</b>（均值減一個標準差）分批買，回到均值 123.5 獲利了結","metrics":{"z":"4.55","一年均值":"123.5"}},"div":{"s":1,"why":["現金殖利率 4.70%，月報酬波動 3.9%","殖利率 4.5% 以上，適合定期定額"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>161.5</b>）時加碼","metrics":{"殖利率":"4.70%","本益比":16.24}}},"alerts":[],"avg":0.5,"sigma":1.258,"rec":"buy"},{"id":"K","label":"股票 K","industry":"電腦及週邊","p":147.35,"ma":147.13,"m":[100.0,107.57,106.86,115.22,117.64,115.52,113.71,122.46,131.66,124.72,128.95,153.83],"pe":16.56,"dy":4.09,"pb":1.38,"macro":{"light":"綠","rate":1,"pmi":47.9},"advisors":{"tech":{"s":2,"why":["月均價 147.1 高於近三個月均價 135.8，趨勢向上","股價拉回到月均價附近（+0.1%），多頭中的買點"],"entry":"月均價 <b>147.1</b> 附近分批買，跌破三個月均價 135.8 停損","metrics":{"月線乖離":"+0.1%","月均價":"147.1"}},"macro":{"s":0,"why":["「綠燈」：景氣穩定，偏好成長型電子與金融","電腦及週邊是這個階段偏好的類型","升息循環，壓抑估值","PMI 47.9 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電腦及週邊","燈號":"綠"}},"value":{"s":2,"why":["本益比 16.6 倍，電腦及週邊同業中位數 28.4 倍","比同業便宜三成以上，具安全邊際"],"entry":"現價 147.3 已低於同業本益比八折價 202.0，可分批買；先確認獲利不是一次性的","metrics":{"本益比":"16.6","同業比":"58%","淨值比":1.38}},"mom":{"s":2,"why":["近 6 個月上漲 +29.6%，動能強","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 147.3 附近進場，跌破 <b>138.4</b>（高點回落 10%）出場","metrics":{"6月報酬":"+29.6%","距高點":"-4.2%"}},"quant":{"s":-2,"why":["現價相對一年月收盤平均 119.8 的 z 分數為 2.03","遠高於一年均值，過度延伸"],"entry":"低於 <b>106.3</b>（均值減一個標準差）分批買，回到均值 119.8 獲利了結","metrics":{"z":"2.03","一年均值":"119.8"}},"div":{"s":0,"why":["現金殖利率 4.09%，月報酬波動 6.5%","殖利率普通，維持定期定額即可"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>100.4</b>）時加碼","metrics":{"殖利率":"4.09%","本益比":16.56}}},"alerts":[],"avg":0.667,"sigma":1.491,"rec":"buy"},{"id":"L","label":"股票 L","industry":"電子零組件","p":124.51,"ma":121.83,"m":[100.0,96.68,109.62,98.45,100.77,100.88,102.54,101.25,103.6,104.31,106.89,106.42],"pe":11.21,"dy":5.09,"pb":1.76,"macro":{"light":"藍","rate":1,"pmi":45.5},"advisors":{"tech":{"s":2,"why":["月均價 121.8 高於近三個月均價 105.9，趨勢向上","股價拉回到月均價附近（+2.2%），多頭中的買點"],"entry":"月均價 <b>121.8</b> 附近分批買，跌破三個月均價 105.9 停損","metrics":{"月線乖離":"+2.2%","月均價":"121.8"}},"macro":{"s":0,"why":["「藍燈」：景氣低迷，布局景氣循環股","電子零組件是這個階段偏好的類型","升息循環，壓抑估值","PMI 45.5 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電子零組件","燈號":"藍"}},"value":{"s":2,"why":["本益比 11.2 倍，電子零組件同業中位數 23.8 倍","比同業便宜三成以上，具安全邊際"],"entry":"現價 124.5 已低於同業本益比八折價 211.2，可分批買；先確認獲利不是一次性的","metrics":{"本益比":"11.2","同業比":"47%","淨值比":1.76}},"mom":{"s":2,"why":["近 6 個月上漲 +21.4%，動能強","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 124.5 附近進場，跌破 <b>112.1</b>（高點回落 10%）出場","metrics":{"6月報酬":"+21.4%","距高點":"+0.0%"}},"quant":{"s":-2,"why":["現價相對一年月收盤平均 102.6 的 z 分數為 6.12","遠高於一年均值，過度延伸"],"entry":"低於 <b>99.04</b>（均值減一個標準差）分批買，回到均值 102.6 獲利了結","metrics":{"z":"6.12","一年均值":"102.6"}},"div":{"s":1,"why":["現金殖利率 5.09%，月報酬波動 5.3%","殖利率 4.5% 以上，適合定期定額"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>105.6</b>）時加碼","metrics":{"殖利率":"5.09%","本益比":11.21}}},"alerts":[],"avg":0.833,"sigma":1.462,"rec":"buy"},{"id":"M","label":"股票 M","industry":"貿易百貨","p":99.27,"ma":100.2,"m":[100.0,101.68,101.49,100.75,99.63,100.56,100.93,104.29,105.41,104.1,103.12,101.19],"pe":26.68,"dy":3.5,"pb":8.15,"macro":{"light":"黃藍","rate":1,"pmi":48.2},"advisors":{"tech":{"s":-1,"why":["月均價 100.2 低於近三個月均價 102.8，趨勢向下","股價與月均價乖離 -0.9%"],"entry":"等月均價重新站上三個月均價（約 <b>102.8</b>）再進場","metrics":{"月線乖離":"-0.9%","月均價":"100.2"}},"macro":{"s":-2,"why":["「黃藍燈」：景氣低迷，布局景氣循環股","貿易百貨不在這個階段的偏好類型","升息循環，壓抑估值","PMI 48.2 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"貿易百貨","燈號":"黃藍"}},"value":{"s":0,"why":["本益比 26.7 倍，貿易百貨同業中位數 26.7 倍","和同業差不多，合理價"],"entry":"同業本益比八折價 <b>79.42</b> 以下積極買（現價 99.27）","metrics":{"本益比":"26.7","同業比":"100%","淨值比":8.15}},"mom":{"s":0,"why":["近 6 個月 -1.6%，動能普通","距一年高點 -5.8%"],"entry":"等股價突破一年高點 <b>105.4</b> 再追進","metrics":{"6月報酬":"-1.6%","距高點":"-5.8%"}},"quant":{"s":1,"why":["現價相對一年月收盤平均 101.9 的 z 分數為 -1.50","低於均值，偏便宜"],"entry":"低於 <b>100.2</b>（均值減一個標準差）分批買，回到均值 101.9 獲利了結","metrics":{"z":"-1.50","一年均值":"101.9"}},"div":{"s":0,"why":["現金殖利率 3.50%，月報酬波動 1.5%","殖利率普通，維持定期定額即可"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>57.91</b>）時加碼","metrics":{"殖利率":"3.50%","本益比":26.68}}},"alerts":[],"avg":-0.333,"sigma":0.943,"rec":"no"},{"id":"N","label":"股票 N","industry":"航運","p":246.44,"ma":250.04,"m":[100.0,94.76,95.51,96.63,91.76,105.99,124.34,122.1,132.21,175.66,222.85,236.33],"pe":9.22,"dy":6.99,"pb":1.88,"macro":{"light":"黃紅","rate":1,"pmi":55.4},"advisors":{"tech":{"s":2,"why":["月均價 250.0 高於近三個月均價 211.6，趨勢向上","股價拉回到月均價附近（-1.4%），多頭中的買點"],"entry":"月均價 <b>250.0</b> 附近分批買，跌破三個月均價 211.6 停損","metrics":{"月線乖離":"-1.4%","月均價":"250.0"}},"macro":{"s":-2,"why":["「黃紅燈」：景氣過熱，轉向防禦型產業","航運不在這個階段的偏好類型","升息循環，壓抑估值"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"航運","燈號":"黃紅"}},"value":{"s":2,"why":["本益比 9.2 倍，航運同業中位數 20.2 倍","比同業便宜三成以上，具安全邊際"],"entry":"現價 246.4 已低於同業本益比八折價 432.6，可分批買；先確認獲利不是一次性的","metrics":{"本益比":"9.2","同業比":"46%","淨值比":1.88}},"mom":{"s":2,"why":["近 6 個月上漲 +98.2%，動能強","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 246.4 附近進場，跌破 <b>221.8</b>（高點回落 10%）出場","metrics":{"6月報酬":"+98.2%","距高點":"+0.0%"}},"quant":{"s":-2,"why":["現價相對一年月收盤平均 133.2 的 z 分數為 2.33","遠高於一年均值，過度延伸"],"entry":"低於 <b>84.47</b>（均值減一個標準差）分批買，回到均值 133.2 獲利了結","metrics":{"z":"2.33","一年均值":"133.2"}},"div":{"s":2,"why":["現金殖利率 6.99%，月報酬波動 12.3%","殖利率 6% 以上且本益比合理，加碼買進","股價波動偏大，不適合當存股核心"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>287.1</b>）時加碼","metrics":{"殖利率":"6.99%","本益比":9.22}}},"alerts":[{"by":"macro","on":"div","msg":"殖利率吸引人，但景氣在「黃紅燈」，高峰期股利可能縮水"}],"avg":0.667,"sigma":1.886,"rec":"buy"},{"id":"O","label":"股票 O","industry":"水泥","p":100.54,"ma":99.23,"m":[100.0,101.5,101.5,102.54,98.11,97.13,96.77,97.38,101.52,100.91,96.77,98.47],"pe":13.45,"dy":5.08,"pb":0.87,"macro":{"light":"綠","rate":1,"pmi":48.1},"advisors":{"tech":{"s":2,"why":["月均價 99.23 高於近三個月均價 98.72，趨勢向上","股價拉回到月均價附近（+1.3%），多頭中的買點"],"entry":"月均價 <b>99.23</b> 附近分批買，跌破三個月均價 98.72 停損","metrics":{"月線乖離":"+1.3%","月均價":"99.23"}},"macro":{"s":-2,"why":["「綠燈」：景氣穩定，偏好成長型電子與金融","水泥不在這個階段的偏好類型","升息循環，壓抑估值","PMI 48.1 低於 50，製造業仍在收縮"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"水泥","燈號":"綠"}},"value":{"s":2,"why":["本益比 13.4 倍，水泥同業中位數 31.2 倍","比同業便宜三成以上，具安全邊際","股價淨值比 0.87，低於帳面價值"],"entry":"現價 100.5 已低於同業本益比八折價 186.6，可分批買；先確認獲利不是一次性的","metrics":{"本益比":"13.4","同業比":"43%","淨值比":0.87}},"mom":{"s":1,"why":["近 6 個月 +3.9%，動能普通","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 100.5 附近進場，跌破 <b>92.29</b>（高點回落 10%）出場","metrics":{"6月報酬":"+3.9%","距高點":"-2.0%"}},"quant":{"s":0,"why":["現價相對一年月收盤平均 99.38 的 z 分數為 0.56","在正常範圍內，沒有統計優勢"],"entry":"低於 <b>97.31</b>（均值減一個標準差）分批買，回到均值 99.38 獲利了結","metrics":{"z":"0.56","一年均值":"99.38"}},"div":{"s":1,"why":["現金殖利率 5.08%，月報酬波動 2.4%","殖利率 4.5% 以上，適合定期定額"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>85.12</b>）時加碼","metrics":{"殖利率":"5.08%","本益比":13.45}}},"alerts":[],"avg":0.667,"sigma":1.374,"rec":"buy"},{"id":"P","label":"股票 P","industry":"電子通路","p":100.5,"ma":102.29,"m":[100.0,95.67,95.81,92.64,102.43,100.08,97.33,100.08,99.81,95.4,99.53,100.36],"pe":14.35,"dy":5.76,"pb":1.85,"macro":{"light":"紅","rate":1,"pmi":53.7},"advisors":{"tech":{"s":2,"why":["月均價 102.3 高於近三個月均價 98.43，趨勢向上","股價拉回到月均價附近（-1.7%），多頭中的買點"],"entry":"月均價 <b>102.3</b> 附近分批買，跌破三個月均價 98.43 停損","metrics":{"月線乖離":"-1.7%","月均價":"102.3"}},"macro":{"s":-2,"why":["「紅燈」：景氣過熱，轉向防禦型產業","電子通路不在這個階段的偏好類型","升息循環，壓抑估值"],"entry":"等景氣燈號或利率方向改變再布局","metrics":{"產業":"電子通路","燈號":"紅"}},"value":{"s":1,"why":["本益比 14.3 倍，電子通路同業中位數 16.4 倍","略低於同業，價格合理偏低"],"entry":"同業本益比八折價 <b>91.94</b> 以下積極買（現價 100.5）","metrics":{"本益比":"14.3","同業比":"87%","淨值比":1.85}},"mom":{"s":1,"why":["近 6 個月 +3.3%，動能普通","貼近一年高點，強者恆強"],"entry":"趨勢成立，現價 100.5 附近進場，跌破 <b>92.19</b>（高點回落 10%）出場","metrics":{"6月報酬":"+3.3%","距高點":"-1.9%"}},"quant":{"s":0,"why":["現價相對一年月收盤平均 98.26 的 z 分數為 0.82","在正常範圍內，沒有統計優勢"],"entry":"低於 <b>95.54</b>（均值減一個標準差）分批買，回到均值 98.26 獲利了結","metrics":{"z":"0.82","一年均值":"98.26"}},"div":{"s":1,"why":["現金殖利率 5.76%，月報酬波動 4.3%","殖利率 4.5% 以上，適合定期定額"],"entry":"每月定期定額；跌到殖利率 6%（約 <b>96.48</b>）時加碼","metrics":{"殖利率":"5.76%","本益比":14.35}}},"alerts":[{"by":"macro","on":"div","msg":"殖利率吸引人，但景氣在「紅燈」，高峰期股利可能縮水"}],"avg":0.5,"sigma":1.258,"rec":"buy"}]};
+const STUDY={"config":{"app_version":"1.0.0","datapipe_experiment_id":"fY4jbKM2bLQT","datapipe_condition_assignment":false,"researcher":"梁瑜庭","contact":"ninaliang0521@gmail.com","advisor_professor":"","minutes":"30–40","has_reward":false,"reward":"本研究沒有提供謝禮。"},"surveys":{"_note":"實驗頁的問卷。type：choice（單選）、likert（7 點）、text（開放題）。answer 是有標準答案的題目（金融素養、注意力檢核）。reverse=true 的題目計分時反向。source 標示出處；標「自編」的題目正式使用前請換成已驗證的量表或請指導教授確認。","pre":[{"id":"age_ok","type":"choice","q":"你是否已年滿 18 歲？","options":["是","否"],"required":true},{"id":"age_band","type":"choice","q":"你的年齡","options":["18–24","25–34","35–44","45–54","55 以上"]},{"id":"fin_background","type":"choice","q":"你是否就讀或從事金融相關科系、工作？","options":["是","否"]},{"id":"invest_exp","type":"choice","q":"你實際投資台股或 ETF 多久了？","options":["從來沒有","未滿 1 年","1–3 年","3 年以上"]},{"id":"robo_exp","type":"choice","q":"你用過機器人理財、AI 選股或 AI 投資建議嗎？","options":["用過","沒用過","不確定"]},{"id":"fl1","type":"choice","block":"finlit","source":"Lusardi & Mitchell (2014) Big Five","q":"你在銀行存了 100 元，年利率 2%。如果都不提領，5 年後帳戶裡大約有多少錢？","options":["超過 102 元","剛好 102 元","少於 102 元","不知道"],"answer":"超過 102 元"},{"id":"fl2","type":"choice","block":"finlit","source":"Lusardi & Mitchell (2014) Big Five","q":"存款年利率 1%，物價每年上漲 2%。一年後，這筆存款能買到的東西會：","options":["比現在多","和現在一樣","比現在少","不知道"],"answer":"比現在少"},{"id":"fl3","type":"choice","block":"finlit","source":"Lusardi & Mitchell (2014) Big Five","q":"「只買一家公司的股票，通常比買一檔股票型基金更安全。」這句話是：","options":["對","錯","不知道"],"answer":"錯"},{"id":"fl4","type":"choice","block":"finlit","source":"Lusardi & Mitchell (2014) Big Five","q":"如果市場利率上升，債券價格通常會：","options":["上漲","下跌","不變","兩者沒有關係","不知道"],"answer":"下跌"},{"id":"fl5","type":"choice","block":"finlit","source":"Lusardi & Mitchell (2014) Big Five","q":"「15 年期的房貸通常每月要繳比 30 年期多，但整筆貸款付的總利息比較少。」這句話是：","options":["對","錯","不知道"],"answer":"對"},{"id":"att1","type":"choice","block":"attention","q":"為了確認你有仔細閱讀，這一題請選「藍色」。","options":["紅色","綠色","藍色","黃色"],"answer":"藍色"},{"id":"pt1","type":"likert","block":"propensity","source":"自編","q":"一般來說，我願意相信電腦系統提供的建議。"},{"id":"pt2","type":"likert","block":"propensity","source":"自編","q":"自動化系統通常比人更可靠。"},{"id":"pt3","type":"likert","block":"propensity","source":"自編","q":"我傾向自己做決定，而不是照系統的建議做。","reverse":true}],"post":[{"id":"tr1","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"這個理專系統會騙人。","reverse":true},{"id":"tr2","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"這個理專系統的運作方式不光明正大。","reverse":true},{"id":"tr3","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"我懷疑這個理專系統的意圖、行為或建議。","reverse":true},{"id":"tr4","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"我對這個理專系統保持戒心。","reverse":true},{"id":"tr5","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"照這個理專系統的建議做，可能會帶來不好的結果。","reverse":true},{"id":"att2","type":"likert","block":"attention","q":"為了確認你有仔細閱讀，這一題請選「1 非常不同意」。","answer":1},{"id":"tr6","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"我對這個理專系統有信心。"},{"id":"tr7","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"這個理專系統讓我覺得有保障。"},{"id":"tr8","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"這個理專系統是正直的。"},{"id":"tr9","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"這個理專系統靠得住。"},{"id":"tr10","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"這個理專系統是可靠的。"},{"id":"tr11","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"我可以信任這個理專系統。"},{"id":"tr12","type":"likert","block":"trust","source":"Jian, Bisantz & Drury (2000)","q":"我對這個理專系統很熟悉。"},{"id":"mc1","type":"choice","block":"manipulation","q":"剛剛的正式題，你看到的理專意見是哪一種？","options":["一位理專的建議","只有六位理專的共識結論","六位理專各自的意見與理由"],"answer_by_cond":["一位理專的建議","只有六位理專的共識結論","六位理專各自的意見與理由","六位理專各自的意見與理由"]},{"id":"mc2","type":"choice","block":"manipulation","q":"作答時，你能不能調整每位理專的採信權重？","options":["能","不能"],"answer_by_cond":["不能","不能","不能","能"]},{"id":"recog","type":"choice","block":"check","q":"作答時，你有沒有認出某一題是哪一檔股票或哪一段時間？","options":["有","沒有"]},{"id":"recog_text","type":"text","block":"check","q":"如果有，是哪一題、你認為是哪一檔？（沒有就留白）"},{"id":"fl1_post","type":"choice","block":"finlit_post","same_as":"fl1"},{"id":"fl2_post","type":"choice","block":"finlit_post","same_as":"fl2"},{"id":"fl3_post","type":"choice","block":"finlit_post","same_as":"fl3"},{"id":"fl4_post","type":"choice","block":"finlit_post","same_as":"fl4"},{"id":"fl5_post","type":"choice","block":"finlit_post","same_as":"fl5"},{"id":"open_override","type":"text","block":"open","q":"你在什麼情況下會不採納理專的建議？"}],"likert":["1 非常不同意","2","3","4 普通","5","6","7 非常同意"]},"items_sha":"441daed6a0571095f33b765fc1dda7ce914cc5b5a8e28c88252fcf885bdebc94"};
+const C=STUDY.config, SV=STUDY.surveys;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const CONDS=["單一理專","只顯示共識","完整圓桌","自己調權重"];
+const ALPHA="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+// 和 scripts/make_assignments.py 的 condition_of 同一個算法：FNV-1a 32 位元取 4 的餘數
+function condOf(pid){let h=0x811c9dc5;for(const b of new TextEncoder().encode(pid.trim().toUpperCase())){h^=b;h=Math.imul(h,0x01000193)>>>0}return h%4}
+function rng(seed){let x=0;for(const ch of seed)x=(Math.imul(x,31)+ch.charCodeAt(0))>>>0;return()=>{x=(x+0x6D2B79F5)>>>0;let t=x;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+function randCode(n){const a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(v=>ALPHA[v%ALPHA.length]).join("")}
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const now=()=>performance.now();
+const LABEL=s=>s>=1.5?"現在進場":s>=0.5?"分批布局":s>-0.5?"觀望等待":"暫不進場";
+const REC=r=>r==="buy"?"買進":"不買";
+const std=a=>{const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)};
+
+// ---------- 受試者狀態：存在瀏覽器，重新整理可以接著作答 ----------
+const qs=new URLSearchParams(location.search);
+const PREVIEW=qs.has("preview");
+let S=null;
+function key(pid){return "study_v1_"+pid}
+function save(){if(S)store.set(key(S.pid),S)}
+async function init(){
+  if(!ITEMS){$("main").innerHTML=`<section class="box"><h2>題庫尚未產生</h2><p>請研究者先執行 build-experiment 流程。</p></section>`;return}
+  let pid=(qs.get("pid")||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!pid){pid=store.get("study_v1_last")||("W"+randCode(5))}
+  S=store.get(key(pid));
+  if(!S){
+    let cond=condOf(pid),how="pid";
+    if(PREVIEW&&qs.has("cond")){cond=Math.max(0,Math.min(3,(+qs.get("cond")||1)-1));how="preview"}
+    else if(!qs.get("pid")&&C.datapipe_experiment_id&&C.datapipe_condition_assignment){
+      try{const r=await fetch("https://pipe.jspsych.org/api/condition/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},body:JSON.stringify({experimentID:C.datapipe_experiment_id})});
+        const j=await r.json();if(Number.isInteger(j.condition)){cond=j.condition%4;how="datapipe"}}catch(e){}
+    }
+    const r=rng(pid),order=ITEMS.items.map(it=>it.id);
+    for(let i=order.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[order[i],order[j]]=[order[j],order[i]]}
+    S={pid,cond,assigned_by:how,preview:PREVIEW,app_ver:C.app_version,items_sha:STUDY.items_sha,engine_sha:ITEMS.engine_sha,draft:ITEMS.draft,
+       started:new Date().toISOString(),ua:navigator.userAgent.slice(0,160),step:"consent",pre:{},post:{},practice:[],trials:[],order,k:0,sent:{}};
+  }
+  store.set("study_v1_last",pid);save();render();
+}
+
+function render(){
+  const m=$("main");
+  ({consent,pre,intro,practice:trialStep,trials:trialStep,post,done,declined}[S.step])(m);
+  m.focus({preventScroll:true});window.scrollTo(0,0);
+}
+function go(step){S.step=step;S.k=0;save();render()}
+
+// ---------- 同意書 ----------
+function consent(m){
+  m.innerHTML=`<section class="box"><h2>研究參與同意書</h2>
+  <div class="consent"><ul>
+   <li><b>研究目的</b>：了解人在看到不同形式的 AI 投資建議時，如何做判斷、多信任這些建議。</li>
+   <li><b>你要做的事</b>：填一份簡短問卷，然後用過去的股市資料判斷 18 題「要不要買」（2 題練習），最後再填一份問卷。約 ${esc(C.minutes)} 分鐘，全程不計時。</li>
+   <li><b>這不是投資建議</b>：題目都是歷史資料，不涉及真實金錢，結果不代表任何股票未來會怎麼走。</li>
+   <li><b>為了公平</b>：題目會隱藏股票名稱和日期，價格也重新換算過，結束時會全部告訴你是哪一檔、哪一段時間。不同參與者看到的理專呈現方式可能不同。</li>
+   <li><b>收集哪些資料</b>：你的選擇、信心、每個步驟花的秒數、問卷回答。<b>不收</b>姓名、電話、email 或任何能識別你的資料，只用隨機編號 <span class="mono">${esc(S.pid)}</span>。</li>
+   <li><b>資料存放</b>：作答資料會傳到研究者的 Google 雲端硬碟（伺服器可能在國外），只有研究者與指導教授看得到，結果只以整體統計發表，論文完成後依學校規定保存，期滿銷毀。</li>
+   <li><b>自願參加</b>：你可以隨時關掉頁面退出，不會有任何損失；中途退出的資料${C.withdraw_note?esc(C.withdraw_note):"不會用於分析"}。</li>
+   <li><b>謝禮</b>：${esc(C.reward)}</li>
+   <li><b>聯絡</b>：研究者 ${esc(C.researcher)}（${esc(C.contact)}）${C.advisor_professor?`；指導教授 ${esc(C.advisor_professor)}`:""}${C.rec_contact?`；倫理審查 ${esc(C.rec_contact)}`:""}。${C.rec_approval?`審查編號：${esc(C.rec_approval)}。`:""}有任何問題，或想刪除自己的資料（請附上上方的編號），都可以來信。</li>
+  </ul></div>
+  ${PREVIEW?`<p class="warn">預覽模式（第 ${S.cond+1} 組：${CONDS[S.cond]}）：資料不會送出。</p>`:""}
+  <div class="row" style="margin-top:14px"><button class="btn" id="yes" type="button">我已閱讀，同意參加</button><button class="btn ghost" id="no" type="button">不同意</button></div></section>`;
+  $("yes").onclick=()=>{S.consent_at=new Date().toISOString();go("pre")};
+  $("no").onclick=()=>{S.step="declined";store.set(key(S.pid),{pid:S.pid,step:"declined"});render()};
+}
+function declined(m){m.innerHTML=`<section class="box"><h2>謝謝你</h2><p>你選擇不參加，沒有任何資料被送出。可以直接關掉這個頁面。</p></section>`}
+
+// ---------- 問卷 ----------
+function qHTML(q){
+  const src=q.same_as?{...SV.pre.find(x=>x.id===q.same_as),id:q.id}:q;
+  if(src.type==="text")return `<div class="q"><label for="f_${src.id}"><b>${esc(src.q)}</b></label><textarea id="f_${src.id}" name="${src.id}"></textarea></div>`;
+  const opts=src.type==="likert"?SV.likert.map((t,i)=>[i+1,t]):src.options.map(o=>[o,o]);
+  return `<div class="q"><fieldset><legend>${esc(src.q)}</legend><div class="${src.type==="likert"?"likert":"opts"}">${opts.map(([v,t])=>`<label><input type="radio" name="${src.id}" value="${esc(v)}">${src.type==="likert"?"<br>":""}${esc(t)}</label>`).join("")}</div></fieldset></div>`;
+}
+function survey(m,title,lead,list,onDone){
+  m.innerHTML=`<section class="box"><h2>${title}</h2><p class="muted">${lead}</p><form id="sv">${list.map(qHTML).join("")}</form>
+   <p class="warn" id="miss" hidden>還有題目沒有回答（開放題可以留白）。</p><button class="btn" id="next" type="button">下一步</button></section>`;
+  const t0=now();
+  $("next").onclick=()=>{
+    const f=new FormData($("sv")),ans={};
+    for(const q of list){const v=f.get(q.id);const type=q.same_as?"choice":q.type;
+      if(type!=="text"&&(v===null||v===""))return($("miss").hidden=false);ans[q.id]=type==="likert"?+v:v??""}
+    ans._seconds=Math.round((now()-t0)/1000);onDone(ans);
+  };
+}
+function pre(m){survey(m,"開始前的幾個問題",`有些題目考的是基本金融觀念，不知道就選「不知道」${C.has_reward?"，不影響謝禮":""}。`,SV.pre,ans=>{
+  if(ans.age_ok!=="是"){S.step="declined";S.pre=ans;save();m.innerHTML=`<section class="box"><h2>謝謝你</h2><p>這項研究只邀請年滿 18 歲的參與者，沒有任何資料被送出。</p></section>`;return}
+  S.pre=ans;send("pre");go("intro")})}
+function post(m){survey(m,"最後幾個問題","「理專系統」指的是你剛剛在題目裡看到的理專建議。",SV.post,ans=>{S.post=ans;S.finished=new Date().toISOString();S.code=S.code||randCode(6);send("final");go("done")})}
+
+// ---------- 說明 ----------
+function intro(m){
+  const c=S.cond;
+  m.innerHTML=`<section class="box"><h2>怎麼作答</h2>
+   <p>每一題是一檔台股在過去某個月底的狀況。請判斷：<b>如果現在買進並持有 3 個月，報酬會不會贏過大盤（0050）？</b></p>
+   <ol><li>先看資料，自己選「買進」或「不買」，並選你有多少把握（50% 是完全用猜的，100% 是非常確定）。</li>
+   <li>接著會看到${["一位理專的建議","六位理專的共識","六位理專各自的意見、理由與彼此的質疑","六位理專各自的意見、理由與彼此的質疑，你還可以調整每位理專的採信權重"][c]}。</li>
+   <li>最後再決定一次，可以維持也可以改，並再選一次把握程度。</li></ol>
+   <p>股票名稱與日期都隱藏了，價格以 12 個月前為 100 換算，避免靠記憶作答。先做 2 題練習，練習題會告訴你答案；正式題 16 題要到最後才公布。</p>
+   ${c===3?`<p class="warn">權重從 0×（完全不採信）到 3×，預設每位都是 1×。共識會依你設定的權重即時重算，買進的門檻是加權平均分數 0.5 以上。</p>`:""}
+   <button class="btn" id="go" type="button">開始練習</button></section>`;
+  $("go").onclick=()=>go("practice");
+}
+
+// ---------- 題目 ----------
+const curList=()=>S.step==="practice"?ITEMS.practice:S.order.map(id=>ITEMS.items.find(it=>it.id===id));
+function chart(it){
+  const v=[...it.m,it.p],W=420,H=170,pad=28,lo=Math.min(...v)*0.95,hi=Math.max(...v)*1.05;
+  const x=i=>pad+i*(W-pad-10)/(v.length-1),y=p=>H-22-(p-lo)/(hi-lo)*(H-40);
+  const pts=v.map((p,i)=>`${x(i).toFixed(1)},${y(p).toFixed(1)}`).join(" ");
+  const ticks=[0,3,6,9,12].map(i=>`<text x="${x(i)}" y="${H-5}" font-size="11" text-anchor="middle" fill="#7a675a">${i===12?"現在":`${i-12} 月`}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="過去 12 個月的月收盤走勢，以 12 個月前為 100">
+   <line x1="${pad}" x2="${W-10}" y1="${y(100)}" y2="${y(100)}" stroke="#f1e2d6" stroke-dasharray="4 4"/>
+   <text x="2" y="${y(100)+4}" font-size="11" fill="#7a675a">100</text>
+   <polyline points="${pts}" fill="none" stroke="#3d6f94" stroke-width="2.5" stroke-linejoin="round"/>
+   <circle cx="${x(12)}" cy="${y(it.p)}" r="4" fill="#c13357"/>${ticks}</svg>`;
+}
+const f2=v=>v==null?"—":(+v).toFixed(2);
+function dataCard(it){
+  const mc=it.macro,rate={"-1":"降息循環","0":"按兵不動","1":"升息循環"}[mc.rate];
+  return `<div class="data"><div class="chart">${chart(it)}</div><table class="kv">
+   <tr><td>產業</td><td>${esc(it.industry)}</td></tr>
+   <tr><td>現在價格（12 個月前 = 100）</td><td>${f2(it.p)}</td></tr>
+   <tr><td>本月平均價</td><td>${f2(it.ma)}</td></tr>
+   <tr><td>本益比</td><td>${it.pe>0?f2(it.pe)+" 倍":"沒有（近四季虧損或無資料）"}</td></tr>
+   <tr><td>現金殖利率</td><td>${f2(it.dy)}%</td></tr>
+   <tr><td>股價淨值比</td><td>${f2(it.pb)}</td></tr>
+   <tr><td>景氣對策信號（上月）</td><td>${esc(mc.light)}燈</td></tr>
+   <tr><td>央行利率</td><td>${rate}</td></tr>
+   <tr><td>製造業 PMI（上月）</td><td>${mc.pmi==null?"—":mc.pmi}</td></tr></table></div>`;
+}
+function choiceHTML(id){return `<div class="choice" id="${id}" role="group" aria-label="買進或不買"><button type="button" data-v="buy" aria-pressed="false">買進</button><button type="button" data-v="no" aria-pressed="false">不買</button></div>`}
+function confHTML(id){return `<div class="muted" style="font-size:14px">你有多少把握？</div><div class="conf" id="${id}" role="group" aria-label="把握程度">${[50,60,70,80,90,100].map(v=>`<button type="button" data-v="${v}" aria-pressed="false">${v}%</button>`).join("")}</div>`}
+function bindPick(id,cb){$(id).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;$(id).querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));cb(b.dataset.v)})}
+
+function trialStep(m){
+  const list=curList(),k=S.k;
+  if(k>=list.length){if(S.step==="practice")return go("trials");send("task");return go("post")}
+  const it=list[k],isP=S.step==="practice",T={item_id:it.id,order:k+1,practice:isP,cond:S.cond};
+  m.innerHTML=`<section class="box"><div class="progress"><span>${isP?`練習 ${k+1}／${list.length}`:`第 ${k+1}／${list.length} 題`}</span><span>不計時，慢慢看</span></div>
+   <h2>${esc(it.label)}</h2>${dataCard(it)}
+   <div style="margin-top:14px"><h3>你的判斷：現在買進、持有 3 個月，會贏過 0050 嗎？</h3>${choiceHTML("d1")}${confHTML("c1")}
+   <button class="btn" id="see" type="button" disabled>看理專意見</button></div>
+   <div id="stage2" hidden></div></section>`;
+  const t0=now();
+  const ready=()=>$("see").disabled=!(T.d1&&T.c1);
+  bindPick("d1",v=>{T.d1=v;ready()});bindPick("c1",v=>{T.c1=+v;ready()});
+  $("see").onclick=()=>{T.t_pre=+((now()-t0)/1000).toFixed(1);$("d1").querySelectorAll("button").forEach(b=>b.disabled=true);$("c1").querySelectorAll("button").forEach(b=>b.disabled=true);$("see").hidden=true;stage2(it,T,isP)};
+}
+
+function verdictOf(it,w){const keys=ITEMS.advisors.map(a=>a.key),tw=keys.reduce((t,k)=>t+w[k],0);if(!tw)return {rec:null,avg:null};const avg=keys.reduce((t,k)=>t+it.advisors[k].s*w[k],0)/tw;return {rec:avg>=0.5?"buy":"no",avg}}
+function aiPanel(it,T){
+  const c=S.cond,A=ITEMS.advisors;
+  if(c===0){
+    // 首席理專：建議就是等權共識；理由取同一邊立場最鮮明那位理專的理由（名字不顯示）
+    const side=A.filter(a=>(it.advisors[a.key].s>=0.5)===(it.rec==="buy"));
+    const lead=(side.length?side:A).slice().sort((a,b)=>Math.abs(it.advisors[b.key].s-0.5)-Math.abs(it.advisors[a.key].s-0.5))[0];
+    return `<div class="ai"><div class="eyebrow">🧑‍💼 首席理專</div><div class="verdict">建議：${REC(it.rec)}</div><ul>${it.advisors[lead.key].why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>`;
+  }
+  if(c===1)return `<div class="ai"><div class="eyebrow">🤝 六位理專的共識</div><div class="verdict">建議：${REC(it.rec)}</div><p class="muted" style="margin:0">綜合六位理專的判斷。</p></div>`;
+  const cards=A.map(a=>{const r=it.advisors[a.key],al=it.alerts.filter(x=>x.on===a.key),by=A.find(x=>x.key===(al[0]||{}).by);
+    return `<div class="card" style="--tape:${a.tape}"><div class="row" style="justify-content:space-between"><b>${a.emoji} ${esc(a.name)}</b><span class="pill">${LABEL(r.s)}</span></div>
+     <div class="muted" style="font-size:12.5px">${esc(a.style)}</div><ul>${r.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
+     <details data-k="${a.key}"><summary>同儕質疑</summary><p>${esc(a.critique)}</p>${al.map(x=>`<p>⚠️ ${esc(by?by.name:"")}：${esc(x.msg)}</p>`).join("")}</details>
+     ${c===3?`<div class="weight"><label for="w_${a.key}">採信權重</label><input id="w_${a.key}" type="range" min="0" max="3" step="0.5" value="1" data-k="${a.key}"><span class="num" id="wv_${a.key}">1×</span></div>`:""}</div>`}).join("");
+  return `<div class="ai"><div class="eyebrow">🪑 六位理專圓桌</div><div class="verdict" id="cons"></div><div class="muted" id="spread" style="font-size:14px"></div><div class="cards">${cards}</div></div>`;
+}
+function stage2(it,T,isP){
+  const box=$("stage2"),t0=now(),w={};ITEMS.advisors.forEach(a=>w[a.key]=1);T.opened=[];T.w_moves=0;
+  box.hidden=false;
+  box.innerHTML=`<hr style="border:none;border-top:2px dashed var(--line);margin:18px 0">${aiPanel(it,T)}
+   <div style="margin-top:14px"><h3>你的最後決定</h3>${choiceHTML("d2")}${confHTML("c2")}<button class="btn" id="nx" type="button" disabled>${isP?"送出，看答案":"送出，下一題"}</button></div><div id="fb"></div>`;
+  const refresh=()=>{if(S.cond<2)return;const v=verdictOf(it,w);T.shown_rec=v.rec;
+    $("cons").textContent=v.rec?`${S.cond===3?"加權":"等權"}共識：建議${REC(v.rec)}（平均分數 ${v.avg.toFixed(2)}）`:"你沒有採信任何一位理專";
+    $("spread").textContent=`分歧度 σ = ${it.sigma.toFixed(2)}　${it.sigma>1.2?"意見嚴重分歧":it.sigma>0.7?"意見有落差":"多數理專看法接近"}`};
+  refresh();
+  box.querySelectorAll("details").forEach(d=>d.addEventListener("toggle",()=>{if(d.open&&!T.opened.includes(d.dataset.k))T.opened.push(d.dataset.k)}));
+  box.addEventListener("input",e=>{const k=e.target.dataset.k;if(!k)return;w[k]=+e.target.value;$("wv_"+k).textContent=w[k]+"×";T.w_moves++;refresh()});
+  const ready=()=>$("nx").disabled=!(T.d2&&T.c2);
+  bindPick("d2",v=>{T.d2=v;ready()});bindPick("c2",v=>{T.c2=+v;ready()});
+  $("nx").onclick=()=>{
+    T.t_post=+((now()-t0)/1000).toFixed(1);T.ai_rec=it.rec;T.sigma=it.sigma;T.shown_rec=T.shown_rec??it.rec;
+    if(S.cond===3)T.w_final={...w};T.at=new Date().toISOString();
+    (isP?S.practice:S.trials).push(T);S.k++;save();
+    if(!isP)return render();
+    const ok=T.d2===it.truth,aiOk=it.rec===it.truth,pct=x=>`${x>=0?"+":""}${(x*100).toFixed(1)}%`;
+    $("nx").hidden=true;box.querySelectorAll("button,input").forEach(b=>b.disabled=true);
+    $("fb").innerHTML=`<div class="feedback" style="margin-top:12px"><b>${ok?"答對了":"這題答錯了"}</b>：之後 3 個月這檔 ${pct(it.r_stock)}，0050 ${pct(it.r_bench)}，所以正確答案是「${REC(it.truth)}」。理專的建議是「${REC(it.rec)}」，這題理專${aiOk?"對了":"錯了"}。<br>正式題不會在作答中公布答案。</div>
+     <button class="btn" id="cont" type="button" style="margin-top:12px">下一題</button>`;
+    $("cont").onclick=()=>render();
+  };
+}
+
+// ---------- 結束：完成碼、揭曉 ----------
+async function done(m){
+  m.innerHTML=`<section class="box"><h2>完成了，謝謝你！</h2><p>你的完成碼：</p><p class="code">${esc(S.code)}</p>
+   <p class="muted">${C.has_reward?"請把完成碼留給研究者領取謝禮（領獎表單和作答資料分開保存）。":"如果研究者請你回報是否完成，提供這組完成碼即可。"}</p><div id="sendst"></div></section>
+   <section class="box"><h2>揭曉：這 16 題是哪些股票？</h2><div id="reveal" class="muted">載入中…</div></section>`;
+  showSend();
+  try{
+    const key=await (await fetch("study-key.json",{cache:"no-store"})).json();
+    let right=0;const rows=S.trials.map(t=>{const k=key.items[t.item_id];if(!k)return "";const ok=t.d2===k.truth;right+=ok;
+      return `<tr><td>${esc(t.item_id)}</td><td>${esc(k.name)}（${esc(k.code)}）</td><td>${k.date.slice(0,4)}-${k.date.slice(4,6)}</td><td>${(k.r_stock*100).toFixed(1)}% ／ ${(k.r_bench*100).toFixed(1)}%</td><td>${REC(k.truth)}</td><td>${REC(t.d2)} ${ok?"✅":"❌"}</td><td>${REC(k.rec)}</td></tr>`}).join("");
+    $("reveal").innerHTML=`<p>你答對 <b>${right}</b>／${S.trials.length} 題。理專在這 16 題答對 ${Object.entries(key.items).filter(([q,v])=>!q.startsWith("練習")&&v.ai_correct).length} 題：這是研究刻意安排的，理專有對有錯。</p>
+     <div style="overflow-x:auto"><table class="res"><thead><tr><th>題</th><th>股票</th><th>決策月</th><th>3 個月報酬／0050</th><th>正確</th><th>你的決定</th><th>理專</th></tr></thead><tbody>${rows}</tbody></table></div>
+     <p style="margin-top:10px">這項研究比較四種呈現 AI 建議的方式：一位理專、只給共識、攤開六位理專的分歧，以及讓你自己調權重。我們想知道哪一種方式最能幫人「AI 對時採納、AI 錯時推翻」。你被分到的是「${CONDS[S.cond]}」。請不要把題目內容告訴還沒參加的人，謝謝！</p>`;
+  }catch(e){$("reveal").textContent="揭曉資料載入失敗，研究結束後研究者會另外公布。"}
+}
+function payload(){return JSON.stringify({...S,sent:undefined})}
+function download(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([payload()],{type:"application/json"}));a.download=`advisor-study-${S.pid}.json`;document.body.append(a);a.click();a.remove()}
+function showSend(){
+  const st=$("sendst");if(!st)return;
+  const ok=S.sent.final==="ok";
+  st.innerHTML=ok?`<p class="feedback">作答資料已送出。</p>`
+   :`<p class="warn">${PREVIEW?"預覽模式不送出資料。":C.datapipe_experiment_id?"作答資料還沒送出成功。":"研究者還沒設定資料收集服務。"}請按下面的按鈕下載作答檔，交給研究者。</p>
+     <div class="row">${C.datapipe_experiment_id&&!PREVIEW?`<button class="btn" id="retry" type="button">重新送出</button>`:""}<button class="btn ghost" id="dl" type="button">下載作答檔</button></div>`;
+  if($("dl"))$("dl").onclick=download;
+  if($("retry"))$("retry").onclick=()=>send("final");
+}
+// 每個階段送一份完整快照到 DataPipe（檔名：編號_階段.json）；分析時每位受試者取最後一份
+async function send(phase){
+  if(PREVIEW||!C.datapipe_experiment_id)return;
+  S.sent[phase]="pending";save();
+  try{
+    const r=await fetch("https://pipe.jspsych.org/api/data/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},
+      body:JSON.stringify({experimentID:C.datapipe_experiment_id,filename:`${S.pid}_${phase}.json`,data:payload()})});
+    // 201 已存、202 已收到稍後寫入；FILE_EXISTS 代表這份之前已經送成功過
+    let ok=r.ok;if(!ok&&r.status===400){try{ok=(await r.json()).error==="FILE_EXISTS"}catch(e){}}
+    S.sent[phase]=ok?"ok":"error";
+  }catch(e){S.sent[phase]="error"}
+  save();if(phase==="final")showSend();
+}
+init();
+</script>
+
+</body>
+</html>

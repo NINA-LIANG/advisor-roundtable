@@ -1,0 +1,59 @@
+# 論文實驗的題庫：抓 2022-07～2025-03 證交所歷史資料（約 25 分鐘），算出六位理專的判斷，抽題後提交回同一個分支
+# 什麼時候會跑：手動 Actions → build-experiment → Run workflow；或推送改動到抓取／建置腳本、總經資料時
+# 題庫正式版（items.v1.json 的 draft=false）產生後就不會被覆寫；PMI 還沒補齊前都是草稿，可以重跑
+name: build-experiment
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/fetch_experiment_panel.py
+      - scripts/build_experiment_items.py
+      - knowledge/experiment/macro_2023_2024.csv
+      - knowledge/experiment/config.json
+      - .github/workflows/build-experiment.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-experiment-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      # 取分支最新的 commit（而不是觸發時那一個），排隊中的重跑才看得到前一次提交的 panel.json
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: 快取證交所回應（重跑時不用再抓一次）
+        uses: actions/cache@v4
+        with:
+          path: .cache/twse
+          key: twse-experiment-v1-${{ github.run_id }}
+          restore-keys: twse-experiment-v1-
+      - name: 抓歷史資料（已有 panel.json 就跳過）
+        run: |
+          if [ ! -f knowledge/experiment/panel.json ]; then python scripts/fetch_experiment_panel.py; fi
+      - name: 建題庫
+        run: python scripts/build_experiment_items.py || python -c "import json,sys;sys.exit(json.load(open('knowledge/experiment/items.v1.json'))['draft'])"
+      - name: 重建網站（實驗頁嵌入題庫）
+        run: python scripts/build_site.py
+      - name: 提交
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898499+github-actions[bot]@users.noreply.github.com"
+          git add knowledge/experiment web/study.html web/study-key.json
+          if git diff --cached --quiet; then echo "沒有變動"; exit 0; fi
+          git commit -m "experiment: 建立實驗題庫（$(python -c 'import json;d=json.load(open("knowledge/experiment/items.v1.json"));print("草稿" if d["draft"] else "正式版")')）"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"

@@ -1,0 +1,326 @@
+<title>理專圓桌研究</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* 論文使用者實驗（受試者間四組）。刻意不放導覽列、倒數、排行榜，按鈕「買進／不買」同大小同顏色、沒有預設選項。
+   流程：同意書 → 前測 → 說明與 2 題練習 → 16 題正式題（先自己答、再看理專、最後再答＋信心）→ 後測 → 揭曉與完成碼。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#c13357; --apricot:#ffd9a0; --matcha:#c5ddb0; --matcha-deep:#4c7439;
+  --sky:#b5d8f2; --sky-deep:#3d6f94; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#eef4ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(26px,5vw,36px)} h2{font-size:21px;margin-bottom:6px} h3{font-size:16.5px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:20px;min-width:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+.muted{color:var(--ink-soft)} .num{font-variant-numeric:tabular-nums} .mono{font-family:var(--f-mono)}
+.eyebrow{font-size:12.5px;letter-spacing:.08em;color:var(--ink-soft)}
+.btn{border:none;border-radius:999px;padding:10px 22px;font-family:var(--f-display);font-size:16px;background:linear-gradient(135deg,var(--sky),var(--lilac));box-shadow:0 4px 0 #94b6d3}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:#fff;border:2px solid var(--line);box-shadow:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.progress{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--ink-soft)}
+/* 兩個決策按鈕外觀完全一樣，避免介面替受試者做選擇 */
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0}
+.choice button{border:2px solid var(--line);background:#fff;border-radius:18px;padding:14px 10px;font-family:var(--f-display);font-size:18px}
+.choice button[aria-pressed="true"]{border-color:var(--sky-deep);background:#eef6fd;box-shadow:inset 0 0 0 2px var(--sky-deep)}
+.conf{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.conf button{border:2px solid var(--line);background:#fff;border-radius:999px;padding:5px 13px;font-size:14px;min-width:58px}
+.conf button[aria-pressed="true"]{border-color:var(--sky-deep);background:#eef6fd;font-weight:700}
+.data{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:720px){.data{grid-template-columns:1fr}}
+table.kv{border-collapse:collapse;width:100%;font-size:14px}
+table.kv td{padding:5px 6px;border-bottom:1px dashed var(--line)}
+table.kv td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.chart svg{width:100%;height:auto;display:block}
+.ai{border-radius:20px;background:#f6f2ff;padding:14px 16px;margin-top:4px}
+.verdict{font-family:var(--f-display);font-size:19px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:10px}
+.card{background:#fff;border:2px solid var(--line);border-top:6px solid var(--tape,var(--line));border-radius:18px;padding:12px 14px;font-size:14px}
+.card ul{margin:6px 0 4px;padding-left:18px}
+.card details{margin-top:4px}
+.card summary{cursor:pointer;color:var(--sky-deep);font-weight:700}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:700;background:var(--line)}
+.weight{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px}
+.weight input{flex:1;accent-color:var(--pink-deep)}
+.q{margin:14px 0;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.q legend{font-weight:700;margin-bottom:6px}
+.q fieldset{border:none;margin:0;padding:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{border:2px solid var(--line);background:#fff;border-radius:14px;padding:6px 12px;cursor:pointer}
+.opts input{margin-right:6px}
+.likert{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.likert label{text-align:center;font-size:12.5px;padding:6px 2px}
+textarea{width:100%;min-height:70px;border:2px solid var(--line);border-radius:14px;padding:8px}
+.consent{max-height:420px;overflow:auto;background:#fff;border:2px solid var(--line);border-radius:18px;padding:12px 16px}
+.consent li{margin-bottom:6px}
+.feedback{border-radius:18px;background:#eef7e8;padding:12px 16px}
+.warn{border-radius:18px;background:#fff1e0;padding:10px 14px}
+table.res{border-collapse:collapse;width:100%;font-size:13.5px}
+table.res th,table.res td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}
+.code{font-family:var(--f-mono);font-size:26px;letter-spacing:.15em}
+</style>
+
+<div class="wrap">
+  <header class="box">
+    <div class="eyebrow">研究參與</div>
+    <h1>理專圓桌：投資判斷研究</h1>
+    <p class="muted" id="sub">用過去的股市資料做判斷，看人怎麼使用 AI 理專的建議。全程不計時，也不涉及真實金錢。</p>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <p class="muted" style="font-size:12.5px;text-align:center">研究用途，非投資建議。題目使用臺灣證券交易所公開的歷史資料。</p>
+</div>
+
+<script>
+const ITEMS=/*ITEMS*/;
+const STUDY=/*STUDY*/;
+const C=STUDY.config, SV=STUDY.surveys;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const CONDS=["單一理專","只顯示共識","完整圓桌","自己調權重"];
+const ALPHA="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+// 和 scripts/make_assignments.py 的 condition_of 同一個算法：FNV-1a 32 位元取 4 的餘數
+function condOf(pid){let h=0x811c9dc5;for(const b of new TextEncoder().encode(pid.trim().toUpperCase())){h^=b;h=Math.imul(h,0x01000193)>>>0}return h%4}
+function rng(seed){let x=0;for(const ch of seed)x=(Math.imul(x,31)+ch.charCodeAt(0))>>>0;return()=>{x=(x+0x6D2B79F5)>>>0;let t=x;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+function randCode(n){const a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(v=>ALPHA[v%ALPHA.length]).join("")}
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const now=()=>performance.now();
+const LABEL=s=>s>=1.5?"現在進場":s>=0.5?"分批布局":s>-0.5?"觀望等待":"暫不進場";
+const REC=r=>r==="buy"?"買進":"不買";
+const std=a=>{const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)};
+
+// ---------- 受試者狀態：存在瀏覽器，重新整理可以接著作答 ----------
+const qs=new URLSearchParams(location.search);
+const PREVIEW=qs.has("preview");
+let S=null;
+function key(pid){return "study_v1_"+pid}
+function save(){if(S)store.set(key(S.pid),S)}
+async function init(){
+  if(!ITEMS){$("main").innerHTML=`<section class="box"><h2>題庫尚未產生</h2><p>請研究者先執行 build-experiment 流程。</p></section>`;return}
+  let pid=(qs.get("pid")||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!pid){pid=store.get("study_v1_last")||("W"+randCode(5))}
+  S=store.get(key(pid));
+  if(!S){
+    let cond=condOf(pid),how="pid";
+    if(PREVIEW&&qs.has("cond")){cond=Math.max(0,Math.min(3,(+qs.get("cond")||1)-1));how="preview"}
+    else if(!qs.get("pid")&&C.datapipe_experiment_id&&C.datapipe_condition_assignment){
+      try{const r=await fetch("https://pipe.jspsych.org/api/condition/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},body:JSON.stringify({experimentID:C.datapipe_experiment_id})});
+        const j=await r.json();if(Number.isInteger(j.condition)){cond=j.condition%4;how="datapipe"}}catch(e){}
+    }
+    const r=rng(pid),order=ITEMS.items.map(it=>it.id);
+    for(let i=order.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[order[i],order[j]]=[order[j],order[i]]}
+    S={pid,cond,assigned_by:how,preview:PREVIEW,app_ver:C.app_version,items_sha:STUDY.items_sha,engine_sha:ITEMS.engine_sha,draft:ITEMS.draft,
+       started:new Date().toISOString(),ua:navigator.userAgent.slice(0,160),step:"consent",pre:{},post:{},practice:[],trials:[],order,k:0,sent:{}};
+  }
+  store.set("study_v1_last",pid);save();render();
+}
+
+function render(){
+  const m=$("main");
+  ({consent,pre,intro,practice:trialStep,trials:trialStep,post,done,declined}[S.step])(m);
+  m.focus({preventScroll:true});window.scrollTo(0,0);
+}
+function go(step){S.step=step;S.k=0;save();render()}
+
+// ---------- 同意書 ----------
+function consent(m){
+  m.innerHTML=`<section class="box"><h2>研究參與同意書</h2>
+  <div class="consent"><ul>
+   <li><b>研究目的</b>：了解人在看到不同形式的 AI 投資建議時，如何做判斷、多信任這些建議。</li>
+   <li><b>你要做的事</b>：填一份簡短問卷，然後用過去的股市資料判斷 18 題「要不要買」（2 題練習），最後再填一份問卷。約 ${esc(C.minutes)} 分鐘，全程不計時。</li>
+   <li><b>這不是投資建議</b>：題目都是歷史資料，不涉及真實金錢，結果不代表任何股票未來會怎麼走。</li>
+   <li><b>為了公平</b>：題目會隱藏股票名稱和日期，價格也重新換算過，結束時會全部告訴你是哪一檔、哪一段時間。不同參與者看到的理專呈現方式可能不同。</li>
+   <li><b>收集哪些資料</b>：你的選擇、信心、每個步驟花的秒數、問卷回答。<b>不收</b>姓名、電話、email 或任何能識別你的資料，只用隨機編號 <span class="mono">${esc(S.pid)}</span>。</li>
+   <li><b>資料存放</b>：作答資料會傳到研究者的 Google 雲端硬碟（伺服器可能在國外），只有研究者與指導教授看得到，結果只以整體統計發表，論文完成後依學校規定保存，期滿銷毀。</li>
+   <li><b>自願參加</b>：你可以隨時關掉頁面退出，不會有任何損失；中途退出的資料${C.withdraw_note?esc(C.withdraw_note):"不會用於分析"}。</li>
+   <li><b>謝禮</b>：${esc(C.reward)}</li>
+   <li><b>聯絡</b>：研究者 ${esc(C.researcher)}（${esc(C.contact)}）${C.advisor_professor?`；指導教授 ${esc(C.advisor_professor)}`:""}${C.rec_contact?`；倫理審查 ${esc(C.rec_contact)}`:""}。${C.rec_approval?`審查編號：${esc(C.rec_approval)}。`:""}有任何問題，或想刪除自己的資料（請附上上方的編號），都可以來信。</li>
+  </ul></div>
+  ${PREVIEW?`<p class="warn">預覽模式（第 ${S.cond+1} 組：${CONDS[S.cond]}）：資料不會送出。</p>`:""}
+  <div class="row" style="margin-top:14px"><button class="btn" id="yes" type="button">我已閱讀，同意參加</button><button class="btn ghost" id="no" type="button">不同意</button></div></section>`;
+  $("yes").onclick=()=>{S.consent_at=new Date().toISOString();go("pre")};
+  $("no").onclick=()=>{S.step="declined";store.set(key(S.pid),{pid:S.pid,step:"declined"});render()};
+}
+function declined(m){m.innerHTML=`<section class="box"><h2>謝謝你</h2><p>你選擇不參加，沒有任何資料被送出。可以直接關掉這個頁面。</p></section>`}
+
+// ---------- 問卷 ----------
+function qHTML(q){
+  const src=q.same_as?{...SV.pre.find(x=>x.id===q.same_as),id:q.id}:q;
+  if(src.type==="text")return `<div class="q"><label for="f_${src.id}"><b>${esc(src.q)}</b></label><textarea id="f_${src.id}" name="${src.id}"></textarea></div>`;
+  const opts=src.type==="likert"?SV.likert.map((t,i)=>[i+1,t]):src.options.map(o=>[o,o]);
+  return `<div class="q"><fieldset><legend>${esc(src.q)}</legend><div class="${src.type==="likert"?"likert":"opts"}">${opts.map(([v,t])=>`<label><input type="radio" name="${src.id}" value="${esc(v)}">${src.type==="likert"?"<br>":""}${esc(t)}</label>`).join("")}</div></fieldset></div>`;
+}
+function survey(m,title,lead,list,onDone){
+  m.innerHTML=`<section class="box"><h2>${title}</h2><p class="muted">${lead}</p><form id="sv">${list.map(qHTML).join("")}</form>
+   <p class="warn" id="miss" hidden>還有題目沒有回答（開放題可以留白）。</p><button class="btn" id="next" type="button">下一步</button></section>`;
+  const t0=now();
+  $("next").onclick=()=>{
+    const f=new FormData($("sv")),ans={};
+    for(const q of list){const v=f.get(q.id);const type=q.same_as?"choice":q.type;
+      if(type!=="text"&&(v===null||v===""))return($("miss").hidden=false);ans[q.id]=type==="likert"?+v:v??""}
+    ans._seconds=Math.round((now()-t0)/1000);onDone(ans);
+  };
+}
+function pre(m){survey(m,"開始前的幾個問題",`有些題目考的是基本金融觀念，不知道就選「不知道」${C.has_reward?"，不影響謝禮":""}。`,SV.pre,ans=>{
+  if(ans.age_ok!=="是"){S.step="declined";S.pre=ans;save();m.innerHTML=`<section class="box"><h2>謝謝你</h2><p>這項研究只邀請年滿 18 歲的參與者，沒有任何資料被送出。</p></section>`;return}
+  S.pre=ans;send("pre");go("intro")})}
+function post(m){survey(m,"最後幾個問題","「理專系統」指的是你剛剛在題目裡看到的理專建議。",SV.post,ans=>{S.post=ans;S.finished=new Date().toISOString();S.code=S.code||randCode(6);send("final");go("done")})}
+
+// ---------- 說明 ----------
+function intro(m){
+  const c=S.cond;
+  m.innerHTML=`<section class="box"><h2>怎麼作答</h2>
+   <p>每一題是一檔台股在過去某個月底的狀況。請判斷：<b>如果現在買進並持有 3 個月，報酬會不會贏過大盤（0050）？</b></p>
+   <ol><li>先看資料，自己選「買進」或「不買」，並選你有多少把握（50% 是完全用猜的，100% 是非常確定）。</li>
+   <li>接著會看到${["一位理專的建議","六位理專的共識","六位理專各自的意見、理由與彼此的質疑","六位理專各自的意見、理由與彼此的質疑，你還可以調整每位理專的採信權重"][c]}。</li>
+   <li>最後再決定一次，可以維持也可以改，並再選一次把握程度。</li></ol>
+   <p>股票名稱與日期都隱藏了，價格以 12 個月前為 100 換算，避免靠記憶作答。先做 2 題練習，練習題會告訴你答案；正式題 16 題要到最後才公布。</p>
+   ${c===3?`<p class="warn">權重從 0×（完全不採信）到 3×，預設每位都是 1×。共識會依你設定的權重即時重算，買進的門檻是加權平均分數 0.5 以上。</p>`:""}
+   <button class="btn" id="go" type="button">開始練習</button></section>`;
+  $("go").onclick=()=>go("practice");
+}
+
+// ---------- 題目 ----------
+const curList=()=>S.step==="practice"?ITEMS.practice:S.order.map(id=>ITEMS.items.find(it=>it.id===id));
+function chart(it){
+  const v=[...it.m,it.p],W=420,H=170,pad=28,lo=Math.min(...v)*0.95,hi=Math.max(...v)*1.05;
+  const x=i=>pad+i*(W-pad-10)/(v.length-1),y=p=>H-22-(p-lo)/(hi-lo)*(H-40);
+  const pts=v.map((p,i)=>`${x(i).toFixed(1)},${y(p).toFixed(1)}`).join(" ");
+  const ticks=[0,3,6,9,12].map(i=>`<text x="${x(i)}" y="${H-5}" font-size="11" text-anchor="middle" fill="#7a675a">${i===12?"現在":`${i-12} 月`}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="過去 12 個月的月收盤走勢，以 12 個月前為 100">
+   <line x1="${pad}" x2="${W-10}" y1="${y(100)}" y2="${y(100)}" stroke="#f1e2d6" stroke-dasharray="4 4"/>
+   <text x="2" y="${y(100)+4}" font-size="11" fill="#7a675a">100</text>
+   <polyline points="${pts}" fill="none" stroke="#3d6f94" stroke-width="2.5" stroke-linejoin="round"/>
+   <circle cx="${x(12)}" cy="${y(it.p)}" r="4" fill="#c13357"/>${ticks}</svg>`;
+}
+const f2=v=>v==null?"—":(+v).toFixed(2);
+function dataCard(it){
+  const mc=it.macro,rate={"-1":"降息循環","0":"按兵不動","1":"升息循環"}[mc.rate];
+  return `<div class="data"><div class="chart">${chart(it)}</div><table class="kv">
+   <tr><td>產業</td><td>${esc(it.industry)}</td></tr>
+   <tr><td>現在價格（12 個月前 = 100）</td><td>${f2(it.p)}</td></tr>
+   <tr><td>本月平均價</td><td>${f2(it.ma)}</td></tr>
+   <tr><td>本益比</td><td>${it.pe>0?f2(it.pe)+" 倍":"沒有（近四季虧損或無資料）"}</td></tr>
+   <tr><td>現金殖利率</td><td>${f2(it.dy)}%</td></tr>
+   <tr><td>股價淨值比</td><td>${f2(it.pb)}</td></tr>
+   <tr><td>景氣對策信號（上月）</td><td>${esc(mc.light)}燈</td></tr>
+   <tr><td>央行利率</td><td>${rate}</td></tr>
+   <tr><td>製造業 PMI（上月）</td><td>${mc.pmi==null?"—":mc.pmi}</td></tr></table></div>`;
+}
+function choiceHTML(id){return `<div class="choice" id="${id}" role="group" aria-label="買進或不買"><button type="button" data-v="buy" aria-pressed="false">買進</button><button type="button" data-v="no" aria-pressed="false">不買</button></div>`}
+function confHTML(id){return `<div class="muted" style="font-size:14px">你有多少把握？</div><div class="conf" id="${id}" role="group" aria-label="把握程度">${[50,60,70,80,90,100].map(v=>`<button type="button" data-v="${v}" aria-pressed="false">${v}%</button>`).join("")}</div>`}
+function bindPick(id,cb){$(id).addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;$(id).querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));cb(b.dataset.v)})}
+
+function trialStep(m){
+  const list=curList(),k=S.k;
+  if(k>=list.length){if(S.step==="practice")return go("trials");send("task");return go("post")}
+  const it=list[k],isP=S.step==="practice",T={item_id:it.id,order:k+1,practice:isP,cond:S.cond};
+  m.innerHTML=`<section class="box"><div class="progress"><span>${isP?`練習 ${k+1}／${list.length}`:`第 ${k+1}／${list.length} 題`}</span><span>不計時，慢慢看</span></div>
+   <h2>${esc(it.label)}</h2>${dataCard(it)}
+   <div style="margin-top:14px"><h3>你的判斷：現在買進、持有 3 個月，會贏過 0050 嗎？</h3>${choiceHTML("d1")}${confHTML("c1")}
+   <button class="btn" id="see" type="button" disabled>看理專意見</button></div>
+   <div id="stage2" hidden></div></section>`;
+  const t0=now();
+  const ready=()=>$("see").disabled=!(T.d1&&T.c1);
+  bindPick("d1",v=>{T.d1=v;ready()});bindPick("c1",v=>{T.c1=+v;ready()});
+  $("see").onclick=()=>{T.t_pre=+((now()-t0)/1000).toFixed(1);$("d1").querySelectorAll("button").forEach(b=>b.disabled=true);$("c1").querySelectorAll("button").forEach(b=>b.disabled=true);$("see").hidden=true;stage2(it,T,isP)};
+}
+
+function verdictOf(it,w){const keys=ITEMS.advisors.map(a=>a.key),tw=keys.reduce((t,k)=>t+w[k],0);if(!tw)return {rec:null,avg:null};const avg=keys.reduce((t,k)=>t+it.advisors[k].s*w[k],0)/tw;return {rec:avg>=0.5?"buy":"no",avg}}
+function aiPanel(it,T){
+  const c=S.cond,A=ITEMS.advisors;
+  if(c===0){
+    // 首席理專：建議就是等權共識；理由取同一邊立場最鮮明那位理專的理由（名字不顯示）
+    const side=A.filter(a=>(it.advisors[a.key].s>=0.5)===(it.rec==="buy"));
+    const lead=(side.length?side:A).slice().sort((a,b)=>Math.abs(it.advisors[b.key].s-0.5)-Math.abs(it.advisors[a.key].s-0.5))[0];
+    return `<div class="ai"><div class="eyebrow">🧑‍💼 首席理專</div><div class="verdict">建議：${REC(it.rec)}</div><ul>${it.advisors[lead.key].why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>`;
+  }
+  if(c===1)return `<div class="ai"><div class="eyebrow">🤝 六位理專的共識</div><div class="verdict">建議：${REC(it.rec)}</div><p class="muted" style="margin:0">綜合六位理專的判斷。</p></div>`;
+  const cards=A.map(a=>{const r=it.advisors[a.key],al=it.alerts.filter(x=>x.on===a.key),by=A.find(x=>x.key===(al[0]||{}).by);
+    return `<div class="card" style="--tape:${a.tape}"><div class="row" style="justify-content:space-between"><b>${a.emoji} ${esc(a.name)}</b><span class="pill">${LABEL(r.s)}</span></div>
+     <div class="muted" style="font-size:12.5px">${esc(a.style)}</div><ul>${r.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
+     <details data-k="${a.key}"><summary>同儕質疑</summary><p>${esc(a.critique)}</p>${al.map(x=>`<p>⚠️ ${esc(by?by.name:"")}：${esc(x.msg)}</p>`).join("")}</details>
+     ${c===3?`<div class="weight"><label for="w_${a.key}">採信權重</label><input id="w_${a.key}" type="range" min="0" max="3" step="0.5" value="1" data-k="${a.key}"><span class="num" id="wv_${a.key}">1×</span></div>`:""}</div>`}).join("");
+  return `<div class="ai"><div class="eyebrow">🪑 六位理專圓桌</div><div class="verdict" id="cons"></div><div class="muted" id="spread" style="font-size:14px"></div><div class="cards">${cards}</div></div>`;
+}
+function stage2(it,T,isP){
+  const box=$("stage2"),t0=now(),w={};ITEMS.advisors.forEach(a=>w[a.key]=1);T.opened=[];T.w_moves=0;
+  box.hidden=false;
+  box.innerHTML=`<hr style="border:none;border-top:2px dashed var(--line);margin:18px 0">${aiPanel(it,T)}
+   <div style="margin-top:14px"><h3>你的最後決定</h3>${choiceHTML("d2")}${confHTML("c2")}<button class="btn" id="nx" type="button" disabled>${isP?"送出，看答案":"送出，下一題"}</button></div><div id="fb"></div>`;
+  const refresh=()=>{if(S.cond<2)return;const v=verdictOf(it,w);T.shown_rec=v.rec;
+    $("cons").textContent=v.rec?`${S.cond===3?"加權":"等權"}共識：建議${REC(v.rec)}（平均分數 ${v.avg.toFixed(2)}）`:"你沒有採信任何一位理專";
+    $("spread").textContent=`分歧度 σ = ${it.sigma.toFixed(2)}　${it.sigma>1.2?"意見嚴重分歧":it.sigma>0.7?"意見有落差":"多數理專看法接近"}`};
+  refresh();
+  box.querySelectorAll("details").forEach(d=>d.addEventListener("toggle",()=>{if(d.open&&!T.opened.includes(d.dataset.k))T.opened.push(d.dataset.k)}));
+  box.addEventListener("input",e=>{const k=e.target.dataset.k;if(!k)return;w[k]=+e.target.value;$("wv_"+k).textContent=w[k]+"×";T.w_moves++;refresh()});
+  const ready=()=>$("nx").disabled=!(T.d2&&T.c2);
+  bindPick("d2",v=>{T.d2=v;ready()});bindPick("c2",v=>{T.c2=+v;ready()});
+  $("nx").onclick=()=>{
+    T.t_post=+((now()-t0)/1000).toFixed(1);T.ai_rec=it.rec;T.sigma=it.sigma;T.shown_rec=T.shown_rec??it.rec;
+    if(S.cond===3)T.w_final={...w};T.at=new Date().toISOString();
+    (isP?S.practice:S.trials).push(T);S.k++;save();
+    if(!isP)return render();
+    const ok=T.d2===it.truth,aiOk=it.rec===it.truth,pct=x=>`${x>=0?"+":""}${(x*100).toFixed(1)}%`;
+    $("nx").hidden=true;box.querySelectorAll("button,input").forEach(b=>b.disabled=true);
+    $("fb").innerHTML=`<div class="feedback" style="margin-top:12px"><b>${ok?"答對了":"這題答錯了"}</b>：之後 3 個月這檔 ${pct(it.r_stock)}，0050 ${pct(it.r_bench)}，所以正確答案是「${REC(it.truth)}」。理專的建議是「${REC(it.rec)}」，這題理專${aiOk?"對了":"錯了"}。<br>正式題不會在作答中公布答案。</div>
+     <button class="btn" id="cont" type="button" style="margin-top:12px">下一題</button>`;
+    $("cont").onclick=()=>render();
+  };
+}
+
+// ---------- 結束：完成碼、揭曉 ----------
+async function done(m){
+  m.innerHTML=`<section class="box"><h2>完成了，謝謝你！</h2><p>你的完成碼：</p><p class="code">${esc(S.code)}</p>
+   <p class="muted">${C.has_reward?"請把完成碼留給研究者領取謝禮（領獎表單和作答資料分開保存）。":"如果研究者請你回報是否完成，提供這組完成碼即可。"}</p><div id="sendst"></div></section>
+   <section class="box"><h2>揭曉：這 16 題是哪些股票？</h2><div id="reveal" class="muted">載入中…</div></section>`;
+  showSend();
+  try{
+    const key=await (await fetch("study-key.json",{cache:"no-store"})).json();
+    let right=0;const rows=S.trials.map(t=>{const k=key.items[t.item_id];if(!k)return "";const ok=t.d2===k.truth;right+=ok;
+      return `<tr><td>${esc(t.item_id)}</td><td>${esc(k.name)}（${esc(k.code)}）</td><td>${k.date.slice(0,4)}-${k.date.slice(4,6)}</td><td>${(k.r_stock*100).toFixed(1)}% ／ ${(k.r_bench*100).toFixed(1)}%</td><td>${REC(k.truth)}</td><td>${REC(t.d2)} ${ok?"✅":"❌"}</td><td>${REC(k.rec)}</td></tr>`}).join("");
+    $("reveal").innerHTML=`<p>你答對 <b>${right}</b>／${S.trials.length} 題。理專在這 16 題答對 ${Object.entries(key.items).filter(([q,v])=>!q.startsWith("練習")&&v.ai_correct).length} 題：這是研究刻意安排的，理專有對有錯。</p>
+     <div style="overflow-x:auto"><table class="res"><thead><tr><th>題</th><th>股票</th><th>決策月</th><th>3 個月報酬／0050</th><th>正確</th><th>你的決定</th><th>理專</th></tr></thead><tbody>${rows}</tbody></table></div>
+     <p style="margin-top:10px">這項研究比較四種呈現 AI 建議的方式：一位理專、只給共識、攤開六位理專的分歧，以及讓你自己調權重。我們想知道哪一種方式最能幫人「AI 對時採納、AI 錯時推翻」。你被分到的是「${CONDS[S.cond]}」。請不要把題目內容告訴還沒參加的人，謝謝！</p>`;
+  }catch(e){$("reveal").textContent="揭曉資料載入失敗，研究結束後研究者會另外公布。"}
+}
+function payload(){return JSON.stringify({...S,sent:undefined})}
+function download(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([payload()],{type:"application/json"}));a.download=`advisor-study-${S.pid}.json`;document.body.append(a);a.click();a.remove()}
+function showSend(){
+  const st=$("sendst");if(!st)return;
+  const ok=S.sent.final==="ok";
+  st.innerHTML=ok?`<p class="feedback">作答資料已送出。</p>`
+   :`<p class="warn">${PREVIEW?"預覽模式不送出資料。":C.datapipe_experiment_id?"作答資料還沒送出成功。":"研究者還沒設定資料收集服務。"}請按下面的按鈕下載作答檔，交給研究者。</p>
+     <div class="row">${C.datapipe_experiment_id&&!PREVIEW?`<button class="btn" id="retry" type="button">重新送出</button>`:""}<button class="btn ghost" id="dl" type="button">下載作答檔</button></div>`;
+  if($("dl"))$("dl").onclick=download;
+  if($("retry"))$("retry").onclick=()=>send("final");
+}
+// 每個階段送一份完整快照到 DataPipe（檔名：編號_階段.json）；分析時每位受試者取最後一份
+async function send(phase){
+  if(PREVIEW||!C.datapipe_experiment_id)return;
+  S.sent[phase]="pending";save();
+  try{
+    const r=await fetch("https://pipe.jspsych.org/api/data/",{method:"POST",headers:{"Content-Type":"application/json",Accept:"*/*"},
+      body:JSON.stringify({experimentID:C.datapipe_experiment_id,filename:`${S.pid}_${phase}.json`,data:payload()})});
+    // 201 已存、202 已收到稍後寫入；FILE_EXISTS 代表這份之前已經送成功過
+    let ok=r.ok;if(!ok&&r.status===400){try{ok=(await r.json()).error==="FILE_EXISTS"}catch(e){}}
+    S.sent[phase]=ok?"ok":"error";
+  }catch(e){S.sent[phase]="error"}
+  save();if(phase==="final")showSend();
+}
+init();
+</script>

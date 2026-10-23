@@ -12,6 +12,8 @@ def test_every_page_builds_with_nav_and_main():
     assert set(out) == set(build_site.META)
     for name, html in out.items():
         assert '<main id="main"' in html, name
+        if name == "study.html":  # 實驗頁刻意不放導覽列
+            continue
         assert 'class="sitenav"' in html and 'class="sitefoot"' in html, name
         assert not re.search(r"/\*[A-Z]+\*/", html), f"{name} 還有沒替換的資料標記"
 
