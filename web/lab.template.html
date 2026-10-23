@@ -1,0 +1,522 @@
+<title>理專考場</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: 仿 AIOpsLab（Chen et al., 2025）的評測台。故意把一檔股票的資料弄壞，讓你、看門狗與 Claude 用同一組查看工具找問題。
+   上方考試台（題目＋工具｜作答）→ 結果與波及範圍 → 成績表（人在迴圈中／上 比較）→ 故障庫 → 論文對照。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
+  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --up:#c4475f; --down:#3d7a2b;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#eef4ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,42px)}
+h2{font-size:22px;margin-bottom:6px}
+h3{font-size:17px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px;min-width:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+a{color:var(--sky-deep)}
+.muted{color:var(--ink-soft)}
+.num,.mono{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:.93em}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-soft)}
+.lead{font-size:16.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--sky);border-color:var(--sky-deep);font-weight:700}
+.btn{border:none;border-radius:999px;padding:10px 20px;font-family:var(--f-display);font-size:16px;background:linear-gradient(135deg,var(--sky),var(--lilac));box-shadow:0 4px 0 #94b6d3}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #94b6d3}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:#fff;border:2px solid var(--line);box-shadow:none}
+.btn.small{padding:6px 14px;font-size:14px}
+
+/* 考試台 */
+.exam{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.exam{grid-template-columns:1fr}}
+.qhead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;justify-content:space-between}
+.qhead h2{margin:0}
+.meter{display:flex;gap:12px;font-size:13px;color:var(--ink-soft)}
+.meter b{color:var(--ink);font-family:var(--f-mono)}
+.steps{display:inline-flex;gap:3px;vertical-align:middle}
+.steps i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.steps i.on{background:var(--sky-deep)}
+.ctx{background:#f4f8ff;border-radius:18px;padding:10px 14px;font-size:14px;margin:10px 0}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tool{border:2px solid var(--line);background:#fff;border-radius:16px;padding:8px 10px;text-align:left;min-height:44px}
+.tool b{display:block;font-size:14px}
+.tool small{color:var(--ink-soft);font-size:12px;font-family:var(--f-mono)}
+.tool:hover:not(:disabled){border-color:var(--sky-deep)}
+.tool:disabled{opacity:.45;cursor:not-allowed}
+.cross{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;font-size:13px}
+.trace{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.trace li{border:2px solid var(--line);border-radius:16px;padding:8px 12px;background:#fff;font-size:14px}
+.trace li.src2{background:#fffbea;border-color:#f3dfa0}
+.trace .th{font-size:12px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:4px 12px}
+.kv div{display:flex;flex-direction:column}
+.kv small{font-size:12px;color:var(--ink-soft)}
+.kv b{font-family:var(--f-mono);font-weight:500}
+.spark{width:100%;height:70px;display:block;margin-top:6px}
+.months{font-family:var(--f-mono);font-size:12px;color:var(--ink-soft);overflow-wrap:anywhere}
+.advs{margin:0;padding:0;list-style:none;display:grid;gap:3px}
+.advs li{font-size:13px}
+.hint{background:#f4fbef;border:2px dashed var(--matcha);border-radius:18px;padding:10px 14px;font-size:14px}
+.hint h3{font-size:15px;margin-bottom:4px}
+
+fieldset{border:none;margin:0 0 12px;padding:0}
+legend{font-weight:700;font-size:14px;margin-bottom:6px;padding:0}
+legend small{font-weight:400;color:var(--ink-soft)}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:8px;align-items:flex-start;border:2px solid var(--line);border-radius:14px;padding:7px 10px;background:#fff;cursor:pointer;font-size:14px;min-height:44px}
+.opt input{margin-top:4px;accent-color:var(--sky-deep)}
+.opt:has(input:checked){border-color:var(--sky-deep);background:#eef6fd}
+.opt small{display:block;color:var(--ink-soft);font-size:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* 結果 */
+.result{border-top:2px dashed var(--line);margin-top:14px;padding-top:14px}
+.lv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0}
+@media (max-width:560px){.lv{grid-template-columns:1fr 1fr}}
+.lv>div{border-radius:16px;padding:8px 10px;background:#fff;border:2px solid var(--line);font-size:13px}
+.lv>div.ok{background:#eef6e6;border-color:var(--matcha)}
+.lv>div.no{background:#fff0f3;border-color:var(--pink)}
+.lv>div.na{opacity:.6}
+.lv b{display:block;font-size:14px}
+.blast{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:8px}
+.blast>div{border-radius:14px;padding:6px 10px;border:2px solid var(--line);background:#fff;font-size:13px}
+.blast>div.hit{border-color:var(--pink-deep);background:#fff4f6}
+.cmp{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+.cmp th,.cmp td{padding:6px 8px;border-bottom:1.5px dashed var(--line);text-align:left;vertical-align:top}
+.cmp th{font-size:12px;color:var(--ink-soft);font-weight:500}
+
+/* 成績表 */
+.scroll{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:680px}
+.tbl th{font-size:12px;color:var(--ink-soft);font-weight:500;text-align:right;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+.tbl td{padding:7px 8px;border-bottom:1px dashed var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td.best{background:#eef6e6;font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{border:2px solid var(--line);border-radius:20px;padding:12px 14px;background:#fff}
+.card b{display:block;margin-bottom:4px}
+.card .big{font-family:var(--f-mono);font-size:26px;line-height:1.2}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;background:#f6efe8;color:var(--ink-soft)}
+.pill.sym{background:#e8f3fc;color:#2f6b97}
+.pill.fun{background:#fde8ee;color:#a2465d}
+.ai{background:#f6f2ff;border:2px solid var(--lilac);border-radius:18px;padding:10px 14px;font-size:14px;margin-top:12px}
+.ai pre{white-space:pre-wrap;font-family:var(--f-body);margin:6px 0 0;font-size:13px;max-height:220px;overflow:auto}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header>
+    <div class="eyebrow">參考 AIOpsLab（Chen et al., 2025, arXiv:2501.06706）</div>
+    <h1>🧪 理專考場</h1>
+    <p class="lead">理專的判斷只會跟資料一樣可靠。這裡故意把一檔股票的資料弄壞，看誰先發現、找得到哪裡壞、說得出為什麼、選得對怎麼修：你、兩隻看門狗，還是 Claude。</p>
+  </header>
+
+  <section class="box" aria-label="作答模式">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h2>選一種作答模式</h2>
+        <p class="muted" style="margin:0">兩種模式的成績分開記，可以比較「自己判斷」和「先看機器意見」哪個比較準、比較快。</p>
+      </div>
+      <div class="chips" id="mode" role="group" aria-label="作答模式">
+        <button class="chip" type="button" data-m="in">🙋 人在迴圈中：自己判斷</button>
+        <button class="chip" type="button" data-m="on">👀 人在迴圈上：先看代理意見</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="box" aria-label="考試台">
+    <div class="exam">
+      <div>
+        <div class="qhead">
+          <h2 id="qTitle">第 1 題</h2>
+          <div class="meter"><span>步數 <b id="stepN">0</b>／8 <span class="steps" id="stepDots" aria-hidden="true"></span></span><span>已作答 <b id="doneN">0</b>／48</span></div>
+        </div>
+        <div class="ctx" id="ctx"></div>
+        <div id="agentHint" class="hint" hidden></div>
+        <h3 style="margin-top:12px">查看工具 <small class="muted">（每用一次算一步，最多 8 步）</small></h3>
+        <div class="tools" id="tools">
+          <button class="tool" type="button" data-t="quote"><b>📄 今日報價</b><small>get_quote</small></button>
+          <button class="tool" type="button" data-t="history"><b>📈 近一年月收盤</b><small>get_history</small></button>
+          <button class="tool" type="button" data-t="valuation"><b>🧮 估值數字</b><small>get_valuation</small></button>
+          <button class="tool" type="button" data-t="advisors"><b>🧑‍💼 六位理專怎麼說</b><small>get_advisors</small></button>
+        </div>
+        <div class="cross" id="cross">
+          <span>🔁 對照第二來源（算 2 步，每題只能查一組）：</span>
+          <button class="chip" type="button" data-g="quote">報價</button>
+          <button class="chip" type="button" data-g="history">月收盤</button>
+          <button class="chip" type="button" data-g="valuation">估值</button>
+        </div>
+        <ol class="trace" id="trace" aria-live="polite"></ol>
+      </div>
+
+      <form id="ans" aria-label="作答">
+        <fieldset>
+          <legend>第 1 層・偵測 <small>這筆資料有問題嗎？</small></legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="l1" value="yes">有問題</label>
+            <label class="opt"><input type="radio" name="l1" value="no">沒有問題，可以照常給理專用</label>
+          </div>
+        </fieldset>
+        <div id="deeper" hidden>
+          <fieldset><legend>第 2 層・定位 <small>問題在哪一塊？</small></legend><div class="opts" id="o2"></div></fieldset>
+          <fieldset><legend>第 3 層・根因 <small>為什麼會壞？</small></legend><div class="opts" id="o3"></div></fieldset>
+          <fieldset><legend>第 4 層・修復 <small>怎麼處理？</small></legend><div class="opts" id="o4"></div></fieldset>
+        </div>
+        <div class="row">
+          <button class="btn" type="submit" id="submit" disabled>送出答案</button>
+          <button class="btn ghost small" type="button" id="skip">換一題</button>
+        </div>
+        <div id="result" class="result" hidden aria-live="polite"></div>
+      </form>
+    </div>
+    <div class="ai" id="aiBox" hidden>
+      <div class="row" style="justify-content:space-between">
+        <span>🤖 <b>請 Claude 也考這一題</b>　<span class="muted">用同樣的工具與 8 步上限，會用到你自己的 Claude 額度。</span></span>
+        <span class="row"><button class="btn small" type="button" id="aiGo">開始</button><button class="btn ghost small" type="button" id="aiStop" hidden>停止</button></span>
+      </div>
+      <div id="aiOut"></div>
+    </div>
+  </section>
+
+  <section class="box" aria-label="成績表">
+    <div class="row" style="justify-content:space-between">
+      <h2>📊 成績表</h2>
+      <div class="chips" id="scope" role="group" aria-label="範圍">
+        <button class="chip" type="button" data-s="mine">你做過的題</button>
+        <button class="chip" type="button" data-s="all">全部 48 題（只有自動代理）</button>
+      </div>
+    </div>
+    <p class="muted" id="scopeTxt"></p>
+    <div class="scroll"><table class="tbl">
+      <thead><tr><th>作答者</th><th>題數</th><th>偵測</th><th>定位</th><th>根因</th><th>修復</th><th>無故障題誤報</th><th>平均步數</th><th>平均秒數</th></tr></thead>
+      <tbody id="board"></tbody>
+    </table></div>
+    <div class="cards" id="loop" style="margin-top:14px"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost small" type="button" id="csv">⬇️ 下載作答紀錄 CSV</button>
+      <button class="btn ghost small" type="button" id="copy">📋 複製 CSV</button>
+      <button class="btn ghost small" type="button" id="reset">清除我的紀錄</button>
+      <span class="muted" id="csvMsg" style="font-size:13px"></span>
+    </div>
+  </section>
+
+  <section class="box" aria-label="故障庫">
+    <h2>🧯 資料故障庫</h2>
+    <p class="muted">對應論文的 Table 2。「表面症狀」看得到異狀但看不出原因；「功能故障」要追到根因才修得好。另有 6 題完全沒有故障，用來測誤報。</p>
+    <div class="scroll"><table class="tbl" style="min-width:760px">
+      <thead><tr><th>故障</th><th>類型</th><th>題數</th><th style="text-align:left">發生什麼事</th><th style="text-align:left">真實世界會怎麼發生</th><th style="text-align:left">正確處理</th></tr></thead>
+      <tbody id="lib"></tbody>
+    </table></div>
+  </section>
+
+  <section class="box" aria-label="論文對照">
+    <h2>📄 論文怎麼說、這頁怎麼做</h2>
+    <p>AIOpsLab 是微軟等團隊提出的框架：在微服務系統裡故意注入故障，讓 AI 代理透過一組固定的查看工具（Agent-Cloud Interface）去偵測、定位、找根因、修復，並自動記錄正確率、步數與耗時。理專圓桌的「系統」是資料管線，所以把故障注入的對象換成股票資料。</p>
+    <div class="scroll"><table class="cmp" style="min-width:620px">
+      <thead><tr><th>AIOpsLab</th><th>理專考場</th></tr></thead>
+      <tbody>
+        <tr><td>問題 P = ⟨任務 T, 情境 C, 標準答案 S⟩</td><td>每題 = 四層任務 ＋ 一檔股票的資料（可能被弄壞）＋ 標準答案</td></tr>
+        <tr><td>故障庫：Symptomatic／Functional faults，用 ChaosMesh 注入</td><td>6 種資料故障：2 種表面症狀、4 種功能故障，在瀏覽器裡注入真實收盤資料的複本</td></tr>
+        <tr><td>Noop 題：沒有注入故障，測誤報</td><td>6 題無故障，其中 2 檔本來就沒有本益比（虧損公司），最容易被誤判</td></tr>
+        <tr><td>任務四層：Detection → Localization → RCA → Mitigation</td><td>偵測 → 定位 → 根因 → 修復，四層分開計分</td></tr>
+        <tr><td>ACI：get_logs、get_metrics、get_traces、exec_shell</td><td>get_quote、get_history、get_valuation、get_advisors，加上一次「對照第二來源」</td></tr>
+        <tr><td>步數上限（K = 3～20）影響正確率</td><td>每題最多 8 步，對照第二來源算 2 步</td></tr>
+        <tr><td>指標：正確率、Time-to-Detect、步數、token</td><td>四層正確率、作答秒數、步數、無故障題誤報率</td></tr>
+        <tr><td>受測代理：GPT-4／GPT-3.5 w/ shell、ReAct、FLASH，對照傳統 AIOps 演算法</td><td>你（兩種模式）、基本看門狗（理專圓桌原本的健康檢查）、規則看門狗、Claude</td></tr>
+        <tr><td>故障的 blast radius（波及範圍）</td><td>每題結束後顯示：這個故障讓幾位理專的判斷變了、誰的前三名被換掉</td></tr>
+      </tbody>
+    </table></div>
+    <h3 style="margin-top:16px">論文的發現，放在這裡可以怎麼看</h3>
+    <div class="cards" style="margin-top:8px">
+      <div class="card"><b>最好的代理也只有 59%</b>四個代理裡最好的 FLASH 整體正確率 59.32%，修復層最難（最高 54.55%）。這裡也分層計分，看你和代理各自卡在哪一層。</div>
+      <div class="card"><b>沒有故障時也會喊有事</b>Noop 題只有 GPT-4 w/ shell 答對，其他代理把正常流量當成故障。這裡的無故障題包含虧損公司，基本看門狗會因為「沒有本益比」而誤報。</div>
+      <div class="card"><b>步數多不一定比較準</b>步數上限放寬後，有些代理正確率停在原地，只是多花 token。看看你用了幾步、哪幾步其實沒有幫助。</div>
+      <div class="card"><b>資料太多反而干擾</b>代理把大量指標直接讀進來，反而容易失敗。所以這裡的工具只回傳精簡數字，第二來源也只能查一組，逼你先有假設再驗證。</div>
+      <div class="card"><b>人在迴圈中 vs 迴圈上</b>論文只評代理。這頁多記一個問題：人先看代理意見再作答，正確率和速度會不會變？代理答錯時，你有沒有跟著錯（自動化偏誤）？</div>
+    </div>
+    <p class="muted" style="margin-top:12px;font-size:13px">出處：Yinfang Chen, Manish Shetty, Gagan Somashekar, Minghua Ma, Yogesh Simmhan, Jonathan Mace, Chetan Bansal, Rujia Wang, Saravan Rajmohan. <i>AIOpsLab: A Holistic Framework to Evaluate AI Agents for Enabling Autonomous Clouds</i>. MLSys 2025. <a href="https://arxiv.org/abs/2501.06706" target="_blank" rel="noopener">arXiv:2501.06706</a></p>
+  </section>
+</div>
+
+<script>
+/*SHARED*/
+// ---------- 理專考場 ----------
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const MACRO={light:"綠",rate:0,pmi:50.5};
+const ASOF=TW.asof,PREV="2026-10-20",MAXSTEP=8;
+const LABEL=s=>s>=1.5?"現在進場":s>=0.5?"分批布局":s>-0.5?"觀望":"暫不進場";
+const byCode=c=>TW.stocks.find(s=>s.c===c);
+const nameOf=s=>`${s.c} ${s.n}`;
+const fx=x=>x==null?"—":typeof x==="number"?(Math.abs(x)>=100?x.toFixed(1):x.toFixed(2)):x;
+
+// 定位、根因、修復的選項；故障的標準答案指向這些代號
+const FIELDS={quote:"今日報價（收盤、漲跌、日期）",hist:"近一年月收盤",val:"估值數字（本益比、殖利率）",whole:"整筆資料都不屬於這檔"};
+const CAUSES={stale:"資料沒更新",missing:"欄位缺值",yieldfmt:"單位或格式錯誤",split:"歷史股價未還原（分割、減資）",swap:"對錯股票（代號對照錯）",sign:"正負號錯誤"};
+const FIXES={refetch:"重新抓今天的資料",abstain:"讓用到空欄位的理專棄權，其他照常",rescale:"把數字換算回正確單位後重算",adjust:"用還原股價重算歷史",flip:"修正正負號後重算",suspend:"暫停這檔、通報資料來源"};
+const FAULTS={
+ stale:{kind:"sym",field:"quote",fix:"refetch",n:7,pre:s=>s.chg!==0,
+  what:"拿到的是前一個交易日的收盤：股價是昨天的、漲跌 0、資料日期停在前一天。",real:"排程在證交所發布資料前就去抓，或抓取失敗沿用舊檔。",
+  make(s){const d=clone(s);d.p=+(s.p/(1+s.chg/100)).toFixed(2);d.chg=0;d.asof=PREV;return d}},
+ missing:{kind:"sym",field:"val",fix:"abstain",n:7,pre:s=>s.pe>0&&s.dy>0,
+  what:"本益比和殖利率都是空的。",real:"來源網站改版，欄位名稱變了，程式讀不到。",
+  make(s){const d=clone(s);d.pe=null;d.dy=null;return d}},
+ yieldfmt:{kind:"fun",field:"val",fix:"rescale",n:7,pre:s=>s.dy>=1.5,
+  what:"殖利率用小數表示（4.5% 存成 0.045），系統又當成百分比，看起來只有 0.045%。",real:"兩個 API 一個給 4.5、一個給 0.045，合併時沒換算。",
+  make(s){const d=clone(s);d.dy=+(s.dy/100).toFixed(4);return d}},
+ split:{kind:"fun",field:"hist",fix:"adjust",n:7,pre:s=>s.p>=30,
+  what:"公司做了 1 拆 4 的股票分割，舊的月收盤沒有除以 4，看起來像某個月股價崩跌七成以上。",real:"分割、減資、除權後沒有用還原股價。",
+  make(s,p){const d=clone(s);for(let i=0;i<p.cut;i++)d.m[i]=+(s.m[i]*4).toFixed(2);return d}},
+ swap:{kind:"fun",field:"whole",fix:"suspend",n:7,pre:()=>true,
+  what:"代號對到另一檔股票的數字，名稱和月均價還是原本那檔。",real:"代號更名、合併或下市後，對照表沒更新。",
+  make(s,p){const d=clone(s),o=byCode(p.o);["p","chg","tv","m","pe","pb","dy"].forEach(k=>d[k]=clone(o[k]));return d}},
+ sign:{kind:"fun",field:"val",fix:"flip",n:7,pre:s=>s.pe>0,
+  what:"本益比被存成負數，看起來像公司在虧錢。",real:"解析數字時把括號或「−」當成虧損標記。",
+  make(s){const d=clone(s);d.pe=-s.pe;return d}},
+};
+
+// ---------- 題庫：固定種子產生 48 題（42 題有故障＋6 題無故障） ----------
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const POOL=(()=>{const r=mulberry(20250112),S=TW.stocks,used=new Set(),L=[];
+ const pick=f=>{for(let k=0;k<5000;k++){const s=S[Math.floor(r()*S.length)];if(f(s)&&!used.has(s.c)){used.add(s.c);return s}}return S.find(s=>!used.has(s.c))};
+ for(let i=0;i<7;i++)for(const f of Object.keys(FAULTS)){const s=pick(FAULTS[f].pre),p={f,c:s.c};
+  if(f==="split")p.cut=3+Math.floor(r()*6);
+  if(f==="swap"){let o;do{o=S[Math.floor(r()*S.length)]}while(o.c===s.c);p.o=o.c}
+  L.push(p)}
+ for(let i=0;i<6;i++){const s=pick(i<2?(x=>x.pe==null):(x=>x.pe>0));L.push({f:"noop",c:s.c})}
+ for(let i=L.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[L[i],L[j]]=[L[j],L[i]]}
+ return L.map((p,i)=>({...p,id:i+1}))})();
+const cleanOf=p=>({...clone(byCode(p.c)),asof:ASOF});
+const dataOf=p=>p.f==="noop"?cleanOf(p):{...FAULTS[p.f].make(byCode(p.c),p),asof:ASOF,...(p.f==="stale"?{asof:PREV}:{})};
+
+// ---------- 理專：跟首頁同一套規則 ----------
+const view=(a,d)=>{const v={c:d.c,n:d.n};(PROFILES[a.key]?.fields||Object.keys(d)).forEach(k=>v[k]=d[k]);return v};
+const runA=(a,d)=>a.run(view(a,{...d,...MACRO}));
+const needsNull=(a,d)=>(PROFILES[a.key]?.fields||[]).some(k=>k in d&&d[k]==null);
+function top3(a,d){const U=TW.stocks.map(s=>s.c===d.c?d:s);return U.map(st=>({c:st.c,...runA(a,st)})).sort((x,y)=>y.s-x.s||y.tb-x.tb).slice(0,3).map(r=>r.c)}
+
+// ---------- 查看工具（人和 Claude 用同一組） ----------
+const IND_MED=c=>{const s=byCode(c);return IND_PE[s.i]};
+const TOOLS={
+ quote:d=>({"資料日期":d.asof,"收盤價":d.p,"漲跌幅 %":d.chg,"成交值（億）":d.tv,"本月均價":d.ma}),
+ history:d=>({"月份":MONTHS.slice(0,12),"月收盤":d.m,"今天收盤":d.p}),
+ valuation:d=>({"產業":indName(d.i),"本益比":d.pe,"同業本益比中位數":+(IND_MED(d.c)||0).toFixed(1)||null,"股價淨值比":d.pb,"殖利率 %":d.dy}),
+ advisors:d=>ADVISORS.map(a=>{const r=runA(a,d);return {"理專":`${a.name}（${a.style.split("・")[0]}）`,"判斷":LABEL(r.s),"理由":r.why[0]}}),
+};
+const TOOLNAME={quote:"📄 今日報價",history:"📈 近一年月收盤",valuation:"🧮 估值數字",advisors:"🧑‍💼 六位理專怎麼說"};
+
+// ---------- 自動代理 ----------
+// 基本看門狗＝理專圓桌原本的健康檢查：只看欄位有沒有值
+function basicDog(d){return {steps:1,...(d.pe==null||d.dy==null?{l1:true,l2:"val",l3:"missing",l4:"abstain",why:"本益比或殖利率是空的"}:{l1:false,why:"欄位都有值"})}}
+// 規則看門狗：多幾條範圍與一致性檢查，但沒有檢查資料日期
+function ruleDog(d){const seq=[...d.m,d.p];let drop=1;for(let i=1;i<seq.length;i++)if(seq[i-1]>0)drop=Math.min(drop,seq[i]/seq[i-1]);
+ const r=x=>({steps:3,l1:true,...x});
+ if(d.pe==null||d.dy==null)return r({l2:"val",l3:"missing",l4:"abstain",why:"本益比或殖利率是空的"});
+ if(d.pe<0)return r({l2:"val",l3:"sign",l4:"flip",why:`本益比 ${d.pe} 是負數`});
+ if(d.dy>0&&d.dy<0.3)return r({l2:"val",l3:"yieldfmt",l4:"rescale",why:`殖利率 ${d.dy}% 低得不合理`});
+ if(drop<0.45)return r({l2:"hist",l3:"split",l4:"adjust",why:`有一個月股價只剩前月的 ${(drop*100).toFixed(0)}%`});
+ if(d.ma>0&&Math.abs(d.p/d.ma-1)>0.25)return r({l2:"whole",l3:"swap",l4:"suspend",why:`收盤 ${d.p} 和本月均價 ${d.ma} 差超過 25%`});
+ return {steps:3,l1:false,why:"範圍與一致性檢查都通過"}}
+const AUTO={basic:{name:"🐶 基本看門狗",run:basicDog},rule:{name:"🐕 規則看門狗",run:ruleDog}};
+
+function grade(ans,p){const f=p.f,F=FAULTS[f],bad=f!=="noop";
+ const g={l1:!!ans.l1===bad};
+ if(bad){g.l2=!!ans.l1&&ans.l2===F.field;g.l3=!!ans.l1&&ans.l3===f;g.l4=!!ans.l1&&ans.l4===F.fix}
+ return g}
+
+// ---------- 修復：把選的處理方式套到壞掉的資料上，看理專回不回得來 ----------
+function applyFix(fix,d,p){let x=clone(d),all=false,nul=false;
+ if(fix==="refetch"&&p.f==="stale")x=cleanOf(p);
+ if(fix==="abstain")nul=true;
+ if(fix==="rescale"&&x.dy>0&&x.dy<0.3)x.dy=+(x.dy*100).toFixed(2);
+ if(fix==="adjust"){const seq=[...x.m,x.p];for(let i=1;i<seq.length;i++)if(seq[i-1]>0&&seq[i]/seq[i-1]<0.45){const k=Math.round(seq[i-1]/seq[i]);for(let j=0;j<i;j++)x.m[j]=+(x.m[j]/k).toFixed(2);break}}
+ if(fix==="flip"&&x.pe<0)x.pe=-x.pe;
+ if(fix==="suspend")all=true;
+ const clean=cleanOf(p);
+ return ADVISORS.map(a=>{const r0=runA(a,clean);if(all||(nul&&needsNull(a,x)))return {a,abst:true,ok:true};const r1=runA(a,x);return {a,ok:r1.s===r0.s,s0:r0.s,s1:r1.s}})}
+
+// ---------- 狀態 ----------
+let mode=store.get("labMode","in"),scope="mine",runs=store.get("labRuns",[]),order=store.get("labOrder",null);
+if(!order||order.length!==POOL.length){order=POOL.map(p=>p.id).sort(()=>Math.random()-.5);store.set("labOrder",order)}
+let cur=null,steps=0,crossUsed=false,trace=[],t0=0,done=false;
+const doneIds=()=>new Set(runs.filter(r=>r.who==="you").map(r=>r.pid));
+function nextId(skip){const d=doneIds();const rest=order.filter(i=>!d.has(i)&&i!==skip);return rest.length?rest[0]:order[Math.floor(Math.random()*order.length)]}
+
+function opts(id,name,obj){$(id).innerHTML=Object.entries(obj).map(([k,v])=>`<label class="opt"><input type="radio" name="${name}" value="${k}">${esc(v)}</label>`).join("")}
+opts("o2","l2",FIELDS);opts("o3","l3",CAUSES);opts("o4","l4",FIXES);
+
+function load(id){cur=POOL.find(p=>p.id===id);steps=0;crossUsed=false;trace=[];t0=performance.now();done=false;
+ const s=byCode(cur.c);
+ $("qTitle").textContent=`第 ${cur.id} 題・${nameOf(s)}`;
+ $("ctx").innerHTML=`系統在 <b>${ASOF}</b> 收盤後收到 <b>${esc(nameOf(s))}</b>（${esc(indName(s.i))}）的資料，準備交給六位理專判斷。資料裡<b>可能</b>有一種故障，也可能完全正常。先用工具查看，再回答右邊四個問題。`;
+ $("ans").reset();$("deeper").hidden=true;$("result").hidden=true;$("submit").disabled=true;
+ $("ans").querySelectorAll("input").forEach(i=>i.disabled=false);
+ $("trace").innerHTML="";$("aiOut").innerHTML="";
+ renderHint();renderSteps()}
+function renderSteps(){$("stepN").textContent=steps;$("stepDots").innerHTML=Array.from({length:MAXSTEP},(_,i)=>`<i class="${i<steps?"on":""}"></i>`).join("");
+ const left=MAXSTEP-steps;
+ $("tools").querySelectorAll(".tool").forEach(b=>b.disabled=done||left<1);
+ $("cross").querySelectorAll("[data-g]").forEach(b=>b.disabled=done||crossUsed||left<2);
+ $("doneN").textContent=doneIds().size}
+function renderHint(){const show=mode==="on";$("agentHint").hidden=!show;if(!show)return;const d=dataOf(cur);
+ $("agentHint").innerHTML=`<h3>👀 代理先看過了</h3>${Object.values(AUTO).map(A=>{const r=A.run(d);return `<div><b>${A.name}</b>：${r.l1?`有問題 → ${esc(FIELDS[r.l2])}・${esc(CAUSES[r.l3])}・${esc(FIXES[r.l4])}`:"沒有問題"}<span class="muted">（${esc(r.why)}）</span></div>`}).join("")}<div class="muted" style="font-size:13px;margin-top:4px">代理也會錯。你可以照它的意見答，也可以自己查證後推翻。</div>`}
+
+// 把工具輸出畫成卡片
+function show(kind,out,src2){
+ let body;
+ if(kind==="history"){const v=out["月收盤"].concat(out["今天收盤"]),mx=Math.max(...v),mn=Math.min(...v),W=300,H=70;
+  const pts=v.map((y,i)=>`${(i/(v.length-1)*W).toFixed(1)},${(H-6-(y-mn)/((mx-mn)||1)*(H-12)).toFixed(1)}`).join(" ");
+  body=`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="近一年月收盤走勢"><polyline points="${pts}" fill="none" stroke="var(--sky-deep)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+   <div class="months">${out["月份"].map((m,i)=>`${m} ${fx(out["月收盤"][i])}`).join("・")}・今天 ${fx(out["今天收盤"])}</div>`}
+ else if(kind==="advisors")body=`<ul class="advs">${out.map(r=>`<li><b>${esc(r["理專"])}</b>：${esc(r["判斷"])}　<span class="muted">${esc(r["理由"])}</span></li>`).join("")}</ul>`;
+ else body=`<div class="kv">${Object.entries(out).map(([k,v])=>`<div><small>${esc(k)}</small><b>${esc(fx(v))}</b></div>`).join("")}</div>`;
+ const li=document.createElement("li");if(src2)li.className="src2";
+ li.innerHTML=`<div class="th"><span>${src2?"🔁 第二來源・":""}${TOOLNAME[kind]}</span><span>第 ${steps} 步・${((performance.now()-t0)/1000).toFixed(0)} 秒</span></div>${body}`;
+ $("trace").prepend(li)}
+$("tools").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b||done||steps>=MAXSTEP)return;
+ steps++;const k=b.dataset.t;trace.push(k);show(k,TOOLS[k](dataOf(cur)));renderSteps()});
+$("cross").addEventListener("click",e=>{const b=e.target.closest("[data-g]");if(!b||done||crossUsed||steps>MAXSTEP-2)return;
+ steps+=2;crossUsed=true;const k=b.dataset.g;trace.push("cross:"+k);show(k,TOOLS[k](cleanOf(cur)),true);renderSteps()});
+
+$("ans").addEventListener("change",()=>{const f=new FormData($("ans")),l1=f.get("l1");$("deeper").hidden=l1!=="yes";
+ $("submit").disabled=done||!l1||(l1==="yes"&&!(f.get("l2")&&f.get("l3")&&f.get("l4")))});
+$("skip").addEventListener("click",()=>load(nextId(cur.id)));
+
+$("ans").addEventListener("submit",e=>{e.preventDefault();if(done)return;const f=new FormData($("ans"));
+ const ans={l1:f.get("l1")==="yes",l2:f.get("l2"),l3:f.get("l3"),l4:f.get("l4")};
+ const secs=+((performance.now()-t0)/1000).toFixed(1),g=grade(ans,cur);
+ const rd=ruleDog(dataOf(cur));
+ runs.push({who:"you",mode,pid:cur.id,f:cur.f,c:cur.c,...ans,g,steps,secs,trace:trace.join(" "),dogL1:rd.l1,t:new Date().toISOString()});store.set("labRuns",runs);
+ done=true;$("ans").querySelectorAll("input").forEach(i=>i.disabled=true);$("submit").disabled=true;
+ renderResult(ans,g,secs);renderSteps();renderBoard()});
+
+function cell(lbl,ok,na,txt){return `<div class="${na?"na":ok?"ok":"no"}"><b>${ok?"✅":na?"—":"❌"} ${lbl}</b>${txt}</div>`}
+function renderResult(ans,g,secs){const p=cur,F=FAULTS[p.f],bad=p.f!=="noop",d=dataOf(p),clean=cleanOf(p);
+ let h=`<h3>${bad?`這題的故障是「${esc(CAUSES[p.f])}」`:"這題沒有故障"}</h3><p>${bad?esc(F.what):`資料是 ${ASOF} 的真實收盤快照。${clean.pe==null?"這檔本來就沒有本益比（近四季虧損或沒有資料），不是故障。":""}`}　<span class="muted">你用了 ${steps} 步、${secs} 秒。</span></p>`;
+ h+=`<div class="lv">${cell("偵測",g.l1,false,bad?"有故障":"沒有故障")}${["l2","l3","l4"].map((k,i)=>cell(["定位","根因","修復"][i],g[k],!bad,bad?esc([FIELDS[F.field],CAUSES[p.f],FIXES[F.fix]][i]):"不適用")).join("")}</div>`;
+ if(bad){
+  const changed=ADVISORS.map(a=>({a,r0:runA(a,clean),r1:runA(a,d)})).filter(x=>x.r0.s!==x.r1.s);
+  const lost=ADVISORS.filter(a=>{const A=top3(a,clean),B=top3(a,d);return A.join()!==B.join()});
+  h+=`<h3 style="margin-top:12px">💥 波及範圍</h3><p>沒人發現的話，<b>${changed.length}</b> 位理專的判斷會被帶偏，<b>${lost.length}</b> 位的前三名名單會變。${changed.length===0?"這個故障剛好沒有改變任何判斷，但資料仍然是錯的，下次可能就會。":""}</p>`;
+  h+=`<div class="blast">${ADVISORS.map(a=>{const x=changed.find(c=>c.a===a);return x?`<div class="hit">${a.emoji} ${a.name}<br>${LABEL(x.r0.s)} → <b>${LABEL(x.r1.s)}</b></div>`:`<div>${a.emoji} ${a.name}<br><span class="muted">沒受影響</span></div>`}).join("")}</div>`;
+  if(ans.l1){const fr=applyFix(ans.l4,d,p),ok=fr.filter(x=>x.ok&&!x.abst).length,ab=fr.filter(x=>x.abst).length;
+   h+=`<p style="margin-top:10px">🔧 照你選的「${esc(FIXES[ans.l4])}」處理後：${ok} 位理專回到正確判斷，${ab} 位棄權，${6-ok-ab} 位仍然被帶偏。${ans.l4==="suspend"&&p.f!=="swap"?"暫停整檔最安全，但這檔今天就沒有任何建議了，屬於過度處理。":""}</p>`}}
+ h+=`<h3 style="margin-top:12px">其他作答者怎麼答這題</h3><table class="cmp"><thead><tr><th>作答者</th><th>答案</th><th>理由</th></tr></thead><tbody>${Object.values(AUTO).map(A=>{const r=A.run(d),gg=grade(r,p);
+  return `<tr><td>${A.name}</td><td>${gg.l1?"✅":"❌"} ${r.l1?`有問題・${esc(CAUSES[r.l3])}`:"沒有問題"}</td><td class="muted">${esc(r.why)}</td></tr>`}).join("")}${runs.filter(r=>r.who==="claude"&&r.pid===p.id).slice(-1).map(r=>`<tr><td>🤖 Claude</td><td>${r.g.l1?"✅":"❌"} ${r.l1?`有問題・${esc(CAUSES[r.l3]||r.l3)}`:"沒有問題"}</td><td class="muted">${esc(r.why||"")}</td></tr>`).join("")}</tbody></table>`;
+ h+=`<div class="row" style="margin-top:12px"><button class="btn" type="button" id="next">下一題 →</button></div>`;
+ $("result").innerHTML=h;$("result").hidden=false;$("next").addEventListener("click",()=>load(nextId(cur.id)));$("result").scrollIntoView({behavior:"smooth",block:"nearest"})}
+
+// ---------- 成績表 ----------
+function agg(rows,pidSet){const R=rows.filter(r=>!pidSet||pidSet.has(r.pid)),P=id=>POOL.find(p=>p.id===id);
+ const bad=R.filter(r=>P(r.pid).f!=="noop"),noop=R.filter(r=>P(r.pid).f==="noop"),acc=(a,k)=>a.length?a.filter(r=>r.g[k]).length/a.length:null;
+ return {n:R.length,l1:acc(R,"l1"),l2:acc(bad,"l2"),l3:acc(bad,"l3"),l4:acc(bad,"l4"),fp:noop.length?noop.filter(r=>r.l1).length/noop.length:null,
+  steps:R.length?R.reduce((s,r)=>s+r.steps,0)/R.length:null,secs:R.some(r=>r.secs!=null)?R.reduce((s,r)=>s+(r.secs||0),0)/R.length:null}}
+const autoRows=k=>POOL.map(p=>{const r=AUTO[k].run(dataOf(p));return {pid:p.id,...r,g:grade(r,p),secs:null}});
+const pc=x=>x==null?"—":(x*100).toFixed(0)+"%";
+function renderBoard(){
+ $("scope").querySelectorAll("[data-s]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.s===scope));
+ const mine=runs.filter(r=>r.who==="you"),ids=new Set(mine.map(r=>r.pid));
+ let rows=[];
+ if(scope==="mine"){
+  // 同一題作答多次時只算第一次
+  const first=(arr)=>{const s=new Set();return arr.filter(r=>!s.has(r.pid)&&s.add(r.pid))};
+  rows.push(["🙋 你（人在迴圈中）",agg(first(mine.filter(r=>r.mode==="in")))],["👀 你（人在迴圈上）",agg(first(mine.filter(r=>r.mode==="on")))]);
+  for(const k in AUTO)rows.push([AUTO[k].name,agg(autoRows(k),ids)]);
+  const cl=first(runs.filter(r=>r.who==="claude"));if(cl.length)rows.push(["🤖 Claude",agg(cl)]);
+  $("scopeTxt").textContent=ids.size?`你做過 ${ids.size} 題。看門狗只算同樣這 ${ids.size} 題，才能公平比較。同一題做第二次不重複計分。`:"還沒有作答紀錄。先在上面答幾題，這裡就會出現你和代理的比較。";
+ }else{for(const k in AUTO)rows.push([AUTO[k].name,agg(autoRows(k))]);$("scopeTxt").textContent="兩隻看門狗是固定規則，可以一次跑完全部 48 題（42 題有故障、6 題沒有）。";}
+ rows=rows.filter(([,a])=>a.n>0);
+ const best={};["l1","l2","l3","l4"].forEach(k=>best[k]=Math.max(...rows.map(([,a])=>a[k]??-1)));
+ $("board").innerHTML=rows.length?rows.map(([n,a])=>`<tr><td>${n}</td><td>${a.n}</td>${["l1","l2","l3","l4"].map(k=>`<td class="${a[k]!=null&&a[k]===best[k]&&rows.length>1?"best":""}">${pc(a[k])}</td>`).join("")}<td>${pc(a.fp)}</td><td>${a.steps==null?"—":a.steps.toFixed(1)}</td><td>${a.secs==null?"—":a.secs.toFixed(0)}</td></tr>`).join(""):`<tr><td colspan="9" class="muted">還沒有資料</td></tr>`;
+ renderLoop(mine)}
+// 人在迴圈中／上 的比較與自動化偏誤
+function renderLoop(mine){const P=id=>POOL.find(p=>p.id===id);
+ const on=mine.filter(r=>r.mode==="on"),inn=mine.filter(r=>r.mode==="in");
+ const dogWrong=on.filter(r=>r.dogL1!==(P(r.pid).f!=="noop")),follow=dogWrong.filter(r=>r.l1===r.dogL1);
+ const fix=on.filter(r=>r.dogL1===(P(r.pid).f!=="noop"));
+ const a=agg(inn),b=agg(on);
+ $("loop").innerHTML=`
+  <div class="card"><b>🙋 vs 👀 偵測正確率</b><span class="big">${pc(a.l1)} / ${pc(b.l1)}</span><div class="muted">自己判斷 ${a.n} 題，先看代理 ${b.n} 題</div></div>
+  <div class="card"><b>⏱️ 平均作答秒數</b><span class="big">${a.secs==null?"—":a.secs.toFixed(0)} / ${b.secs==null?"—":b.secs.toFixed(0)}</span><div class="muted">看代理意見有沒有讓你更快</div></div>
+  <div class="card"><b>🧲 代理答錯時，你跟著錯</b><span class="big">${dogWrong.length?pc(follow.length/dogWrong.length):"—"}</span><div class="muted">先看代理的題目中，規則看門狗偵測錯了 ${dogWrong.length} 題，你跟它答一樣的有 ${follow.length} 題。越高代表越依賴代理（自動化偏誤）。</div></div>
+  <div class="card"><b>🤝 代理答對時，你也答對</b><span class="big">${fix.length?pc(fix.filter(r=>r.g.l1).length/fix.length):"—"}</span><div class="muted">代理對、你卻推翻它而答錯的情況越少越好。</div></div>`}
+$("scope").addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;scope=b.dataset.s;renderBoard()});
+
+// ---------- 匯出 ----------
+function csv(){const H=["time","who","mode","problem","fault","code","l1","l2","l3","l4","ok_detect","ok_localize","ok_rca","ok_mitigate","steps","seconds","trace","rule_dog_l1"];
+ const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+ return [H.join(","),...runs.map(r=>[r.t,r.who,r.mode||"",r.pid,r.f,r.c,r.l1,r.l2||"",r.l3||"",r.l4||"",r.g.l1,r.g.l2??"",r.g.l3??"",r.g.l4??"",r.steps,r.secs??"",r.trace||"",r.dogL1??""].map(q).join(","))].join("\n")}
+$("csv").addEventListener("click",async()=>{
+ // 在 Claude 裡用 downloads 能力存檔；在一般網站（GitHub Pages）用下載連結
+ let dl=null;try{dl=window.claude?await window.claude.use("downloads"):null}catch(e){}
+ if(dl){try{await dl.save({filename:"advisor-lab-runs.csv",data:"\ufeff"+csv()});$("csvMsg").textContent=`已存下 ${runs.length} 筆紀錄。`}catch(e){$("csvMsg").textContent="沒有存檔，可以改用「複製 CSV」。"}return}
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv()],{type:"text/csv"}));a.download="advisor-lab-runs.csv";document.body.append(a);a.click();a.remove();$("csvMsg").textContent=`已產生 ${runs.length} 筆紀錄。如果沒有下載，請改用「複製 CSV」。`});
+$("copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(csv());$("csvMsg").textContent=`已複製 ${runs.length} 筆紀錄。`}catch(e){$("csvMsg").textContent="這個瀏覽器不允許複製，請改用下載。"}});
+$("reset").addEventListener("click",()=>{if(!confirm("確定清除這台裝置上的所有作答紀錄？"))return;runs=[];store.set("labRuns",runs);renderBoard();renderSteps()});
+
+$("mode").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;mode=b.dataset.m;store.set("labMode",mode);
+ $("mode").querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===mode));if(!done)renderHint()});
+$("mode").querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===mode));
+
+// 故障庫表
+$("lib").innerHTML=Object.entries(FAULTS).map(([k,F])=>`<tr><td>${esc(CAUSES[k])}</td><td><span class="pill ${F.kind}">${F.kind==="sym"?"表面症狀":"功能故障"}</span></td><td>${F.n}</td><td style="text-align:left;white-space:normal">${esc(F.what)}</td><td style="text-align:left;white-space:normal" class="muted">${esc(F.real)}</td><td style="text-align:left;white-space:normal">${esc(FIXES[F.fix])}</td></tr>`).join("")
+ +`<tr><td>沒有故障</td><td><span class="pill">對照組</span></td><td>6</td><td style="text-align:left;white-space:normal">真實資料原封不動。其中 2 檔本來就沒有本益比。</td><td style="text-align:left;white-space:normal" class="muted">虧損公司、剛上市公司本來就沒有某些數字。</td><td style="text-align:left;white-space:normal">照常使用</td></tr>`;
+
+// ---------- Claude 代理（只在 Claude 裡開啟時可用） ----------
+let ctl=null;
+(async()=>{let sample=null;try{sample=window.claude?await window.claude.use("sample"):null}catch(e){}
+ if(!sample)return;$("aiBox").hidden=false;
+ $("aiStop").addEventListener("click",()=>ctl?.abort());
+ $("aiGo").addEventListener("click",async()=>{const p=cur,d=dataOf(p),out=$("aiOut");let n=0,used=false;const tr=[];const t1=performance.now();
+  const step=(k,c=1)=>{if(n+c>MAXSTEP)throw new Error("已達 8 步上限，請直接作答");n+=c;tr.push(k);out.innerHTML=`<p class="muted">第 ${n} 步：${esc(k)}</p>`};
+  const T=[["get_quote","今日報價：資料日期、收盤價、漲跌幅、成交值、本月均價。","quote"],["get_history","近一年 12 個月的月收盤與今天收盤。","history"],["get_valuation","本益比、同業本益比中位數、股價淨值比、殖利率。","valuation"],["get_advisors","六位理專用這筆資料做出的判斷與理由。","advisors"]]
+   .map(([name,description,k])=>({name,description:description+"算 1 步。",execute(){step(name);return TOOLS[k](d)}}));
+  T.push({name:"cross_check",description:"從第二個資料來源查一組數字（quote、history 或 valuation），算 2 步，每題只能用一次。",
+   inputSchema:{type:"object",properties:{group:{type:"string",enum:["quote","history","valuation"]}},required:["group"]},
+   execute(i){const g=String(i.group);if(used)throw new Error("第二來源每題只能查一次");if(!TOOLS[g]||g==="advisors")throw new Error("group 只能是 quote、history 或 valuation");step("cross_check:"+g,2);used=true;return TOOLS[g](cleanOf(p))}});
+  const prompt=`你是資料品質稽核員。系統在 ${ASOF} 收盤後收到台股 ${nameOf(byCode(p.c))} 的資料，準備交給六位規則型理專判斷。資料裡可能有一種故障，也可能完全正常。
+請用工具查看（總共最多 ${MAXSTEP} 步），然後只回一段 JSON，不要其他文字：
+{"anomaly": true 或 false, "field": "${Object.keys(FIELDS).join("|")}", "cause": "${Object.keys(CAUSES).join("|")}", "fix": "${Object.keys(FIXES).join("|")}", "reason": "一句繁體中文"}
+沒有問題時 field、cause、fix 填 null。
+field：${Object.entries(FIELDS).map(([k,v])=>`${k}=${v}`).join("；")}
+cause：${Object.entries(CAUSES).map(([k,v])=>`${k}=${v}`).join("；")}
+fix：${Object.entries(FIXES).map(([k,v])=>`${k}=${v}`).join("；")}
+注意：虧損或資料不足的公司本來就可能沒有本益比；一年內股價大漲大跌也可能是真的。`;
+  ctl=new AbortController();$("aiGo").disabled=true;$("aiStop").hidden=false;out.innerHTML=`<p class="muted">Claude 思考中…</p>`;
+  try{const {text}=await sample(prompt,{tools:T,signal:ctl.signal,cache:false});
+   const m=text.match(/\{[\s\S]*\}/g);let a=null;try{a=m&&JSON.parse(m[m.length-1])}catch(e){}
+   if(!a)throw {code:"bad_json",text};
+   const ans={l1:!!a.anomaly,l2:a.field||null,l3:a.cause||null,l4:a.fix||null},g=grade(ans,p),secs=+((performance.now()-t1)/1000).toFixed(1);
+   runs.push({who:"claude",pid:p.id,f:p.f,c:p.c,...ans,g,steps:n,secs,trace:tr.join(" "),why:a.reason||"",t:new Date().toISOString()});store.set("labRuns",runs);
+   out.innerHTML=`<p><b>Claude 的答案</b>（${n} 步、${secs} 秒）：${ans.l1?`有問題 → ${esc(FIELDS[ans.l2]||ans.l2)}・${esc(CAUSES[ans.l3]||ans.l3)}・${esc(FIXES[ans.l4]||ans.l4)}`:"沒有問題"}<br><span class="muted">${esc(a.reason||"")}</span></p><p class="muted" style="font-size:13px">${done?`偵測 ${g.l1?"✅":"❌"}`:"你作答送出後，這裡會顯示 Claude 有沒有答對。"}</p>`;
+   if(done)renderResultAgain();renderBoard()}
+  catch(e){out.innerHTML=`<p class="muted">${e.code==="cancelled"?"已停止。":e.code==="not_granted"?"沒有允許使用 Claude，這個功能先關閉。":e.code==="rate_limited"?"Claude 暫時忙碌，稍後再試。":e.code==="bad_json"?"Claude 沒有照格式回答，這題不計分。":"這次沒有完成，稍後再試。"}</p>`;if(e.code==="not_granted")$("aiBox").hidden=true}
+  finally{$("aiGo").disabled=false;$("aiStop").hidden=true;ctl=null}})})();
+function renderResultAgain(){const last=runs.filter(r=>r.who==="you"&&r.pid===cur.id).slice(-1)[0];if(last)renderResult(last,last.g,last.secs)}
+
+{const h=+location.hash.slice(1);load(POOL.some(p=>p.id===h)?h:nextId())}
+renderBoard();
+</script>
+<!--SITE-FOOT-->

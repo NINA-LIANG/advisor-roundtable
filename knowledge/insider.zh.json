@@ -1,0 +1,130 @@
+{
+  "_note": "理專內行筆記。內容為自行整理的重點摘要，每條附官方或原始出處；2026-10-22 以 Firecrawl 擷取原文核對。法規條文以全國法規資料庫、金管會、銀行公會公告為準。",
+  "asof": "2026-10-22",
+  "sections": [
+    {
+      "id": "law",
+      "icon": "⚖️",
+      "title": "法規底線：理專一定要做的事",
+      "items": [
+        {"t": "先認識你（KYC）", "b": "簽約前要充分瞭解客戶：身分、財務背景、所得與資金來源、風險偏好、過往投資經驗、簽約目的與需求，確保商品適合客戶（適合度）。", "src": [["金融消費者保護法第 9 條", "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0380226"], ["金融消費評議中心：KYC 與 KYP", "https://www.foi.org.tw/Article.aspx?Lang=1&Arti=2424&k=&p=1&lid=1839"]]},
+        {"t": "認識商品（KYP）", "b": "推介前要先把商品依複雜度與風險分級，再跟客戶的風險屬性配對。適合度至少要包括「客戶風險承受等級」與「商品風險等級」兩種分類。", "src": [["金融消費評議中心：KYC 與 KYP", "https://www.foi.org.tw/Article.aspx?Lang=1&Arti=2424&k=&p=1&lid=1839"]]},
+        {"t": "說清楚、揭露風險", "b": "簽約前要用客戶能理解的方式說明重要內容，包括交易成本、可能收益與風險。複雜性高風險商品的說明要錄音或錄影（非臨櫃自動化通路除外）。", "src": [["金融消費者保護法第 10 條", "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0380226"]]},
+        {"t": "廣告不能誇大", "b": "廣告與招攬不得虛偽、詐欺、隱匿或讓人誤信；業者對客戶的義務不得低於廣告內容。也不得藉金融教育宣導推銷個別商品。", "src": [["金融消費者保護法第 8 條", "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0380226"]]},
+        {"t": "公平待客十大原則", "b": "訂約公平誠信、注意與忠實義務、廣告招攬真實、商品或服務適合度、告知與揭露、酬金與業績衡平、申訴保障、業務人員專業性、友善服務、落實誠信經營。金管會每年評核。", "src": [["金融服務業公平待客原則", "https://law.fsc.gov.tw/LawContent.aspx?id=GL001766"]]},
+        {"t": "客訴怎麼走", "b": "先向金融機構申訴，業者要在 30 天內處理回覆；不滿意或逾期未處理，可在 60 天內向金融消費評議中心申請評議。", "src": [["金融服務業公平待客原則（申訴保障原則）", "https://law.fsc.gov.tw/LawContent.aspx?id=GL001766"]]},
+        {"t": "推薦個股要有執照", "b": "直接或間接收取報酬，對個別有價證券提供分析意見或推介建議，屬於證券投資顧問業務，未經許可經營有刑事責任。本站不收費、不收廣告，僅供學術示範。", "src": [["證券投資信託及顧問法第 4、6、107 條", "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0400121"]]},
+        {"t": "AI 產出仍要有人把關", "b": "金管會 AI 指引：金融機構使用第三方生成式 AI，若無法掌握其訓練過程與公平性，產出的資訊仍需由人員就風險進行客觀且專業的管控；並要求可解釋性與透明性。", "src": [["金管會：金融業運用人工智慧（AI）指引（2024-06-20）", "https://www.fsc.gov.tw/ch/home.jsp?id=96&parentpath=0,2&mcustomize=news_view.jsp&dataserno=202406200001&dtable=News"]]}
+      ]
+    },
+    {
+      "id": "rr",
+      "icon": "🎚️",
+      "title": "商品風險等級 RR1–RR5（以基金為例）",
+      "items": [
+        {"t": "RR1", "b": "通常是貨幣市場型基金，風險低，但不保證本金不虧損。", "src": [["基富通：風險報酬等級 RR1~RR5", "https://www.fundrich.com.tw/event/pensionplatform/education_fund_3.html"]]},
+        {"t": "RR2", "b": "大多投資已開發國家投資級債券、公債，仍有價格下跌風險。", "src": [["基富通", "https://www.fundrich.com.tw/event/pensionplatform/education_fund_3.html"]]},
+        {"t": "RR3", "b": "同時投資股票、債券或高收益證券，兼顧資本利得與固定收益。", "src": [["基富通", "https://www.fundrich.com.tw/event/pensionplatform/education_fund_3.html"]]},
+        {"t": "RR4", "b": "投資已開發國家或大區域多國股市，可能有很大的價格下跌風險。", "src": [["基富通", "https://www.fundrich.com.tw/event/pensionplatform/education_fund_3.html"]]},
+        {"t": "RR5", "b": "投資波動大的單一國家或成長型類股，價格下跌風險很高。單一個股的集中度更高，波動通常比這些基金還大。", "src": [["基富通", "https://www.fundrich.com.tw/event/pensionplatform/education_fund_3.html"]]},
+        {"t": "怎麼配對", "b": "保守型通常只考慮 RR1–RR3，穩健型 RR1–RR4，積極型可依資產配置佈局到 RR5。各家銀行的分級與問卷不完全相同，以實際機構為準。", "src": [["基富通", "https://www.fundrich.com.tw/event/pensionplatform/education_fund_3.html"]]}
+      ]
+    },
+    {
+      "id": "rules",
+      "icon": "📏",
+      "title": "業內規矩：理專十誡",
+      "items": [
+        {"t": "這是什麼", "b": "銀行公會「銀行防範理財專員挪用客戶款項相關內控作業原則」，金管會 108 年 6 月 14 日備查，業界俗稱「理專十誡」。", "src": [["金管會新聞稿", "https://www.fsc.gov.tw/ch/home.jsp?id=2&parentpath=0&mcustomize=news_view.jsp&dataserno=202207260004&dtable=News"], ["銀行公會規範與附件", "https://www.ba.org.tw/memberStandard/details?id=93"]]},
+        {"t": "認識員工（KYE）", "b": "銀行任用理專要做盡職調查，瞭解品性素行、專業、信用與財務狀況，在職期間也要定期或不定期追蹤。", "src": [["內控作業原則全文", "https://law.banking.gov.tw/Chi/downloadfiles.ashx?MsgId=2446&tbl=F&FileId=2439&his=False"]]},
+        {"t": "不能代客保管", "b": "理專不得代客保管存摺、印鑑或已簽章的空白交易單據，不得擅自交易或不當招攬。", "src": [["內控作業原則全文", "https://law.banking.gov.tw/Chi/downloadfiles.ashx?MsgId=2446&tbl=F&FileId=2439&his=False"]]},
+        {"t": "強制休假與輪調", "b": "銀行要對理專採取休假、輪調，以及查核理專與客戶往來情形等防弊措施。", "src": [["內控作業原則全文", "https://law.banking.gov.tw/Chi/downloadfiles.ashx?MsgId=2446&tbl=F&FileId=2439&his=False"]]},
+        {"t": "網銀密碼只有客戶能設", "b": "網路銀行密碼應由客戶自行設定，搭配交付控管、異常檢核報表、交易函證與交易確認。", "src": [["內控作業原則全文", "https://law.banking.gov.tw/Chi/downloadfiles.ashx?MsgId=2446&tbl=F&FileId=2439&his=False"]]},
+        {"t": "禁止私下資金往來", "b": "銀行要建立帳戶監控、異常舉報機制，並抽查理專辦公處所，防止理專與客戶私下資金往來。", "src": [["內控作業原則全文", "https://law.banking.gov.tw/Chi/downloadfiles.ashx?MsgId=2446&tbl=F&FileId=2439&his=False"]]}
+      ]
+    },
+    {
+      "id": "redflags",
+      "icon": "🚩",
+      "title": "警訊：你的理專如果這樣做要小心",
+      "items": [
+        {"t": "跟你借錢或資金往來", "b": "理專與客戶有私人借貸，或與客戶帳戶之間有資金往來。", "src": [["銀行公會：疑似理專挪用客戶款項之態樣", "https://www.ba.org.tw/memberStandard/DownloadFile?intId=241671&downName=.pdf"]]},
+        {"t": "幫你保管東西", "b": "理專留存或保管客戶的圖章、存摺、存單、保單、網銀帳號密碼，或已簽章的空白交易單據。", "src": [["疑似態樣", "https://www.ba.org.tw/memberStandard/DownloadFile?intId=241671&downName=.pdf"]]},
+        {"t": "自己做對帳單給你", "b": "理專自製對帳單，或你的銀行對帳單常常沒收到。", "src": [["疑似態樣", "https://www.ba.org.tw/memberStandard/DownloadFile?intId=241671&downName=.pdf"]]},
+        {"t": "聯絡資料被換成理專的", "b": "你在銀行留的手機、地址、Email 跟理專相同，或你的網路交易跟理專來自同一個 IP。", "src": [["疑似態樣", "https://www.ba.org.tw/memberStandard/DownloadFile?intId=241671&downName=.pdf"]]},
+        {"t": "行外收件、全程代辦", "b": "理專在銀行外收件，或代你全程臨櫃辦理轉帳、取款、贖回、變更通訊資料或約定轉帳帳號。", "src": [["疑似態樣", "https://www.ba.org.tw/memberStandard/DownloadFile?intId=241671&downName=.pdf"]]},
+        {"t": "存摺備註跟實際不符", "b": "存摺備註寫著「基金申購」「保費」，但錢實際流向不是那裡。", "src": [["疑似態樣", "https://www.ba.org.tw/memberStandard/DownloadFile?intId=241671&downName=.pdf"]]},
+        {"t": "不讓別人認識你", "b": "理專不讓主管或同事認識他的客戶；生活開銷明顯與收入不符。", "src": [["疑似態樣", "https://www.ba.org.tw/memberStandard/DownloadFile?intId=241671&downName=.pdf"]]}
+      ]
+    },
+    {
+      "id": "money",
+      "icon": "💰",
+      "title": "理專怎麼賺錢：利益衝突",
+      "items": [
+        {"t": "業績制的誘因", "b": "銀行理專多半靠銷售商品的手續費與獎金計算業績，同樣金額下，獎金較高的商品（例如部分保單）容易被優先推薦。這不代表理專不專業，而是制度誘因，客戶要主動問清楚。", "src": [["財商教育實驗室：銀行理專的利益衝突", "https://fqexlab.com/bank-adviser-conflict-of-interest/"], ["safecheck：銀行通路保單利益衝突揭露", "https://safecheck.tw/learn/bank-life-insurance-channel-conflict-rules"]]},
+        {"t": "法規怎麼管", "b": "公平待客原則要求「酬金與業績衡平」：酬金制度要衡平考量客戶權益、商品風險與業者利益，並提報董（理）事會通過。", "src": [["金融服務業公平待客原則", "https://law.fsc.gov.tw/LawContent.aspx?id=GL001766"]]},
+        {"t": "可以問理專的三個問題", "b": "這個商品你和銀行收多少費用？（前收、後收、管理費、通路服務費）有沒有其他風險更低、費用更低的替代品？這個商品的風險等級和我的風險屬性相符嗎？", "src": [["投信投顧公會：境外基金手續費前收後收差異", "https://www.sitca.org.tw/"]]},
+        {"t": "收顧問費的模式", "b": "另一種模式是收顧問費、不靠賣商品賺錢，讓顧問的利益跟客戶一致；機器人理財也屬於投顧業務，需要執照。", "src": [["財商教育實驗室", "https://fqexlab.com/bank-adviser-conflict-of-interest/"], ["投信投顧公會：認識自動化投資顧問服務", "https://www.sitca.org.tw/ROC/RoboAdvisor/index.html"]]}
+      ]
+    },
+    {
+      "id": "license",
+      "icon": "🎓",
+      "title": "理專要考哪些證照",
+      "items": [
+        {"t": "常見組合", "b": "信託業業務人員信託業務專業測驗、投資型保險商品業務員、人身保險業務員、證券商業務員或高級業務員、理財規劃人員專業能力測驗；銷售衍生性商品另需相關資格。各銀行要求不同。", "src": [["台灣金融研訓院：證照報名", "https://www.tabf.org.tw/License.aspx"], ["南華大學：金融證照總覽", "https://nhuwebfile.nhu.edu.tw/UploadedFiles/2022/7/1b229faa-c0cb-49b7-a21b-5e7a4e41ef94.pdf"]]},
+        {"t": "推薦個股的資格", "b": "從事有價證券投資分析或推介建議，要具備投顧事業人員資格，例如通過證券投資分析人員測驗。", "src": [["投信投顧公會：認定經營投顧業務問答集", "https://www.sitca.org.tw/ROC/Legal/files/%E8%AA%8D%E5%AE%9A%E7%B6%93%E7%87%9F%E8%AD%89%E5%88%B8%E6%8A%95%E8%B3%87%E9%A1%A7%E5%95%8F%E6%A5%AD%E5%8B%99%E4%B9%8B%E5%95%8F%E7%AD%94%E9%9B%86.pdf"]]},
+        {"t": "理財規劃人員考什麼", "b": "金融機構功能與規範、經濟指標、短期投資與信用工具、債券、股票、共同基金、衍生性商品、保險運用等。", "src": [["千華：理財規劃人員專業能力測驗", "https://www.chienhua.com.tw/JobDetail.aspx?Num=102"]]}
+      ]
+    },
+    {
+      "id": "market",
+      "icon": "📈",
+      "title": "台股內行常識",
+      "items": [
+        {"t": "月營收", "b": "上市櫃公司每月 10 日前公布上個月營收，可在 1–10 日任一天公布。月營收是最早的基本面訊號。", "src": [["Yahoo 股市：月營收何時公布", "https://tw.stock.yahoo.com/news/%E3%80%90%E8%B2%A1%E5%A0%B1%E7%9C%8B%E9%96%80%E9%81%93%E3%80%91%E4%B8%8A%E5%B8%82%E6%AB%83%E6%AF%8F%E6%9C%88%E7%87%9F%E6%94%B6%E4%BD%95%E6%99%82%E5%85%AC%E5%B8%83%EF%BC%9F%E9%80%99%E4%BA%9B%E6%95%B8%E6%93%9A%E4%BB%A3%E8%A1%A8%E4%BB%80%E9%BA%BC%E6%84%8F%E7%BE%A9%EF%BC%9F%E6%B2%92%E5%85%AC%E5%B8%83%E6%9C%83%E6%9C%89%E4%BB%80%E9%BA%BC%E5%BE%8C%E6%9E%9C%EF%BC%9F-072134732.html"]]},
+        {"t": "財報季：4、5、8、11 月", "b": "年報 3 月 31 日前，第一季 5 月 15 日前，第二季 8 月 14 日前，第三季 11 月 14 日前。財報公布前後股價常有較大波動。", "src": [["Yahoo 股市", "https://tw.stock.yahoo.com/news/%E3%80%90%E8%B2%A1%E5%A0%B1%E7%9C%8B%E9%96%80%E9%81%93%E3%80%91%E4%B8%8A%E5%B8%82%E6%AB%83%E6%AF%8F%E6%9C%88%E7%87%9F%E6%94%B6%E4%BD%95%E6%99%82%E5%85%AC%E5%B8%83%EF%BC%9F%E9%80%99%E4%BA%9B%E6%95%B8%E6%93%9A%E4%BB%A3%E8%A1%A8%E4%BB%80%E9%BA%BC%E6%84%8F%E7%BE%A9%EF%BC%9F%E6%B2%92%E5%85%AC%E5%B8%83%E6%9C%83%E6%9C%89%E4%BB%80%E9%BA%BC%E5%BE%8C%E6%9E%9C%EF%BC%9F-072134732.html"], ["台股喵：財報公布時程", "https://twstockmeow.com.tw/guide/tw-financial-report-schedule/"]]},
+        {"t": "注意股與處置股", "b": "漲跌幅、成交量、週轉率等交易異常時，證交所先公告「注意股票」；持續異常就列為「處置股票」，改採分盤交易、預收款券等管制。理專選到處置股時要特別提醒。", "src": [["證交所：公布處置有價證券", "https://www.twse.com.tw/zh/announcement/punish.html"], ["永豐金證券：注意股、處置股是什麼", "https://www.sinotrade.com.tw/richclub/primary/-68809b505329692b79f41f52"]]},
+        {"t": "高殖利率不等於好", "b": "殖利率排行常被一次性大額配息或股價急跌拉高；要看配息是否穩定、是否來自本業獲利，以及能否填息。", "src": [["Goodinfo：現金殖利率排行", "https://goodinfo.tw/tw/index.asp"]]},
+        {"t": "回測好看不代表會賺", "b": "試過越多參數，最好看的回測越可能只是運氣。要記錄試了幾次，並保留沒用來調參數的期間驗證。", "src": [["Bailey et al. (2017) The Probability of Backtest Overfitting", "https://doi.org/10.21314/JCF.2016.322"]]}
+      ]
+    },
+    {
+      "id": "peers",
+      "icon": "🧭",
+      "title": "同類網站都有什麼",
+      "items": [
+        {"t": "資訊型（Goodinfo、財報狗）", "b": "個股資料、財報、殖利率排行、三大法人連買、智慧選股與自訂篩選。強在資料完整，但不幫你下判斷。", "src": [["Goodinfo!台灣股市資訊網", "https://goodinfo.tw/tw/index.asp"], ["理財寶：股票分析網站整理", "https://www.cmoney.tw/notes/note-detail.aspx?nid=160841"]]},
+        {"t": "籌碼與達人 App（CMoney 理財寶）", "b": "籌碼 K 線、券商分點、主力進出、達人選股訂閱（存股、當沖、產業雷達）、社群討論與模擬投資。", "src": [["CMoney", "https://www.cmoney.tw/index.html"]]},
+        {"t": "官方資料源", "b": "公開資訊觀測站（財報、重訊、月營收）、證交所與櫃買中心、各家投信 ETF 頁面。", "src": [["投資網站大全", "https://www.my-finance.com.tw/tw/News_Detail/117"]]},
+        {"t": "基金平台（基富通）", "b": "以 KYC 問卷判定風險屬性，再依 RR 等級限制可購買的基金。", "src": [["基富通", "https://www.fundrich.com.tw/event/pensionplatform/education_fund_3.html"]]},
+        {"t": "本站的差異", "b": "多位不同流派的理專互相質疑、分歧度與升級條件公開、稽核紀錄可追溯。這是同類網站少見、也最貼近論文 human on the loop 的部分。", "src": []}
+      ]
+    }
+  ],
+  "quiz": {
+    "title": "風險屬性小測驗（KYC 示範）",
+    "note": "示範版 5 題，參考銀行 KYC 問卷常見題型自行設計，不是任何機構的正式問卷，結果僅供理解 KYC 用途。",
+    "qs": [
+      {"q": "你的年齡？", "a": [["60 歲以上", 1], ["45–59 歲", 2], ["30–44 歲", 3], ["30 歲以下", 4]]},
+      {"q": "這筆錢多久內可能會用到？", "a": [["1 年內", 1], ["1–3 年", 2], ["3–7 年", 3], ["7 年以上", 4]]},
+      {"q": "你投資過哪些商品？", "a": [["只有存款", 1], ["基金或 ETF", 2], ["個股", 3], ["期貨、選擇權或槓桿商品", 4]]},
+      {"q": "如果一年內虧損 20%，你會？", "a": [["全部賣掉", 1], ["賣掉一部分", 2], ["繼續持有", 3], ["加碼買進", 4]]},
+      {"q": "這筆錢占你可投資資產的比例？", "a": [["超過 70%", 1], ["40–70%", 2], ["20–40%", 3], ["低於 20%", 4]]}
+    ],
+    "levels": [
+      {"max": 9, "name": "保守型", "rr": "RR1–RR3", "tip": "個股波動通常高於 RR3，理專推薦的個股可能不適合你。可以先看 ETF 或債券型商品。"},
+      {"max": 14, "name": "穩健型", "rr": "RR1–RR4", "tip": "個股要控制比重並分散，避免把大部分資金放在單一股票。"},
+      {"max": 20, "name": "積極型", "rr": "RR1–RR5", "tip": "可以承受較大波動，但仍要設停損與分散，並留意處置股與財報季的波動。"}
+    ]
+  },
+  "calendar": [
+    {"m": 1, "d": 10, "t": "12 月營收公布期限"}, {"m": 2, "d": 10, "t": "1 月營收公布期限"}, {"m": 3, "d": 10, "t": "2 月營收公布期限"},
+    {"m": 3, "d": 31, "t": "年報公布期限"}, {"m": 4, "d": 10, "t": "3 月營收公布期限"}, {"m": 5, "d": 10, "t": "4 月營收公布期限"},
+    {"m": 5, "d": 15, "t": "第一季財報期限"}, {"m": 6, "d": 10, "t": "5 月營收公布期限"}, {"m": 7, "d": 10, "t": "6 月營收公布期限"},
+    {"m": 8, "d": 10, "t": "7 月營收公布期限"}, {"m": 8, "d": 14, "t": "第二季財報期限"}, {"m": 9, "d": 10, "t": "8 月營收公布期限"},
+    {"m": 10, "d": 10, "t": "9 月營收公布期限"}, {"m": 11, "d": 10, "t": "10 月營收公布期限"}, {"m": 11, "d": 14, "t": "第三季財報期限"},
+    {"m": 12, "d": 10, "t": "11 月營收公布期限"}
+  ]
+}

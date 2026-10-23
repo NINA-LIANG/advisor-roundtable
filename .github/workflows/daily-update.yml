@@ -1,0 +1,54 @@
+# 每個交易日收盤後抓證交所資料、銀行牌告利率、上市櫃清單（ETF 持股每週一次）、重建網站並發佈到 GitHub Pages
+name: daily-update
+
+on:
+  schedule:
+    - cron: "30 10 * * 1-5"   # 台灣時間 18:30（本益比、殖利率約 17:00 後才更新）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 抓證交所資料
+        run: python scripts/fetch_twse.py
+      - name: 抓央行牌告利率
+        run: python scripts/fetch_rates.py
+        continue-on-error: true
+      - name: 抓上市櫃全部股票與 ETF 清單
+        run: python scripts/fetch_universe.py
+        continue-on-error: true
+      - name: 抓除權息預告、填息與殖利率
+        run: python scripts/fetch_dividends.py
+        continue-on-error: true
+      - name: 抓 ETF 持股明細（每週一次，約 6 分鐘）
+        run: python scripts/fetch_etf_holdings.py
+        continue-on-error: true
+      - name: 重建網站
+        run: python scripts/build_site.py
+      - name: 保存資料快照
+        run: |
+          git config user.name "daily-update-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/tw.json data/rates.json data/universe.json data/etf_holdings.json data/dividends.json web/index.html web/sim.html web/rates.html web/news.html web/learn.html web/market.html web/dividend.html web/about.html web/lab.html
+          git diff --cached --quiet || git commit -m "data: $(date -u +%F) 證交所收盤與銀行牌告利率"
+          git push
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deploy
+        uses: actions/deploy-pages@v4

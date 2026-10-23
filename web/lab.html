@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body>
+<title>理專考場</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: 仿 AIOpsLab（Chen et al., 2025）的評測台。故意把一檔股票的資料弄壞，讓你、看門狗與 Claude 用同一組查看工具找問題。
+   上方考試台（題目＋工具｜作答）→ 結果與波及範圍 → 成績表（人在迴圈中／上 比較）→ 故障庫 → 論文對照。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
+  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --up:#c4475f; --down:#3d7a2b;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#eef4ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,42px)}
+h2{font-size:22px;margin-bottom:6px}
+h3{font-size:17px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px;min-width:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+a{color:var(--sky-deep)}
+.muted{color:var(--ink-soft)}
+.num,.mono{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:.93em}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-soft)}
+.lead{font-size:16.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--sky);border-color:var(--sky-deep);font-weight:700}
+.btn{border:none;border-radius:999px;padding:10px 20px;font-family:var(--f-display);font-size:16px;background:linear-gradient(135deg,var(--sky),var(--lilac));box-shadow:0 4px 0 #94b6d3}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #94b6d3}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:#fff;border:2px solid var(--line);box-shadow:none}
+.btn.small{padding:6px 14px;font-size:14px}
+
+/* 考試台 */
+.exam{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.exam{grid-template-columns:1fr}}
+.qhead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;justify-content:space-between}
+.qhead h2{margin:0}
+.meter{display:flex;gap:12px;font-size:13px;color:var(--ink-soft)}
+.meter b{color:var(--ink);font-family:var(--f-mono)}
+.steps{display:inline-flex;gap:3px;vertical-align:middle}
+.steps i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.steps i.on{background:var(--sky-deep)}
+.ctx{background:#f4f8ff;border-radius:18px;padding:10px 14px;font-size:14px;margin:10px 0}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tool{border:2px solid var(--line);background:#fff;border-radius:16px;padding:8px 10px;text-align:left;min-height:44px}
+.tool b{display:block;font-size:14px}
+.tool small{color:var(--ink-soft);font-size:12px;font-family:var(--f-mono)}
+.tool:hover:not(:disabled){border-color:var(--sky-deep)}
+.tool:disabled{opacity:.45;cursor:not-allowed}
+.cross{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;font-size:13px}
+.trace{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.trace li{border:2px solid var(--line);border-radius:16px;padding:8px 12px;background:#fff;font-size:14px}
+.trace li.src2{background:#fffbea;border-color:#f3dfa0}
+.trace .th{font-size:12px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:4px 12px}
+.kv div{display:flex;flex-direction:column}
+.kv small{font-size:12px;color:var(--ink-soft)}
+.kv b{font-family:var(--f-mono);font-weight:500}
+.spark{width:100%;height:70px;display:block;margin-top:6px}
+.months{font-family:var(--f-mono);font-size:12px;color:var(--ink-soft);overflow-wrap:anywhere}
+.advs{margin:0;padding:0;list-style:none;display:grid;gap:3px}
+.advs li{font-size:13px}
+.hint{background:#f4fbef;border:2px dashed var(--matcha);border-radius:18px;padding:10px 14px;font-size:14px}
+.hint h3{font-size:15px;margin-bottom:4px}
+
+fieldset{border:none;margin:0 0 12px;padding:0}
+legend{font-weight:700;font-size:14px;margin-bottom:6px;padding:0}
+legend small{font-weight:400;color:var(--ink-soft)}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:8px;align-items:flex-start;border:2px solid var(--line);border-radius:14px;padding:7px 10px;background:#fff;cursor:pointer;font-size:14px;min-height:44px}
+.opt input{margin-top:4px;accent-color:var(--sky-deep)}
+.opt:has(input:checked){border-color:var(--sky-deep);background:#eef6fd}
+.opt small{display:block;color:var(--ink-soft);font-size:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* 結果 */
+.result{border-top:2px dashed var(--line);margin-top:14px;padding-top:14px}
+.lv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0}
+@media (max-width:560px){.lv{grid-template-columns:1fr 1fr}}
+.lv>div{border-radius:16px;padding:8px 10px;background:#fff;border:2px solid var(--line);font-size:13px}
+.lv>div.ok{background:#eef6e6;border-color:var(--matcha)}
+.lv>div.no{background:#fff0f3;border-color:var(--pink)}
+.lv>div.na{opacity:.6}
+.lv b{display:block;font-size:14px}
+.blast{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:8px}
+.blast>div{border-radius:14px;padding:6px 10px;border:2px solid var(--line);background:#fff;font-size:13px}
+.blast>div.hit{border-color:var(--pink-deep);background:#fff4f6}
+.cmp{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+.cmp th,.cmp td{padding:6px 8px;border-bottom:1.5px dashed var(--line);text-align:left;vertical-align:top}
+.cmp th{font-size:12px;color:var(--ink-soft);font-weight:500}
+
+/* 成績表 */
+.scroll{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:680px}
+.tbl th{font-size:12px;color:var(--ink-soft);font-weight:500;text-align:right;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+.tbl td{padding:7px 8px;border-bottom:1px dashed var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td.best{background:#eef6e6;font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{border:2px solid var(--line);border-radius:20px;padding:12px 14px;background:#fff}
+.card b{display:block;margin-bottom:4px}
+.card .big{font-family:var(--f-mono);font-size:26px;line-height:1.2}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;background:#f6efe8;color:var(--ink-soft)}
+.pill.sym{background:#e8f3fc;color:#2f6b97}
+.pill.fun{background:#fde8ee;color:#a2465d}
+.ai{background:#f6f2ff;border:2px solid var(--lilac);border-radius:18px;padding:10px 14px;font-size:14px;margin-top:12px}
+.ai pre{white-space:pre-wrap;font-family:var(--f-body);margin:6px 0 0;font-size:13px;max-height:220px;overflow:auto}
+</style>
+
+<div class="wrap">
+  <style>/* 全站共用：導覽列、資料日期、名詞提示、表格、漲跌符號、觸控大小、頁尾聲明。由 build_site.py 嵌入每一頁。 */
+.sitenav{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;font-size:14px;line-height:1.4;color:#4a3b32;box-shadow:0 4px 0 rgba(74,59,50,.05)}
+.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.sitenav a:hover{background:#fff1e3}
+.sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
+.sitenav .grp{display:flex;align-items:center;gap:2px}
+.sitenav .grp>span{font-size:11.5px;color:#8a7566;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
+.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#5f9147;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
+@media (max-width:760px){
+  .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
+  .sitenav::-webkit-scrollbar{display:none}
+  .sitenav .asofb{margin-left:0}
+}
+
+/* 名詞提示 */
+.gl-term{text-decoration:underline dotted #8a7566;text-underline-offset:3px;cursor:help}
+.gl-pop{position:absolute;z-index:50;max-width:min(320px,calc(100vw - 32px));background:#fffdfa;color:#4a3b32;border:2px solid #f1e2d6;border-radius:18px;
+  box-shadow:0 10px 30px rgba(74,59,50,.18);padding:10px 14px;font:14px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-align:left;white-space:normal}
+.gl-pop b{display:block;font-size:15px;margin-bottom:2px}
+.gl-pop a{display:inline-block;margin-top:4px;color:#4a87b5;font-weight:700}
+
+/* 漲跌：顏色之外再加符號 */
+.pc.up::before{content:"▲ ";font-size:.8em}
+.pc.down::before{content:"▼ ";font-size:.8em}
+
+/* 可橫滑的表格：左右出現陰影提示還有內容，名稱欄固定 */
+.scroll{background:
+  linear-gradient(to right,#fffdfa 30%,rgba(255,253,250,0)) left/40px 100% no-repeat local,
+  linear-gradient(to left,#fffdfa 30%,rgba(255,253,250,0)) right/40px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%,rgba(74,59,50,.16),transparent) left/14px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%,rgba(74,59,50,.16),transparent) right/14px 100% no-repeat scroll}
+@media (max-width:760px){
+  .scroll .stick{position:sticky;left:0;z-index:1;background:#fffdfa;box-shadow:4px 0 6px -4px rgba(74,59,50,.25);max-width:9.5em;overflow:hidden;text-overflow:ellipsis}
+  .scroll tr[aria-selected="true"] .stick{background:#e8f3fc}
+}
+
+/* 觸控裝置：按鈕、晶片至少 44 像素高 */
+@media (pointer:coarse){
+  .chip,.tab,.pager button,.more,select,.sitenav a{min-height:44px;display:inline-flex;align-items:center}
+}
+
+.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#8a7566;text-align:center;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.sitefoot a{color:#4a87b5}
+.paper>.sitenav{margin-bottom:14px}
+
+/* 左側目錄：從左邊滑出，分組、圖示、右側數字 */
+.navbtn{border:none;background:#fff1e3;border-radius:12px;width:36px;height:36px;font-size:18px;line-height:1;color:#4a3b32;cursor:pointer;flex:none}
+.navbtn:hover{background:#ffd9a0}
+.drawer-bg{position:fixed;inset:0;background:rgba(74,59,50,.35);z-index:90}
+.drawer{position:fixed;top:0;left:0;bottom:0;z-index:91;width:min(340px,86vw);overflow-y:auto;background:#fffaf4;border-right:2px solid #f1e2d6;
+  box-shadow:8px 0 30px rgba(74,59,50,.18);padding:16px 14px 24px;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:#4a3b32;
+  padding-left:max(14px,env(safe-area-inset-left,0px));animation:drawerIn .2s ease-out}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.drawer{animation:none}}
+.dhead{display:flex;align-items:center;gap:10px;padding:2px 4px 14px;border-bottom:2px dashed #f1e2d6;margin-bottom:6px}
+.dlogo{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffd9a0,#f7b7c5);display:grid;place-items:center;font-size:22px;flex:none}
+.dhead b{display:block;font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-weight:400;font-size:20px;line-height:1.2}
+.dhead small{color:#8a7566;font-size:12.5px;letter-spacing:.04em}
+.dclose{margin-left:auto;border:none;background:none;font-size:20px;color:#8a7566;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.dclose:hover{background:#fff1e3}
+.dgrp{padding:10px 0 4px}
+.dgrp h4{margin:0 6px 4px;font-size:13px;font-weight:700;color:#8a7566;display:flex;gap:8px;align-items:baseline}
+.dgrp h4 small{font-weight:400;font-size:12px}
+.drawer a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:46px;padding:6px 10px;border-radius:14px;color:#4a3b32;text-decoration:none;font-size:16px}
+.drawer a:hover{background:#fff1e3}
+.drawer a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.drawer a i{font-style:normal;font-size:18px;text-align:center}
+.drawer a small{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;color:#8a7566}
+.dnote{margin:14px 8px 0;font-size:12px;color:#8a7566}
+</style>
+<div class="drawer-bg" hidden></div><aside class="drawer" id="sitedrawer" aria-label="網站目錄" hidden><div class="dhead"><span class="dlogo" aria-hidden="true">✨</span><div><b>理專圓桌</b><small>Advisor Roundtable</small></div><button class="dclose" type="button" aria-label="關閉目錄">✕</button></div><div class="dgrp"><h4>學<small>打好基本功</small></h4><a href="learn.html"><i aria-hidden="true">🌱</i><span>入門教室</span><small>27</small></a><a href="news.html"><i aria-hidden="true">📰</i><span>人氣小報</span><small>月刊</small></a></div><div class="dgrp"><h4>查<small>看懂市場資料</small></h4><a href="market.html"><i aria-hidden="true">📇</i><span>台股全覽</span><small>2,352</small></a><a href="dividend.html"><i aria-hidden="true">💰</i><span>除權息行事曆</span><small>45</small></a><a href="rates.html"><i aria-hidden="true">🏦</i><span>存款利率</span><small>37</small></a></div><div class="dgrp"><h4>做<small>練習自己判斷</small></h4><a href="index.html"><i aria-hidden="true">✨</i><span>理專圓桌</span><small>6</small></a><a href="sim.html"><i aria-hidden="true">🐷</i><span>百萬模擬倉</span><small>100萬</small></a><a href="lab.html" aria-current="page"><i aria-hidden="true">🧪</i><span>理專考場</span><small>48 題</small></a></div><div class="dgrp"><h4>站<small>認識這個網站</small></h4><a href="about.html"><i aria-hidden="true">📖</i><span>關於本站</span><small></small></a></div><p class="dnote">示範與教育用途，非投資建議</p></aside>
+<nav class="sitenav" aria-label="網站導覽"><button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html">存款利率</a></div><div class="grp"><span>做</span><a href="index.html">理專圓桌</a><a href="sim.html">百萬模擬倉</a><a href="lab.html" aria-current="page">理專考場</a></div><a href="about.html">關於本站</a><span class="asofb" data-asof="2026-10-21">資料日期 2026-10-21</span></nav>
+  <header>
+    <div class="eyebrow">參考 AIOpsLab（Chen et al., 2025, arXiv:2501.06706）</div>
+    <h1>🧪 理專考場</h1>
+    <p class="lead">理專的判斷只會跟資料一樣可靠。這裡故意把一檔股票的資料弄壞，看誰先發現、找得到哪裡壞、說得出為什麼、選得對怎麼修：你、兩隻看門狗，還是 Claude。</p>
+  </header>
+
+  <section class="box" aria-label="作答模式">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h2>選一種作答模式</h2>
+        <p class="muted" style="margin:0">兩種模式的成績分開記，可以比較「自己判斷」和「先看機器意見」哪個比較準、比較快。</p>
+      </div>
+      <div class="chips" id="mode" role="group" aria-label="作答模式">
+        <button class="chip" type="button" data-m="in">🙋 人在迴圈中：自己判斷</button>
+        <button class="chip" type="button" data-m="on">👀 人在迴圈上：先看代理意見</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="box" aria-label="考試台">
+    <div class="exam">
+      <div>
+        <div class="qhead">
+          <h2 id="qTitle">第 1 題</h2>
+          <div class="meter"><span>步數 <b id="stepN">0</b>／8 <span class="steps" id="stepDots" aria-hidden="true"></span></span><span>已作答 <b id="doneN">0</b>／48</span></div>
+        </div>
+        <div class="ctx" id="ctx"></div>
+        <div id="agentHint" class="hint" hidden></div>
+        <h3 style="margin-top:12px">查看工具 <small class="muted">（每用一次算一步，最多 8 步）</small></h3>
+        <div class="tools" id="tools">
+          <button class="tool" type="button" data-t="quote"><b>📄 今日報價</b><small>get_quote</small></button>
+          <button class="tool" type="button" data-t="history"><b>📈 近一年月收盤</b><small>get_history</small></button>
+          <button class="tool" type="button" data-t="valuation"><b>🧮 估值數字</b><small>get_valuation</small></button>
+          <button class="tool" type="button" data-t="advisors"><b>🧑‍💼 六位理專怎麼說</b><small>get_advisors</small></button>
+        </div>
+        <div class="cross" id="cross">
+          <span>🔁 對照第二來源（算 2 步，每題只能查一組）：</span>
+          <button class="chip" type="button" data-g="quote">報價</button>
+          <button class="chip" type="button" data-g="history">月收盤</button>
+          <button class="chip" type="button" data-g="valuation">估值</button>
+        </div>
+        <ol class="trace" id="trace" aria-live="polite"></ol>
+      </div>
+
+      <form id="ans" aria-label="作答">
+        <fieldset>
+          <legend>第 1 層・偵測 <small>這筆資料有問題嗎？</small></legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="l1" value="yes">有問題</label>
+            <label class="opt"><input type="radio" name="l1" value="no">沒有問題，可以照常給理專用</label>
+          </div>
+        </fieldset>
+        <div id="deeper" hidden>
+          <fieldset><legend>第 2 層・定位 <small>問題在哪一塊？</small></legend><div class="opts" id="o2"></div></fieldset>
+          <fieldset><legend>第 3 層・根因 <small>為什麼會壞？</small></legend><div class="opts" id="o3"></div></fieldset>
+          <fieldset><legend>第 4 層・修復 <small>怎麼處理？</small></legend><div class="opts" id="o4"></div></fieldset>
+        </div>
+        <div class="row">
+          <button class="btn" type="submit" id="submit" disabled>送出答案</button>
+          <button class="btn ghost small" type="button" id="skip">換一題</button>
+        </div>
+        <div id="result" class="result" hidden aria-live="polite"></div>
+      </form>
+    </div>
+    <div class="ai" id="aiBox" hidden>
+      <div class="row" style="justify-content:space-between">
+        <span>🤖 <b>請 Claude 也考這一題</b>　<span class="muted">用同樣的工具與 8 步上限，會用到你自己的 Claude 額度。</span></span>
+        <span class="row"><button class="btn small" type="button" id="aiGo">開始</button><button class="btn ghost small" type="button" id="aiStop" hidden>停止</button></span>
+      </div>
+      <div id="aiOut"></div>
+    </div>
+  </section>
+
+  <section class="box" aria-label="成績表">
+    <div class="row" style="justify-content:space-between">
+      <h2>📊 成績表</h2>
+      <div class="chips" id="scope" role="group" aria-label="範圍">
+        <button class="chip" type="button" data-s="mine">你做過的題</button>
+        <button class="chip" type="button" data-s="all">全部 48 題（只有自動代理）</button>
+      </div>
+    </div>
+    <p class="muted" id="scopeTxt"></p>
+    <div class="scroll"><table class="tbl">
+      <thead><tr><th>作答者</th><th>題數</th><th>偵測</th><th>定位</th><th>根因</th><th>修復</th><th>無故障題誤報</th><th>平均步數</th><th>平均秒數</th></tr></thead>
+      <tbody id="board"></tbody>
+    </table></div>
+    <div class="cards" id="loop" style="margin-top:14px"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost small" type="button" id="csv">⬇️ 下載作答紀錄 CSV</button>
+      <button class="btn ghost small" type="button" id="copy">📋 複製 CSV</button>
+      <button class="btn ghost small" type="button" id="reset">清除我的紀錄</button>
+      <span class="muted" id="csvMsg" style="font-size:13px"></span>
+    </div>
+  </section>
+
+  <section class="box" aria-label="故障庫">
+    <h2>🧯 資料故障庫</h2>
+    <p class="muted">對應論文的 Table 2。「表面症狀」看得到異狀但看不出原因；「功能故障」要追到根因才修得好。另有 6 題完全沒有故障，用來測誤報。</p>
+    <div class="scroll"><table class="tbl" style="min-width:760px">
+      <thead><tr><th>故障</th><th>類型</th><th>題數</th><th style="text-align:left">發生什麼事</th><th style="text-align:left">真實世界會怎麼發生</th><th style="text-align:left">正確處理</th></tr></thead>
+      <tbody id="lib"></tbody>
+    </table></div>
+  </section>
+
+  <section class="box" aria-label="論文對照">
+    <h2>📄 論文怎麼說、這頁怎麼做</h2>
+    <p>AIOpsLab 是微軟等團隊提出的框架：在微服務系統裡故意注入故障，讓 AI 代理透過一組固定的查看工具（Agent-Cloud Interface）去偵測、定位、找根因、修復，並自動記錄正確率、步數與耗時。理專圓桌的「系統」是資料管線，所以把故障注入的對象換成股票資料。</p>
+    <div class="scroll"><table class="cmp" style="min-width:620px">
+      <thead><tr><th>AIOpsLab</th><th>理專考場</th></tr></thead>
+      <tbody>
+        <tr><td>問題 P = ⟨任務 T, 情境 C, 標準答案 S⟩</td><td>每題 = 四層任務 ＋ 一檔股票的資料（可能被弄壞）＋ 標準答案</td></tr>
+        <tr><td>故障庫：Symptomatic／Functional faults，用 ChaosMesh 注入</td><td>6 種資料故障：2 種表面症狀、4 種功能故障，在瀏覽器裡注入真實收盤資料的複本</td></tr>
+        <tr><td>Noop 題：沒有注入故障，測誤報</td><td>6 題無故障，其中 2 檔本來就沒有本益比（虧損公司），最容易被誤判</td></tr>
+        <tr><td>任務四層：Detection → Localization → RCA → Mitigation</td><td>偵測 → 定位 → 根因 → 修復，四層分開計分</td></tr>
+        <tr><td>ACI：get_logs、get_metrics、get_traces、exec_shell</td><td>get_quote、get_history、get_valuation、get_advisors，加上一次「對照第二來源」</td></tr>
+        <tr><td>步數上限（K = 3～20）影響正確率</td><td>每題最多 8 步，對照第二來源算 2 步</td></tr>
+        <tr><td>指標：正確率、Time-to-Detect、步數、token</td><td>四層正確率、作答秒數、步數、無故障題誤報率</td></tr>
+        <tr><td>受測代理：GPT-4／GPT-3.5 w/ shell、ReAct、FLASH，對照傳統 AIOps 演算法</td><td>你（兩種模式）、基本看門狗（理專圓桌原本的健康檢查）、規則看門狗、Claude</td></tr>
+        <tr><td>故障的 blast radius（波及範圍）</td><td>每題結束後顯示：這個故障讓幾位理專的判斷變了、誰的前三名被換掉</td></tr>
+      </tbody>
+    </table></div>
+    <h3 style="margin-top:16px">論文的發現，放在這裡可以怎麼看</h3>
+    <div class="cards" style="margin-top:8px">
+      <div class="card"><b>最好的代理也只有 59%</b>四個代理裡最好的 FLASH 整體正確率 59.32%，修復層最難（最高 54.55%）。這裡也分層計分，看你和代理各自卡在哪一層。</div>
+      <div class="card"><b>沒有故障時也會喊有事</b>Noop 題只有 GPT-4 w/ shell 答對，其他代理把正常流量當成故障。這裡的無故障題包含虧損公司，基本看門狗會因為「沒有本益比」而誤報。</div>
+      <div class="card"><b>步數多不一定比較準</b>步數上限放寬後，有些代理正確率停在原地，只是多花 token。看看你用了幾步、哪幾步其實沒有幫助。</div>
+      <div class="card"><b>資料太多反而干擾</b>代理把大量指標直接讀進來，反而容易失敗。所以這裡的工具只回傳精簡數字，第二來源也只能查一組，逼你先有假設再驗證。</div>
+      <div class="card"><b>人在迴圈中 vs 迴圈上</b>論文只評代理。這頁多記一個問題：人先看代理意見再作答，正確率和速度會不會變？代理答錯時，你有沒有跟著錯（自動化偏誤）？</div>
+    </div>
+    <p class="muted" style="margin-top:12px;font-size:13px">出處：Yinfang Chen, Manish Shetty, Gagan Somashekar, Minghua Ma, Yogesh Simmhan, Jonathan Mace, Chetan Bansal, Rujia Wang, Saravan Rajmohan. <i>AIOpsLab: A Holistic Framework to Evaluate AI Agents for Enabling Autonomous Clouds</i>. MLSys 2025. <a href="https://arxiv.org/abs/2501.06706" target="_blank" rel="noopener">arXiv:2501.06706</a></p>
+  </section>
+</div>
+
+<script>
+// ---------- 台股資料（證交所公開資料，build_tw_data.py 產生） ----------
+const TW={"asof":"2026-10-21","dates":["20251021","20251121","20251222","20260121","20260224","20260320","20260421","20260521","20260622","20260721","20260821","20260921","20261021"],"stocks":[{"c":"2330","n":"台積電","i":"24","p":2420.0,"chg":0.62,"tv":655.16,"ma":2495.0,"pe":28.05,"dy":0.91,"pb":9.76,"m":[1462.04,1368.19,1452.06,1724.63,1947.64,1829.7,2038.53,2217.52,2502.62,2402.92,2402.92,2480.0]},{"c":"1303","n":"南亞","i":"03","p":320.5,"chg":8.28,"tv":393.37,"ma":302.11,"pe":51.69,"dy":0.25,"pb":5.32,"m":[41.7,52.25,60.11,73.35,90.36,78.02,87.98,86.88,151.77,195.5,192.0,239.5]},{"c":"2454","n":"聯發科","i":"24","p":4140.0,"chg":-0.24,"tv":391.04,"ma":4576.79,"pe":68.37,"dy":1.29,"pb":15.58,"m":[1306.71,1116.55,1365.22,1456.3,1814.16,1689.9,2077.58,3528.91,4438.47,3670.0,3790.0,5010.0]},{"c":"3189","n":"景碩","i":"24","p":1010.0,"chg":6.88,"tv":216.63,"ma":1033.29,"pe":187.38,"dy":0.15,"pb":11.97,"m":[143.33,123.26,137.59,191.1,320.45,379.35,472.69,553.05,794.64,746.0,811.0,827.0]},{"c":"3037","n":"欣興","i":"28","p":1100.0,"chg":4.27,"tv":211.97,"ma":1199.29,"pe":73.24,"dy":0.18,"pb":14.12,"m":[158.03,159.67,220.05,320.34,445.08,552.86,708.54,903.14,1002.94,825.0,1085.0,1020.0]},{"c":"4958","n":"臻鼎-KY","i":"28","p":578.0,"chg":5.67,"tv":199.19,"ma":561.14,"pe":68.4,"dy":0.59,"pb":4.15,"m":[163.88,140.04,143.02,158.41,210.06,208.07,312.86,466.3,622.0,509.0,441.0,470.0]},{"c":"2308","n":"台達電","i":"28","p":1625.0,"chg":1.25,"tv":187.1,"ma":1813.93,"pe":51.72,"dy":0.71,"pb":14.37,"m":[1014.69,890.34,948.04,1129.1,1377.8,1467.33,2004.52,2019.44,2150.0,1835.0,1750.0,1875.0]},{"c":"2327","n":"國巨*","i":"28","p":542.0,"chg":3.63,"tv":186.51,"ma":597.29,"pe":36.5,"dy":1.11,"pb":6.3,"m":[203.54,227.37,224.39,275.52,298.86,269.07,320.7,567.92,1065.0,670.0,554.0,557.0]},{"c":"3008","n":"大立光","i":"26","p":6170.0,"chg":3.26,"tv":167.17,"ma":6604.29,"pe":32.82,"dy":1.3,"pb":4.21,"m":[2186.97,2036.64,2172.42,2366.39,2356.69,2333.68,2621.06,3428.68,5138.07,3948.93,5610.0,6400.0]},{"c":"3443","n":"創意","i":"24","p":8000.0,"chg":3.29,"tv":162.77,"ma":8054.29,"pe":205.08,"dy":0.25,"pb":79.62,"m":[1667.4,1841.61,2000.88,2613.1,2488.66,2633.0,3718.06,5042.03,4755.0,4115.0,5600.0,7615.0]},{"c":"3231","n":"緯創","i":"25","p":195.0,"chg":3.17,"tv":157.06,"ma":186.82,"pe":15.49,"dy":2.82,"pb":3.2,"m":[137.45,134.07,141.31,128.77,126.36,125.39,139.38,135.04,156.74,149.5,175.5,186.5]},{"c":"2313","n":"華通","i":"28","p":240.5,"chg":-1.23,"tv":155.59,"ma":242.79,"pe":38.73,"dy":1.16,"pb":5.9,"m":[87.19,75.1,94.86,142.04,221.66,218.22,250.17,253.61,259.5,210.0,213.5,222.0]},{"c":"2345","n":"智邦","i":"27","p":1815.0,"chg":-7.87,"tv":147.71,"ma":2001.07,"pe":28.52,"dy":0.83,"pb":14.69,"m":[952.46,899.88,1160.81,1140.97,1393.97,1597.36,2172.8,2460.52,2574.62,2202.57,2035.0,1840.0]},{"c":"8039","n":"台虹","i":"28","p":293.0,"chg":-1.01,"tv":143.42,"ma":296.5,"pe":93.02,"dy":0.68,"pb":6.9,"m":[61.59,59.92,93.62,87.9,86.72,115.79,144.37,136.98,150.77,212.0,282.0,265.0]},{"c":"2408","n":"南亞科","i":"24","p":436.5,"chg":3.44,"tv":139.26,"ma":487.36,"pe":16.94,"dy":0.31,"pb":4.67,"m":[105.16,139.55,179.42,250.19,297.04,233.25,219.29,292.06,503.38,405.0,528.0,516.0]},{"c":"2383","n":"台光電","i":"28","p":4990.0,"chg":0.91,"tv":137.97,"ma":5454.64,"pe":78.03,"dy":0.5,"pb":30.65,"m":[1124.86,1304.05,1592.73,1552.91,2299.5,2797.23,3932.05,4668.68,5798.52,4808.05,5654.18,4895.0]},{"c":"2317","n":"鴻海","i":"31","p":250.0,"chg":3.52,"tv":135.35,"ma":247.0,"pe":16.48,"dy":2.87,"pb":1.84,"m":[232.08,218.49,217.51,212.66,225.28,197.12,204.89,240.33,260.73,246.0,245.5,250.0]},{"c":"3017","n":"奇鋐","i":"25","p":3235.0,"chg":-2.71,"tv":131.06,"ma":3390.36,"pe":43.12,"dy":0.65,"pb":23.01,"m":[1147.05,1231.47,1464.85,1271.19,1539.33,2035.89,2547.35,2477.83,2403.34,2304.03,2865.0,3415.0]},{"c":"3026","n":"禾伸堂","i":"28","p":815.0,"chg":2.64,"tv":129.13,"ma":819.79,"pe":79.51,"dy":0.71,"pb":13.09,"m":[112.77,104.82,101.34,104.82,117.24,118.23,253.36,430.71,897.0,682.0,639.0,791.0]},{"c":"6269","n":"台郡","i":"28","p":86.6,"chg":-1.93,"tv":124.88,"ma":71.06,"pe":null,"dy":null,"pb":1.35,"m":[64.9,49.3,57.9,58.0,65.4,60.3,67.1,58.7,87.5,55.9,62.4,65.3]},{"c":"6669","n":"緯穎","i":"25","p":1880.0,"chg":-2.34,"tv":119.46,"ma":2081.43,"pe":6.03,"dy":8.74,"pb":2.56,"m":[1324.45,1334.23,1384.73,1174.58,1249.51,1239.74,1374.95,1741.5,1627.66,1676.28,2097.02,2150.0]},{"c":"2409","n":"友達","i":"26","p":37.25,"chg":4.2,"tv":112.48,"ma":36.88,"pe":155.21,"dy":1.07,"pb":1.82,"m":[12.83,10.62,11.06,15.63,16.07,15.34,18.58,19.86,30.43,25.17,25.6,33.35]},{"c":"6209","n":"今國光","i":"26","p":110.0,"chg":-1.79,"tv":110.2,"ma":93.59,"pe":47.62,"dy":0.45,"pb":5.38,"m":[43.59,55.0,62.35,60.27,61.46,58.97,67.71,86.08,96.5,67.12,69.5,79.1]},{"c":"2492","n":"華新科","i":"28","p":405.5,"chg":9.89,"tv":105.72,"ma":390.82,"pe":45.56,"dy":0.62,"pb":2.96,"m":[112.9,117.87,115.88,142.74,148.21,130.8,148.21,264.59,613.73,273.0,266.0,308.5]},{"c":"8996","n":"高力","i":"05","p":1660.0,"chg":7.44,"tv":104.59,"ma":1611.79,"pe":111.78,"dy":0.27,"pb":30.14,"m":[517.19,459.51,550.02,693.24,925.98,906.08,1215.0,1065.0,1555.0,983.0,1090.0,1505.0]},{"c":"2368","n":"金像電","i":"28","p":1195.0,"chg":0.84,"tv":101.56,"ma":1209.64,"pe":42.89,"dy":0.82,"pb":14.66,"m":[417.54,546.13,645.43,591.81,827.14,981.05,1216.39,1275.96,1385.19,980.0,965.0,1045.0]},{"c":"8046","n":"南電","i":"28","p":1340.0,"chg":2.68,"tv":99.54,"ma":1419.29,"pe":157.46,"dy":0.15,"pb":17.58,"m":[272.93,249.48,243.49,360.24,501.95,539.87,787.35,870.17,862.19,1190.0,1135.0,1060.0]},{"c":"1802","n":"台玻","i":"08","p":67.2,"chg":-0.3,"tv":98.58,"ma":63.54,"pe":78.14,"dy":null,"pb":3.78,"m":[28.1,32.45,35.75,54.0,56.8,57.6,74.2,65.1,76.6,54.1,57.6,60.1]},{"c":"2303","n":"聯電","i":"24","p":128.0,"chg":0.79,"tv":95.05,"ma":142.93,"pe":19.25,"dy":2.04,"pb":3.62,"m":[44.68,44.24,50.04,67.25,66.36,56.83,74.92,114.05,157.31,134.5,116.5,157.0]},{"c":"3653","n":"健策","i":"28","p":6535.0,"chg":-1.73,"tv":87.81,"ma":6885.0,"pe":147.48,"dy":0.33,"pb":40.67,"m":[2226.17,2529.29,2628.67,2315.62,2921.85,3826.23,5336.85,3309.44,3816.29,3498.27,5395.0,5790.0]},{"c":"2344","n":"華邦電","i":"24","p":159.5,"chg":4.59,"tv":79.5,"ma":168.46,"pe":17.59,"dy":0.31,"pb":4.35,"m":[44.37,51.93,72.72,104.95,121.36,109.43,91.1,114.0,222.0,155.5,181.0,174.0]},{"c":"3711","n":"日月光投控","i":"24","p":684.0,"chg":3.64,"tv":75.02,"ma":713.71,"pe":49.49,"dy":0.96,"pb":7.73,"m":[193.23,207.11,229.9,288.36,378.04,340.88,467.72,505.38,667.89,633.0,587.0,663.0]},{"c":"2059","n":"川湖","i":"28","p":10080.0,"chg":-0.2,"tv":63.47,"ma":10947.14,"pe":55.57,"dy":0.51,"pb":28.46,"m":[3846.43,3512.61,3716.89,3507.63,3114.02,3393.03,3841.45,4877.79,7523.46,7946.97,13337.95,12800.0]},{"c":"2449","n":"京元電子","i":"24","p":278.0,"chg":7.13,"tv":62.77,"ma":288.36,"pe":36.44,"dy":0.54,"pb":5.42,"m":[174.6,194.05,209.71,253.36,309.35,292.27,266.64,271.39,321.68,264.75,232.0,301.5]},{"c":"6278","n":"台表科","i":"26","p":316.5,"chg":9.9,"tv":58.19,"ma":264.86,"pe":32.07,"dy":1.76,"pb":3.95,"m":[105.96,95.76,93.91,93.42,97.7,96.34,154.09,216.79,200.26,167.0,187.0,194.5]},{"c":"2360","n":"致茂","i":"31","p":2010.0,"chg":0.5,"tv":54.53,"ma":2180.71,"pe":51.28,"dy":0.97,"pb":25.81,"m":[671.32,767.51,749.66,986.65,1214.73,1571.71,2008.02,2250.96,2310.0,2015.0,2100.0,2375.0]},{"c":"3665","n":"貿聯-KY","i":"31","p":1950.0,"chg":1.3,"tv":54.07,"ma":2236.43,"pe":35.81,"dy":0.78,"pb":7.68,"m":[1278.96,1591.26,1462.38,1288.87,1283.92,1809.38,2404.25,2136.56,1972.97,2000.0,2275.0,2300.0]},{"c":"3661","n":"世芯-KY","i":"24","p":3710.0,"chg":1.92,"tv":48.1,"ma":3934.64,"pe":54.41,"dy":0.88,"pb":5.3,"m":[3328.99,2966.82,3200.0,3214.88,3403.41,3348.84,3954.11,4866.97,4291.47,3462.94,3671.32,3665.0]},{"c":"6805","n":"富世達","i":"28","p":2395.0,"chg":4.59,"tv":45.54,"ma":2317.86,"pe":51.23,"dy":0.52,"pb":19.65,"m":[1310.83,1335.66,1534.27,1276.08,1469.72,1986.11,1901.7,1797.43,1807.36,1405.17,1765.0,2415.0]},{"c":"6505","n":"台塑化","i":"23","p":109.5,"chg":2.82,"tv":43.07,"ma":108.91,"pe":19.01,"dy":1.1,"pb":2.14,"m":[42.53,51.82,47.42,44.78,51.24,54.95,51.82,50.16,52.8,85.4,75.8,88.5]},{"c":"6285","n":"啟碁","i":"27","p":246.5,"chg":-0.4,"tv":40.73,"ma":249.46,"pe":27.0,"dy":1.74,"pb":3.33,"m":[120.47,95.88,101.78,126.37,185.37,170.62,245.36,275.84,263.55,245.0,235.5,234.0]},{"c":"3481","n":"群創","i":"26","p":48.5,"chg":3.63,"tv":39.96,"ma":50.21,"pe":62.18,"dy":2.06,"pb":1.72,"m":[13.49,11.83,12.36,26.54,24.29,25.66,25.41,39.68,66.0,50.7,46.05,50.4]},{"c":"2312","n":"金寶","i":"31","p":32.6,"chg":1.56,"tv":38.72,"ma":31.52,"pe":27.39,"dy":1.84,"pb":2.02,"m":[21.29,20.89,23.01,33.19,25.07,23.25,26.7,29.6,35.25,33.1,31.05,31.3]},{"c":"2882","n":"國泰金","i":"17","p":114.0,"chg":3.64,"tv":37.23,"ma":112.71,"pe":13.44,"dy":3.07,"pb":1.64,"m":[63.43,61.41,73.86,73.09,75.5,69.52,72.9,75.99,109.1,95.8,100.5,113.0]},{"c":"8021","n":"尖點","i":"31","p":506.0,"chg":3.48,"tv":36.6,"ma":531.36,"pe":102.02,"dy":0.39,"pb":11.8,"m":[107.72,116.53,160.6,217.33,242.02,261.29,400.08,379.33,573.94,377.41,393.77,462.21]},{"c":"1301","n":"台塑","i":"03","p":77.0,"chg":2.8,"tv":36.0,"ma":76.66,"pe":46.95,"dy":0.65,"pb":0.85,"m":[38.09,39.62,39.77,41.46,48.14,47.15,51.31,45.32,51.91,63.0,59.4,65.2]},{"c":"6213","n":"聯茂","i":"28","p":823.0,"chg":9.88,"tv":34.87,"ma":774.29,"pe":127.6,"dy":0.36,"pb":13.24,"m":[99.66,99.17,112.06,114.04,132.39,142.3,283.62,244.45,305.43,354.5,513.0,542.0]},{"c":"6456","n":"GIS-KY","i":"26","p":98.4,"chg":9.94,"tv":34.25,"ma":93.76,"pe":null,"dy":null,"pb":1.12,"m":[52.2,41.7,44.55,42.15,44.3,63.6,79.9,69.9,76.1,62.5,68.0,71.9]},{"c":"2382","n":"廣達","i":"25","p":328.5,"chg":2.5,"tv":34.08,"ma":325.79,"pe":14.31,"dy":4.75,"pb":5.2,"m":[279.09,258.94,256.07,263.74,272.37,271.89,326.08,295.39,364.44,324.0,321.5,344.5]},{"c":"6770","n":"力積電","i":"24","p":66.2,"chg":3.28,"tv":32.74,"ma":70.35,"pe":22.07,"dy":null,"pb":2.42,"m":[30.6,32.89,40.32,62.39,73.46,75.25,53.82,58.91,81.33,64.89,68.18,72.7]},{"c":"2891","n":"中信金","i":"17","p":74.8,"chg":4.47,"tv":32.71,"ma":70.44,"pe":17.89,"dy":3.34,"pb":2.14,"m":[40.78,41.84,48.59,48.78,51.87,50.23,51.1,55.44,67.97,62.7,65.0,70.4]},{"c":"4938","n":"和碩","i":"25","p":105.0,"chg":0.0,"tv":32.03,"ma":96.5,"pe":17.71,"dy":3.82,"pb":1.36,"m":[71.87,67.75,67.08,65.55,68.8,73.68,80.38,75.69,82.0,82.8,88.6,90.8]},{"c":"3406","n":"玉晶光","i":"26","p":1140.0,"chg":9.62,"tv":30.38,"ma":1063.64,"pe":30.84,"dy":1.49,"pb":4.75,"m":[419.77,438.3,413.43,448.53,427.57,433.91,515.81,562.62,774.0,531.0,652.0,952.0]},{"c":"2324","n":"仁寶","i":"25","p":37.7,"chg":2.17,"tv":29.5,"ma":36.36,"pe":18.94,"dy":2.92,"pb":1.16,"m":[33.1,27.65,29.63,30.79,28.61,31.85,31.45,30.35,37.5,36.0,38.95,37.6]},{"c":"2455","n":"全新","i":"27","p":490.5,"chg":1.03,"tv":28.91,"ma":532.5,"pe":120.22,"dy":0.53,"pb":24.84,"m":[148.98,133.59,146.0,175.31,198.65,228.44,337.7,383.88,406.73,295.0,406.0,572.0]},{"c":"3034","n":"聯詠","i":"24","p":590.0,"chg":3.87,"tv":27.96,"ma":553.14,"pe":20.59,"dy":3.9,"pb":5.21,"m":[399.3,372.49,361.0,361.48,368.66,368.66,397.87,463.94,542.94,476.0,530.0,548.0]},{"c":"2603","n":"長榮","i":"15","p":257.5,"chg":-0.77,"tv":27.38,"ma":249.86,"pe":10.21,"dy":6.21,"pb":0.99,"m":[168.79,166.94,172.5,177.14,176.68,198.47,186.88,196.62,193.0,203.0,251.5,242.0]},{"c":"2881","n":"富邦金","i":"17","p":158.5,"chg":3.26,"tv":26.42,"ma":156.18,"pe":14.81,"dy":2.68,"pb":1.95,"m":[87.63,85.79,94.98,89.95,91.01,85.69,84.82,92.95,133.95,123.5,134.0,154.5]},{"c":"2301","n":"光寶科","i":"25","p":263.5,"chg":0.57,"tv":25.41,"ma":280.68,"pe":30.82,"dy":1.9,"pb":6.24,"m":[161.09,149.41,164.5,156.71,188.35,158.54,169.93,202.63,229.38,205.11,261.0,288.5]},{"c":"6415","n":"矽力*-KY","i":"24","p":490.0,"chg":5.95,"tv":24.71,"ma":455.11,"pe":49.75,"dy":0.52,"pb":4.72,"m":[237.91,177.93,198.26,266.16,282.51,283.51,394.0,557.0,673.0,461.5,445.5,427.5]},{"c":"2337","n":"旺宏","i":"24","p":103.0,"chg":3.0,"tv":24.44,"ma":111.89,"pe":24.41,"dy":null,"pb":3.29,"m":[28.25,34.5,38.95,73.3,113.5,160.0,132.5,141.0,185.5,123.0,122.5,120.0]},{"c":"6239","n":"力成","i":"24","p":266.0,"chg":3.91,"tv":23.59,"ma":289.46,"pe":26.34,"dy":1.69,"pb":3.44,"m":[149.06,148.08,168.68,234.87,252.53,197.61,208.89,252.53,358.93,266.75,267.5,292.5]},{"c":"2379","n":"瑞昱","i":"24","p":792.0,"chg":2.33,"tv":23.54,"ma":763.21,"pe":28.72,"dy":3.16,"pb":8.1,"m":[518.58,480.92,475.13,484.78,458.71,463.06,532.1,555.28,869.14,727.18,689.51,740.0]},{"c":"3044","n":"健鼎","i":"28","p":583.0,"chg":2.82,"tv":23.49,"ma":573.0,"pe":24.98,"dy":2.18,"pb":5.5,"m":[311.88,292.41,307.01,306.52,381.45,353.23,432.05,474.87,550.77,404.5,459.0,524.0]},{"c":"1709","n":"和益","i":"21","p":56.0,"chg":-0.88,"tv":23.08,"ma":58.6,"pe":27.86,"dy":1.79,"pb":2.97,"m":[16.36,15.92,16.21,16.41,16.26,17.67,18.49,17.86,20.87,27.28,32.32,43.1]},{"c":"6526","n":"達發","i":"24","p":806.0,"chg":0.62,"tv":22.09,"ma":803.71,"pe":44.7,"dy":1.67,"pb":7.16,"m":[497.02,428.89,429.38,414.19,455.85,492.12,544.08,690.15,691.13,584.0,572.0,724.0]},{"c":"1326","n":"台化","i":"03","p":76.2,"chg":3.25,"tv":22.03,"ma":75.62,"pe":32.29,"dy":0.79,"pb":0.86,"m":[29.22,31.54,32.18,33.67,44.24,45.33,49.93,44.94,55.56,68.6,60.1,67.8]},{"c":"6515","n":"穎崴","i":"24","p":4970.0,"chg":0.2,"tv":21.55,"ma":5568.21,"pe":81.37,"dy":0.99,"pb":21.01,"m":[2432.02,2293.04,2570.99,3796.92,4730.02,7871.79,10636.34,9440.19,9390.56,6655.0,6400.0,5795.0]},{"c":"3532","n":"台勝科","i":"24","p":428.0,"chg":9.88,"tv":21.53,"ma":450.11,"pe":329.23,"dy":0.23,"pb":6.83,"m":[111.76,84.82,93.6,131.72,138.7,143.19,182.11,225.51,377.69,433.5,342.5,440.0]},{"c":"6531","n":"愛普*","i":"24","p":831.0,"chg":3.88,"tv":20.91,"ma":926.71,"pe":47.92,"dy":0.84,"pb":10.79,"m":[381.88,377.91,396.78,486.66,409.19,549.23,715.09,870.03,1115.0,858.0,883.0,948.0]},{"c":"2887","n":"台新新光金","i":"17","p":41.95,"chg":2.32,"tv":19.4,"ma":41.8,"pe":15.54,"dy":2.62,"pb":1.54,"m":[18.95,17.65,20.39,21.26,24.34,23.71,23.04,22.94,30.83,34.7,37.25,43.8]},{"c":"3450","n":"聯鈞","i":"24","p":450.0,"chg":4.53,"tv":18.22,"ma":495.36,"pe":91.28,"dy":0.22,"pb":11.74,"m":[268.46,212.07,244.01,253.49,279.44,284.93,379.24,439.12,557.0,427.5,551.0,545.0]},{"c":"6257","n":"矽格","i":"24","p":248.0,"chg":4.2,"tv":18.0,"ma":264.79,"pe":29.01,"dy":1.71,"pb":4.7,"m":[92.93,91.95,99.43,132.41,128.96,130.44,184.09,213.13,238.72,216.0,198.5,250.5]},{"c":"2883","n":"凱基金","i":"17","p":38.25,"chg":2.68,"tv":17.95,"ma":38.05,"pe":13.37,"dy":2.61,"pb":1.51,"m":[15.22,14.69,17.15,17.2,20.15,19.42,20.0,20.68,29.33,29.7,31.55,40.45]},{"c":"6446","n":"藥華藥","i":"22","p":1175.0,"chg":1.73,"tv":17.83,"ma":1185.36,"pe":57.54,"dy":0.22,"pb":11.92,"m":[466.51,421.03,447.6,495.33,658.34,576.39,585.4,718.69,986.17,1175.0,1400.0,1150.0]},{"c":"2357","n":"華碩","i":"25","p":982.0,"chg":0.1,"tv":17.76,"ma":981.57,"pe":14.36,"dy":4.28,"pb":2.42,"m":[649.54,538.62,517.0,470.94,484.1,547.08,563.06,616.64,740.72,736.0,921.0,946.0]},{"c":"3006","n":"晶豪科","i":"24","p":246.0,"chg":6.26,"tv":17.73,"ma":257.07,"pe":7.76,"dy":0.41,"pb":3.68,"m":[83.8,79.72,83.71,136.36,166.22,194.58,160.24,220.96,252.81,199.5,256.5,285.0]},{"c":"4770","n":"上品","i":"21","p":313.5,"chg":10.0,"tv":17.72,"ma":276.61,"pe":29.91,"dy":1.91,"pb":2.99,"m":[244.53,201.26,234.32,236.27,239.18,220.22,239.5,230.0,216.0,220.5,212.0,257.5]},{"c":"2885","n":"元大金","i":"17","p":71.3,"chg":1.13,"tv":17.64,"ma":70.14,"pe":16.7,"dy":3.09,"pb":2.48,"m":[32.32,33.3,37.36,38.62,44.32,41.28,47.63,51.09,64.26,58.94,64.0,70.4]},{"c":"3605","n":"宏致","i":"28","p":178.0,"chg":7.23,"tv":17.61,"ma":173.46,"pe":46.84,"dy":0.88,"pb":3.49,"m":[67.21,58.6,59.96,60.83,64.12,59.12,69.62,80.64,79.06,83.2,108.5,169.0]},{"c":"4960","n":"誠美材","i":"26","p":30.85,"chg":0.98,"tv":16.55,"ma":25.3,"pe":null,"dy":null,"pb":2.47,"m":[13.95,13.3,13.55,14.05,14.3,25.2,40.9,36.45,29.2,21.0,20.9,23.45]},{"c":"3533","n":"嘉澤","i":"28","p":1820.0,"chg":0.83,"tv":16.5,"ma":1851.79,"pe":22.19,"dy":1.92,"pb":4.99,"m":[1405.08,1134.87,1292.08,1306.82,1606.51,2029.01,2589.08,2481.0,2274.66,1994.62,1595.0,1590.0]},{"c":"6442","n":"光聖","i":"27","p":1500.0,"chg":3.09,"tv":15.79,"ma":1610.71,"pe":44.38,"dy":0.75,"pb":9.01,"m":[826.86,1110.41,1174.85,1239.3,2012.62,2027.49,2319.96,1769.72,2067.15,1260.0,1525.0,1525.0]},{"c":"3673","n":"TPK-KY","i":"26","p":75.8,"chg":4.7,"tv":15.5,"ma":74.21,"pe":16.55,"dy":2.37,"pb":0.76,"m":[36.4,39.47,40.83,41.52,41.08,44.88,68.11,72.4,86.35,63.6,63.3,65.7]},{"c":"2356","n":"英業達","i":"25","p":61.3,"chg":2.17,"tv":15.23,"ma":58.71,"pe":19.77,"dy":3.26,"pb":2.83,"m":[43.97,39.52,41.75,45.09,43.54,41.46,45.86,52.4,65.67,60.1,65.7,61.8]},{"c":"2376","n":"技嘉","i":"25","p":358.5,"chg":0.99,"tv":15.18,"ma":362.61,"pe":13.42,"dy":3.35,"pb":3.61,"m":[277.73,230.96,228.55,228.07,219.87,239.64,278.21,305.21,327.39,328.84,339.5,368.0]},{"c":"6834","n":"天二科技","i":"28","p":144.0,"chg":9.92,"tv":15.03,"ma":137.18,"pe":62.61,"dy":0.28,"pb":8.26,"m":[28.39,27.1,27.34,31.71,30.55,30.07,35.94,63.99,107.75,95.77,86.68,111.13]},{"c":"2395","n":"研華","i":"25","p":683.0,"chg":-0.15,"tv":14.54,"ma":711.36,"pe":43.26,"dy":1.63,"pb":10.73,"m":[318.16,275.57,277.04,269.21,317.18,336.76,356.82,453.74,488.98,567.0,649.0,706.0]},{"c":"4919","n":"新唐","i":"24","p":143.5,"chg":7.09,"tv":14.22,"ma":148.11,"pe":null,"dy":null,"pb":3.88,"m":[64.0,50.5,52.6,57.2,72.9,109.0,144.5,181.5,216.0,141.0,114.0,125.5]},{"c":"3090","n":"日電貿","i":"28","p":164.0,"chg":4.46,"tv":13.84,"ma":170.29,"pe":21.72,"dy":2.93,"pb":2.54,"m":[81.64,81.74,93.26,97.99,99.47,93.85,106.36,193.02,330.4,175.5,165.0,164.5]},{"c":"2377","n":"微星","i":"25","p":165.0,"chg":0.3,"tv":13.54,"ma":157.68,"pe":14.31,"dy":2.55,"pb":2.4,"m":[106.36,98.1,98.1,96.84,88.97,90.82,91.11,109.76,133.07,141.81,141.5,153.0]},{"c":"3045","n":"台灣大","i":"27","p":130.5,"chg":0.0,"tv":13.53,"ma":125.86,"pe":24.67,"dy":3.63,"pb":4.73,"m":[106.33,102.5,102.5,102.98,103.46,104.42,108.73,108.73,113.52,112.0,115.0,124.5]},{"c":"2489","n":"瑞軒","i":"26","p":41.7,"chg":3.99,"tv":13.5,"ma":40.54,"pe":30.0,"dy":2.88,"pb":1.92,"m":[14.43,14.28,14.81,20.51,31.92,37.67,43.37,45.61,49.41,30.65,35.65,43.0]},{"c":"8150","n":"南茂","i":"24","p":102.5,"chg":3.43,"tv":13.12,"ma":115.83,"pe":31.93,"dy":1.2,"pb":2.89,"m":[31.65,44.58,45.42,65.36,58.35,61.71,73.17,74.94,112.56,104.0,86.7,103.0]},{"c":"2412","n":"中華電","i":"27","p":154.0,"chg":-0.32,"tv":13.0,"ma":149.0,"pe":30.26,"dy":3.38,"pb":3.26,"m":[128.04,126.6,125.64,128.04,130.45,129.01,131.89,132.37,139.11,139.0,136.5,144.5]},{"c":"2328","n":"廣宇","i":"28","p":54.3,"chg":6.68,"tv":12.94,"ma":48.99,"pe":126.28,"dy":1.66,"pb":1.93,"m":[55.16,44.76,46.18,52.61,51.24,44.46,45.05,51.14,52.41,46.6,44.9,47.75]},{"c":"3702","n":"大聯大","i":"29","p":115.0,"chg":1.32,"tv":12.8,"ma":117.18,"pe":9.85,"dy":3.17,"pb":2.06,"m":[59.61,61.64,57.01,61.06,64.35,88.31,99.04,119.33,108.7,107.73,107.25,114.0]},{"c":"1560","n":"中砂","i":"05","p":877.0,"chg":2.21,"tv":12.68,"ma":956.57,"pe":74.57,"dy":0.56,"pb":14.47,"m":[318.86,297.01,363.56,420.18,494.68,470.84,526.46,664.54,708.24,676.0,679.0,914.0]},{"c":"2884","n":"玉山金","i":"17","p":49.2,"chg":1.76,"tv":12.49,"ma":46.88,"pe":20.41,"dy":2.85,"pb":2.83,"m":[31.18,28.83,31.95,31.99,33.29,30.51,31.61,30.27,34.35,36.95,38.0,46.2]},{"c":"1590","n":"亞德客-KY","i":"05","p":1120.0,"chg":0.9,"tv":12.32,"ma":1174.64,"pe":21.52,"dy":2.6,"pb":4.09,"m":[874.82,860.13,921.84,1004.13,1160.88,961.03,1239.25,1391.09,1366.6,1332.31,1435.0,1240.0]},{"c":"3042","n":"晶技","i":"28","p":182.5,"chg":1.67,"tv":12.29,"ma":201.71,"pe":31.52,"dy":2.63,"pb":3.94,"m":[90.77,79.11,82.44,85.97,89.79,91.17,163.22,156.85,198.0,168.0,190.0,183.5]},{"c":"2481","n":"強茂","i":"24","p":159.0,"chg":3.58,"tv":12.18,"ma":167.32,"pe":42.18,"dy":1.13,"pb":4.03,"m":[96.92,78.46,83.18,92.01,85.92,93.09,110.5,132.5,176.0,143.5,133.0,168.0]},{"c":"4566","n":"時碩工業","i":"05","p":85.1,"chg":-0.82,"tv":11.95,"ma":78.26,"pe":33.77,"dy":0.8,"pb":1.86,"m":[58.69,51.78,56.72,59.39,59.78,60.08,69.2,62.0,65.6,69.0,67.0,65.9]},{"c":"2615","n":"萬海","i":"15","p":116.5,"chg":-0.43,"tv":11.9,"ma":116.54,"pe":8.0,"dy":2.58,"pb":1.13,"m":[74.98,76.81,75.37,73.25,72.96,76.14,71.32,78.26,77.58,85.2,124.5,117.0]},{"c":"2478","n":"大毅","i":"28","p":126.5,"chg":5.42,"tv":11.71,"ma":129.36,"pe":26.03,"dy":1.58,"pb":2.48,"m":[59.93,64.38,56.07,67.94,68.44,67.55,73.08,114.72,232.9,136.5,123.5,120.0]},{"c":"2404","n":"漢唐","i":"31","p":1105.0,"chg":1.38,"tv":11.21,"ma":1207.86,"pe":16.66,"dy":3.62,"pb":11.65,"m":[821.6,727.62,902.99,978.56,949.49,901.05,968.87,1065.76,1240.16,1150.0,1060.0,1130.0]},{"c":"2609","n":"陽明","i":"15","p":62.1,"chg":-0.16,"tv":11.07,"ma":61.72,"pe":13.99,"dy":3.22,"pb":0.66,"m":[51.65,48.96,50.6,53.0,53.67,53.86,48.68,49.06,50.21,50.9,64.0,61.1]},{"c":"2340","n":"台亞","i":"24","p":48.75,"chg":2.63,"tv":10.64,"ma":49.09,"pe":null,"dy":null,"pb":3.36,"m":[27.55,23.15,27.75,28.85,27.5,28.85,39.05,35.15,42.8,31.25,31.2,34.5]},{"c":"3016","n":"嘉晶","i":"24","p":154.5,"chg":2.32,"tv":10.31,"ma":169.89,"pe":128.75,"dy":0.32,"pb":8.61,"m":[60.64,46.92,51.59,72.17,60.14,62.13,69.68,114.81,138.17,101.3,98.21,120.5]},{"c":"8028","n":"昇陽半導體","i":"24","p":258.0,"chg":2.38,"tv":10.09,"ma":272.21,"pe":46.24,"dy":1.05,"pb":7.73,"m":[171.95,145.69,165.51,171.95,177.9,183.35,207.63,265.12,322.5,305.0,242.5,257.5]},{"c":"6139","n":"亞翔","i":"31","p":659.0,"chg":2.01,"tv":10.08,"ma":729.07,"pe":13.28,"dy":3.49,"pb":7.5,"m":[420.07,422.01,549.09,544.24,526.78,575.29,703.34,760.58,785.81,790.66,739.24,718.0]},{"c":"6933","n":"AMAX-KY","i":"25","p":398.0,"chg":0.51,"tv":10.01,"ma":395.43,"pe":49.38,"dy":0.63,"pb":6.71,"m":[166.41,149.67,150.16,142.78,136.87,127.02,185.12,157.55,154.1,175.0,185.5,317.5]},{"c":"2484","n":"希華","i":"28","p":82.4,"chg":0.49,"tv":9.93,"ma":85.55,"pe":59.28,"dy":0.85,"pb":3.2,"m":[23.09,19.47,20.66,28.24,30.02,28.04,48.8,44.44,66.29,70.85,75.8,70.0]},{"c":"4720","n":"德淵","i":"21","p":29.25,"chg":9.96,"tv":9.85,"ma":24.48,"pe":52.23,"dy":1.37,"pb":2.06,"m":[14.7,13.37,14.7,16.96,16.47,16.47,24.92,24.97,24.14,20.35,18.0,19.55]},{"c":"4927","n":"泰鼎-KY","i":"28","p":56.3,"chg":-0.35,"tv":9.3,"ma":54.58,"pe":null,"dy":null,"pb":3.55,"m":[22.2,20.55,34.3,36.7,40.25,46.0,53.2,51.2,52.1,35.35,33.05,42.05]},{"c":"2890","n":"永豐金","i":"17","p":45.4,"chg":2.6,"tv":9.21,"ma":44.72,"pe":17.13,"dy":2.86,"pb":2.48,"m":[24.65,25.22,27.67,27.29,30.84,30.36,29.89,28.05,37.59,37.97,39.22,45.27]},{"c":"8210","n":"勤誠","i":"25","p":802.0,"chg":0.12,"tv":9.2,"ma":845.86,"pe":21.02,"dy":1.75,"pb":8.06,"m":[706.46,884.55,932.05,899.4,860.81,902.36,1009.22,1320.89,1355.52,1165.0,944.0,900.0]},{"c":"6789","n":"采鈺","i":"24","p":469.0,"chg":9.58,"tv":8.75,"ma":465.14,"pe":89.5,"dy":0.64,"pb":8.09,"m":[246.61,224.74,270.98,263.02,301.31,346.06,501.18,522.07,551.9,481.5,424.0,458.5]},{"c":"1216","n":"統一","i":"02","p":78.5,"chg":0.13,"tv":8.71,"ma":76.5,"pe":18.96,"dy":3.82,"pb":3.27,"m":[76.07,71.93,74.82,71.45,71.16,67.51,69.24,70.3,71.45,76.55,77.5,74.7]},{"c":"6271","n":"同欣電","i":"24","p":232.0,"chg":5.94,"tv":8.11,"ma":235.21,"pe":26.1,"dy":1.29,"pb":1.78,"m":[114.06,117.51,133.31,126.4,169.85,152.57,185.16,203.43,266.5,200.5,192.5,230.0]},{"c":"2880","n":"華南金","i":"17","p":49.8,"chg":3.53,"tv":8.04,"ma":47.42,"pe":21.56,"dy":2.91,"pb":2.87,"m":[28.44,28.0,30.59,31.98,35.82,32.18,33.81,30.74,36.06,39.13,39.6,46.65]},{"c":"1101","n":"台泥","i":"01","p":26.8,"chg":0.0,"tv":8.0,"ma":26.25,"pe":null,"dy":2.99,"pb":0.87,"m":[22.14,19.87,21.85,25.28,25.57,22.77,23.93,23.4,23.54,24.05,24.85,24.15]},{"c":"2002","n":"中鋼","i":"10","p":19.6,"chg":0.0,"tv":7.89,"ma":19.22,"pe":null,"dy":0.77,"pb":1.0,"m":[18.6,17.51,18.65,18.8,20.54,19.3,19.59,18.06,19.35,18.65,19.45,18.65]},{"c":"6672","n":"騰輝電子-KY","i":"28","p":627.0,"chg":10.0,"tv":7.78,"ma":533.14,"pe":94.71,"dy":0.53,"pb":10.65,"m":[87.47,81.51,93.44,96.38,99.8,120.35,187.5,178.5,255.5,229.5,267.5,310.0]},{"c":"8213","n":"志超","i":"28","p":42.85,"chg":4.51,"tv":7.78,"ma":37.95,"pe":21.75,"dy":2.66,"pb":0.68,"m":[33.3,31.8,32.19,33.93,36.1,31.9,37.55,36.39,36.05,31.45,32.95,33.2]},{"c":"3035","n":"智原","i":"24","p":198.0,"chg":2.86,"tv":7.77,"ma":203.39,"pe":77.95,"dy":0.91,"pb":3.01,"m":[165.51,158.08,164.03,169.48,165.02,156.1,178.4,206.15,229.5,194.5,169.5,191.0]},{"c":"3715","n":"定穎投控","i":"28","p":135.0,"chg":4.25,"tv":7.65,"ma":133.93,"pe":null,"dy":0.8,"pb":3.66,"m":[92.22,110.07,119.25,133.16,144.09,177.38,190.79,162.97,193.28,122.5,107.0,118.5]},{"c":"2464","n":"盟立","i":"31","p":170.0,"chg":-0.58,"tv":7.55,"ma":183.75,"pe":447.37,"dy":0.28,"pb":6.46,"m":[67.39,56.22,61.56,65.9,72.23,73.61,85.07,134.38,170.94,138.33,176.87,192.5]},{"c":"2618","n":"長榮航","i":"15","p":42.05,"chg":-0.71,"tv":7.54,"ma":42.43,"pe":8.85,"dy":4.76,"pb":1.63,"m":[35.92,31.92,34.73,36.49,36.21,33.16,33.68,33.63,39.69,42.3,42.6,41.95]},{"c":"2892","n":"第一金","i":"17","p":41.3,"chg":1.35,"tv":7.35,"ma":39.89,"pe":19.3,"dy":3.15,"pb":1.97,"m":[27.92,27.25,28.98,28.16,28.88,27.68,27.73,26.67,31.1,33.17,33.65,39.75]},{"c":"4977","n":"眾達-KY","i":"27","p":180.5,"chg":5.56,"tv":7.24,"ma":177.82,"pe":54.2,"dy":1.21,"pb":3.47,"m":[112.31,93.45,130.79,116.1,136.0,190.02,238.83,193.81,181.02,127.0,145.0,174.0]},{"c":"2886","n":"兆豐金","i":"17","p":53.6,"chg":0.75,"tv":7.21,"ma":50.97,"pe":20.86,"dy":3.26,"pb":1.98,"m":[40.3,38.08,39.72,38.37,39.33,37.36,38.03,38.76,43.14,46.85,46.95,51.1]},{"c":"3167","n":"大量","i":"05","p":1000.0,"chg":2.99,"tv":7.11,"ma":1003.5,"pe":70.13,"dy":0.39,"pb":20.85,"m":[160.22,189.08,222.92,217.94,290.59,343.33,622.97,752.34,801.1,729.0,725.0,806.0]},{"c":"4904","n":"遠傳","i":"27","p":112.0,"chg":0.0,"tv":7.1,"ma":108.36,"pe":27.25,"dy":3.4,"pb":4.69,"m":[89.75,88.02,84.55,86.48,92.06,90.62,92.06,92.16,104.01,102.0,102.5,106.0]},{"c":"3376","n":"新日興","i":"28","p":182.5,"chg":2.24,"tv":7.07,"ma":174.11,"pe":125.86,"dy":2.19,"pb":2.16,"m":[220.14,173.66,204.48,225.03,197.14,218.67,219.16,204.97,204.48,185.4,183.0,177.0]},{"c":"1809","n":"中釉","i":"08","p":47.3,"chg":0.0,"tv":6.98,"ma":44.85,"pe":236.5,"dy":0.53,"pb":2.7,"m":[18.88,17.04,17.69,28.22,24.6,32.25,27.23,38.96,56.15,38.76,38.35,39.0]},{"c":"2375","n":"凱美","i":"28","p":122.0,"chg":2.52,"tv":6.79,"ma":126.14,"pe":29.33,"dy":0.98,"pb":1.25,"m":[94.77,92.29,91.01,102.0,94.67,80.01,87.24,121.31,216.87,137.65,122.5,118.5]},{"c":"1519","n":"華城","i":"05","p":626.0,"chg":-0.79,"tv":6.7,"ma":674.57,"pe":40.97,"dy":1.92,"pb":21.48,"m":[537.04,615.8,703.52,917.44,855.68,819.88,822.56,716.05,743.8,619.38,723.0,718.0]},{"c":"6443","n":"元晶","i":"26","p":26.75,"chg":7.86,"tv":6.69,"ma":26.76,"pe":null,"dy":null,"pb":4.12,"m":[14.3,12.35,24.85,39.8,41.5,47.5,39.2,40.1,39.0,28.4,25.95,28.05]},{"c":"6668","n":"中揚光","i":"26","p":58.6,"chg":0.86,"tv":6.66,"ma":56.03,"pe":null,"dy":null,"pb":2.81,"m":[41.3,36.65,38.35,39.0,36.9,33.55,37.95,39.45,45.1,34.15,36.4,50.3]},{"c":"6196","n":"帆宣","i":"31","p":615.0,"chg":3.71,"tv":6.52,"ma":634.86,"pe":27.85,"dy":1.05,"pb":7.59,"m":[233.19,217.87,271.23,286.54,283.58,284.57,392.76,424.38,555.3,540.0,490.5,535.0]},{"c":"6491","n":"晶碩","i":"22","p":431.0,"chg":6.03,"tv":6.4,"ma":410.89,"pe":17.97,"dy":2.32,"pb":2.86,"m":[305.71,297.43,273.09,271.63,286.72,273.58,276.01,298.89,318.36,326.15,372.0,407.0]},{"c":"6426","n":"統新","i":"27","p":342.0,"chg":3.32,"tv":6.32,"ma":338.75,"pe":86.36,"dy":0.15,"pb":13.19,"m":[72.67,64.88,97.32,94.82,184.66,168.69,251.53,262.01,216.6,155.21,240.55,374.0]},{"c":"2353","n":"宏碁","i":"25","p":32.3,"chg":-0.31,"tv":6.27,"ma":31.69,"pe":19.23,"dy":4.02,"pb":1.26,"m":[30.25,27.02,25.23,25.28,26.15,26.87,27.45,27.45,34.0,30.2,30.7,32.15]},{"c":"2466","n":"冠西電","i":"26","p":248.5,"chg":9.96,"tv":6.13,"ma":196.21,"pe":158.28,"dy":null,"pb":22.25,"m":[52.8,53.0,67.4,61.3,54.7,52.2,61.5,47.7,55.1,118.0,104.0,110.0]},{"c":"3706","n":"神達","i":"25","p":81.3,"chg":0.74,"tv":5.95,"ma":81.45,"pe":14.52,"dy":4.92,"pb":1.41,"m":[80.18,75.52,73.59,72.09,70.86,71.21,74.73,73.41,76.84,80.27,79.13,79.8]},{"c":"3036","n":"文曄","i":"29","p":212.5,"chg":2.41,"tv":5.85,"ma":212.36,"pe":10.91,"dy":3.67,"pb":2.17,"m":[128.82,126.88,146.81,146.81,175.49,246.95,211.46,283.41,225.0,196.0,206.0,206.5]},{"c":"6957","n":"裕慶-KY","i":"20","p":448.0,"chg":-3.66,"tv":5.72,"ma":444.11,"pe":38.52,"dy":2.03,"pb":10.36,"m":[173.7,199.62,192.9,179.46,171.78,155.47,155.47,153.55,182.34,242.8,216.0,290.0]},{"c":"1717","n":"長興","i":"21","p":71.2,"chg":-0.42,"tv":5.66,"ma":73.59,"pe":37.47,"dy":1.4,"pb":2.68,"m":[37.95,37.61,40.56,65.66,62.12,65.66,79.55,79.47,74.49,63.2,71.6,71.7]},{"c":"2426","n":"鼎元","i":"26","p":91.9,"chg":2.34,"tv":5.57,"ma":99.0,"pe":919.0,"dy":0.11,"pb":7.2,"m":[17.53,14.83,17.08,19.88,19.68,34.96,53.34,75.61,89.9,54.8,82.2,99.8]},{"c":"2801","n":"彰銀","i":"17","p":29.6,"chg":2.42,"tv":5.46,"ma":28.38,"pe":17.41,"dy":3.55,"pb":1.52,"m":[19.08,18.84,19.98,19.08,20.68,19.36,20.26,19.17,21.58,22.95,24.1,28.45]},{"c":"2049","n":"上銀","i":"05","p":308.0,"chg":2.5,"tv":5.4,"ma":325.79,"pe":46.67,"dy":0.65,"pb":2.78,"m":[214.75,182.43,197.84,230.16,232.14,222.2,299.25,371.33,341.51,305.0,349.0,334.0]},{"c":"5871","n":"中租-KY","i":"20","p":107.5,"chg":0.94,"tv":5.27,"ma":106.57,"pe":9.94,"dy":5.58,"pb":1.08,"m":[96.1,96.1,101.23,96.57,99.36,99.36,109.63,104.5,110.09,115.23,115.5,110.5]},{"c":"2367","n":"燿華","i":"28","p":46.25,"chg":1.43,"tv":5.21,"ma":46.33,"pe":null,"dy":0.43,"pb":2.65,"m":[27.0,22.92,28.14,40.58,60.86,72.6,69.91,63.75,60.27,43.61,42.1,41.8]},{"c":"3013","n":"晟銘電","i":"25","p":96.6,"chg":1.05,"tv":5.07,"ma":94.98,"pe":18.51,"dy":0.83,"pb":3.61,"m":[122.57,112.52,124.49,112.04,106.29,95.66,105.34,96.24,108.69,83.84,79.71,83.1]},{"c":"6533","n":"晶心科","i":"24","p":291.0,"chg":3.37,"tv":5.06,"ma":325.89,"pe":null,"dy":null,"pb":3.44,"m":[272.79,258.74,236.93,230.15,218.52,185.09,223.37,222.88,200.59,227.24,242.26,263.5]},{"c":"6277","n":"宏正","i":"25","p":98.2,"chg":2.19,"tv":5.03,"ma":83.19,"pe":23.72,"dy":3.56,"pb":2.44,"m":[57.91,58.77,59.3,58.33,58.14,57.65,70.64,72.28,69.28,79.3,81.1,79.3]},{"c":"2472","n":"立隆電","i":"28","p":219.5,"chg":3.29,"tv":5.0,"ma":229.93,"pe":22.35,"dy":1.59,"pb":3.79,"m":[101.46,106.88,105.4,115.74,117.71,127.07,185.19,262.02,387.61,268.92,218.0,213.0]},{"c":"3701","n":"大眾控","i":"25","p":59.0,"chg":1.03,"tv":4.95,"ma":60.27,"pe":null,"dy":0.34,"pb":2.96,"m":[37.9,29.6,40.3,56.4,57.0,65.8,71.5,54.8,48.35,39.5,40.75,42.7]},{"c":"4989","n":"榮科","i":"28","p":68.9,"chg":0.15,"tv":4.95,"ma":68.36,"pe":null,"dy":null,"pb":6.34,"m":[32.69,40.21,38.17,58.11,57.36,70.3,100.63,90.99,88.82,69.0,61.9,60.9]},{"c":"1504","n":"東元","i":"05","p":70.6,"chg":3.37,"tv":4.86,"ma":70.24,"pe":25.58,"dy":2.83,"pb":1.72,"m":[110.34,89.44,85.26,83.6,79.42,65.33,61.93,69.12,72.2,67.2,72.1,69.1]},{"c":"2347","n":"聯強","i":"29","p":99.7,"chg":0.71,"tv":4.61,"ma":98.97,"pe":13.64,"dy":4.21,"pb":1.92,"m":[56.01,56.87,55.72,61.63,66.49,73.63,80.78,80.39,89.06,85.3,87.5,89.8]},{"c":"6197","n":"佳必琪","i":"28","p":337.0,"chg":4.01,"tv":4.61,"ma":353.46,"pe":28.49,"dy":2.05,"pb":7.33,"m":[164.16,133.78,137.21,142.11,145.05,191.61,182.3,233.26,345.97,307.5,290.5,322.0]},{"c":"2467","n":"志聖","i":"28","p":480.0,"chg":-0.62,"tv":4.41,"ma":537.86,"pe":47.9,"dy":1.15,"pb":4.78,"m":[180.29,169.89,224.37,252.6,277.86,364.04,554.74,579.5,630.0,530.0,560.0,526.0]},{"c":"3305","n":"昇貿","i":"31","p":112.0,"chg":-1.32,"tv":4.41,"ma":109.57,"pe":20.29,"dy":2.04,"pb":2.59,"m":[104.95,89.45,106.91,112.8,110.34,102.01,115.25,136.34,144.18,110.5,108.0,102.5]},{"c":"6715","n":"嘉基","i":"28","p":480.0,"chg":3.34,"tv":4.4,"ma":488.36,"pe":315.79,"dy":0.4,"pb":8.86,"m":[95.09,83.08,97.45,105.33,163.41,336.16,441.0,469.55,509.91,382.14,448.0,451.5]},{"c":"1711","n":"永光","i":"21","p":47.2,"chg":2.61,"tv":4.36,"ma":44.98,"pe":363.08,"dy":null,"pb":2.9,"m":[19.11,16.9,18.91,22.0,27.24,40.96,53.11,48.7,48.55,36.94,39.29,38.61]},{"c":"6141","n":"柏承","i":"28","p":53.8,"chg":-9.88,"tv":4.34,"ma":53.44,"pe":null,"dy":null,"pb":10.17,"m":[12.2,10.45,11.25,11.65,11.25,25.95,34.95,34.0,35.6,38.55,45.4,49.0]},{"c":"5876","n":"上海商銀","i":"17","p":53.8,"chg":0.19,"tv":4.29,"ma":51.23,"pe":15.2,"dy":3.35,"pb":1.22,"m":[38.66,38.09,39.23,37.28,38.32,37.18,37.89,38.23,39.47,43.46,44.15,49.25]},{"c":"2033","n":"佳大","i":"10","p":65.3,"chg":-1.06,"tv":4.28,"ma":54.44,"pe":192.06,"dy":null,"pb":4.93,"m":[17.0,15.45,15.75,16.0,16.45,15.6,16.65,15.15,16.9,15.15,22.0,33.95]},{"c":"6108","n":"競國","i":"28","p":33.0,"chg":0.61,"tv":4.22,"ma":27.99,"pe":165.0,"dy":3.03,"pb":1.57,"m":[14.22,12.15,13.93,14.31,14.17,16.28,17.58,18.49,18.35,16.04,24.93,22.86]},{"c":"4526","n":"東台","i":"05","p":38.05,"chg":9.97,"tv":4.09,"ma":34.1,"pe":null,"dy":2.63,"pb":1.91,"m":[32.67,28.86,28.57,35.8,35.32,30.93,33.01,36.67,41.49,30.65,29.75,32.6]},{"c":"1312","n":"國喬","i":"03","p":15.35,"chg":2.68,"tv":4.05,"ma":15.73,"pe":null,"dy":null,"pb":0.59,"m":[10.51,10.41,11.78,13.1,13.81,14.52,13.2,10.76,14.0,13.25,12.0,14.6]},{"c":"2355","n":"敬鵬","i":"28","p":52.0,"chg":-0.38,"tv":4.02,"ma":48.41,"pe":27.37,"dy":1.92,"pb":1.18,"m":[33.0,28.95,31.87,34.46,40.95,44.42,51.84,63.46,57.31,42.55,41.7,41.3]},{"c":"4949","n":"有成精密","i":"26","p":85.8,"chg":8.47,"tv":3.99,"ma":81.36,"pe":22.52,"dy":1.63,"pb":3.3,"m":[37.57,36.79,36.35,41.43,48.12,64.49,89.5,96.0,89.2,68.0,69.8,77.0]},{"c":"9105","n":"泰金寶-DR","i":"91","p":8.85,"chg":-1.56,"tv":3.99,"ma":8.83,"pe":null,"dy":null,"pb":null,"m":[6.23,5.65,5.76,6.22,5.97,5.63,5.74,6.09,9.62,8.69,8.35,8.38]},{"c":"2027","n":"大成鋼","i":"10","p":49.9,"chg":-0.1,"tv":3.98,"ma":48.99,"pe":9.84,"dy":3.01,"pb":1.47,"m":[36.7,34.25,34.1,34.39,35.79,36.08,35.55,40.74,39.54,41.15,50.3,46.65]},{"c":"9904","n":"寶成","i":"37","p":26.4,"chg":-0.56,"tv":3.98,"ma":25.58,"pe":5.59,"dy":4.92,"pb":0.42,"m":[27.73,27.78,28.96,29.1,29.44,27.11,25.64,24.46,24.74,24.4,25.0,24.85]},{"c":"7610","n":"聯友金屬-創","i":"35","p":1415.0,"chg":0.35,"tv":3.94,"ma":1605.71,"pe":40.61,"dy":0.18,"pb":22.06,"m":[93.41,79.75,95.47,157.2,234.56,263.37,516.86,1012.32,2061.67,1955.0,1685.0,1890.0]},{"c":"3543","n":"州巧","i":"26","p":53.4,"chg":4.5,"tv":3.93,"ma":52.58,"pe":null,"dy":1.12,"pb":1.9,"m":[41.1,40.44,40.03,45.81,49.15,49.93,43.61,34.48,30.95,28.85,44.0,45.05]},{"c":"5269","n":"祥碩","i":"24","p":1485.0,"chg":1.02,"tv":3.88,"ma":1490.36,"pe":15.84,"dy":3.06,"pb":3.07,"m":[1458.54,1129.04,1153.26,1182.34,1225.95,1162.96,1216.26,1366.47,1405.24,1410.0,1415.0,1475.0]},{"c":"2451","n":"創見","i":"24","p":274.0,"chg":1.67,"tv":3.81,"ma":280.0,"pe":4.77,"dy":4.3,"pb":3.07,"m":[126.23,179.02,172.78,221.74,218.38,289.89,254.85,300.93,297.09,235.0,312.5,286.0]},{"c":"1605","n":"華新","i":"06","p":37.3,"chg":0.81,"tv":3.8,"ma":38.64,"pe":11.3,"dy":1.34,"pb":0.81,"m":[29.17,27.94,30.01,39.08,36.27,31.39,32.18,34.99,40.75,32.95,37.3,37.1]},{"c":"6695","n":"芯鼎","i":"24","p":57.5,"chg":2.5,"tv":3.8,"ma":52.11,"pe":null,"dy":null,"pb":3.31,"m":[51.9,41.3,45.65,42.8,42.4,41.65,43.8,51.5,64.2,57.5,47.45,50.5]},{"c":"2305","n":"全友","i":"25","p":56.3,"chg":2.93,"tv":3.78,"ma":60.26,"pe":68.66,"dy":null,"pb":4.68,"m":[11.3,10.25,11.0,14.6,13.25,14.85,18.6,17.7,37.0,31.9,26.0,58.8]},{"c":"6830","n":"汎銓","i":"31","p":493.5,"chg":3.68,"tv":3.71,"ma":516.32,"pe":1974.0,"dy":0.2,"pb":7.91,"m":[169.72,145.41,175.18,180.64,234.24,446.64,870.78,688.87,604.38,344.44,459.25,553.0]},{"c":"6756","n":"威鋒電子","i":"24","p":128.5,"chg":3.21,"tv":3.65,"ma":104.26,"pe":72.19,"dy":0.7,"pb":2.96,"m":[87.63,72.12,82.39,79.92,80.32,76.17,82.2,101.5,108.0,94.0,98.4,97.0]},{"c":"2493","n":"揚博","i":"28","p":201.5,"chg":9.81,"tv":3.64,"ma":203.25,"pe":38.53,"dy":1.99,"pb":8.29,"m":[90.44,87.39,97.73,114.28,105.91,114.28,133.49,133.49,264.03,238.5,176.5,183.0]},{"c":"2351","n":"順德","i":"24","p":206.0,"chg":5.37,"tv":3.61,"ma":210.11,"pe":52.69,"dy":0.5,"pb":4.88,"m":[84.44,77.29,76.1,85.43,87.32,91.3,150.01,190.74,213.09,162.42,183.0,236.5]},{"c":"6409","n":"旭隼","i":"31","p":913.0,"chg":4.94,"tv":3.61,"ma":888.36,"pe":35.37,"dy":4.03,"pb":10.13,"m":[1122.07,962.18,926.55,883.21,888.02,724.29,744.51,638.57,908.25,952.55,995.0,894.0]},{"c":"1476","n":"儒鴻","i":"04","p":325.0,"chg":-0.15,"tv":3.58,"ma":306.46,"pe":13.46,"dy":4.62,"pb":3.07,"m":[411.22,401.18,372.97,397.83,413.14,351.45,329.93,328.02,317.0,343.5,318.0,279.0]},{"c":"3019","n":"亞光","i":"26","p":134.0,"chg":1.52,"tv":3.58,"ma":136.43,"pe":22.6,"dy":3.43,"pb":2.52,"m":[147.06,127.16,134.93,141.72,147.06,126.68,126.68,147.06,158.22,137.5,135.5,136.0]},{"c":"5469","n":"瀚宇博","i":"28","p":84.5,"chg":-1.17,"tv":3.56,"ma":81.44,"pe":15.65,"dy":2.98,"pb":0.66,"m":[87.66,88.05,94.06,96.39,98.42,83.39,93.09,79.13,87.85,70.5,70.7,73.5]},{"c":"2912","n":"統一超","i":"18","p":224.5,"chg":-1.1,"tv":3.54,"ma":217.89,"pe":20.23,"dy":4.01,"pb":5.7,"m":[235.85,224.3,213.23,208.9,213.71,208.9,227.67,212.75,212.75,233.93,223.5,215.0]},{"c":"4906","n":"正文","i":"27","p":42.5,"chg":-0.23,"tv":3.53,"ma":42.26,"pe":354.17,"dy":1.11,"pb":1.71,"m":[25.81,25.12,28.19,27.74,26.85,34.37,39.91,38.47,47.65,34.65,34.6,38.5]},{"c":"2371","n":"大同","i":"05","p":28.35,"chg":0.18,"tv":3.5,"ma":29.72,"pe":null,"dy":null,"pb":1.2,"m":[38.65,32.0,32.35,41.05,37.2,30.8,32.0,28.4,28.15,26.65,27.6,30.0]},{"c":"2468","n":"華經","i":"30","p":50.0,"chg":2.56,"tv":3.5,"ma":45.65,"pe":36.76,"dy":2.0,"pb":2.8,"m":[44.54,40.02,42.6,39.05,34.68,38.86,34.29,32.54,37.01,34.63,34.05,46.55]},{"c":"1714","n":"和桐","i":"21","p":18.9,"chg":-1.05,"tv":3.48,"ma":18.97,"pe":16.02,"dy":0.95,"pb":1.4,"m":[8.12,8.02,8.28,9.12,9.35,9.58,9.81,9.69,18.15,15.04,17.0,15.95]},{"c":"2316","n":"楠梓電","i":"28","p":158.0,"chg":2.6,"tv":3.33,"ma":166.82,"pe":11.04,"dy":1.27,"pb":1.99,"m":[100.52,88.14,103.5,96.07,97.35,111.91,114.39,149.55,223.83,155.5,158.5,156.0]},{"c":"5434","n":"崇越","i":"29","p":573.0,"chg":2.14,"tv":3.3,"ma":587.86,"pe":21.44,"dy":2.34,"pb":5.06,"m":[314.72,280.56,292.76,314.23,336.18,318.62,423.52,408.89,493.79,547.0,513.0,537.0]},{"c":"5880","n":"合庫金","i":"17","p":28.0,"chg":2.0,"tv":3.27,"ma":26.95,"pe":18.3,"dy":3.75,"pb":1.51,"m":[22.74,22.69,23.5,22.41,22.74,21.7,22.27,21.46,23.12,24.3,25.05,27.2]},{"c":"2485","n":"兆赫","i":"27","p":39.7,"chg":3.12,"tv":3.25,"ma":40.94,"pe":45.11,"dy":null,"pb":2.36,"m":[13.8,17.3,29.45,34.45,42.9,73.9,72.3,70.0,60.6,41.25,40.9,40.9]},{"c":"1727","n":"中華化","i":"21","p":99.1,"chg":3.01,"tv":3.23,"ma":104.57,"pe":143.62,"dy":0.15,"pb":5.87,"m":[35.91,36.2,42.41,45.83,46.66,52.18,57.65,90.88,99.67,79.58,88.29,100.82]},{"c":"2486","n":"一詮","i":"26","p":212.0,"chg":1.92,"tv":3.21,"ma":228.36,"pe":182.76,"dy":0.24,"pb":8.25,"m":[78.45,90.93,93.33,93.83,142.74,154.71,204.12,277.99,272.0,218.5,243.5,234.5]},{"c":"1528","n":"恩德","i":"05","p":25.4,"chg":3.67,"tv":3.19,"ma":24.23,"pe":null,"dy":null,"pb":2.29,"m":[15.05,13.95,16.4,30.3,25.15,22.6,29.0,25.75,25.55,19.95,18.6,27.05]},{"c":"6451","n":"訊芯-KY","i":"24","p":373.5,"chg":5.96,"tv":3.14,"ma":395.71,"pe":342.66,"dy":0.06,"pb":4.95,"m":[144.93,133.43,162.92,152.42,200.4,274.36,473.76,498.75,616.69,434.78,418.0,434.0]},{"c":"2332","n":"友訊","i":"27","p":21.25,"chg":3.16,"tv":3.13,"ma":20.66,"pe":null,"dy":null,"pb":1.54,"m":[17.05,14.85,15.9,16.5,15.7,15.35,15.15,14.6,18.95,22.3,20.2,20.55]},{"c":"6449","n":"鈺邦","i":"28","p":245.0,"chg":3.81,"tv":3.13,"ma":247.75,"pe":27.28,"dy":1.71,"pb":3.22,"m":[191.1,161.89,160.9,179.22,172.29,158.43,174.27,292.1,424.29,245.0,214.0,215.5]},{"c":"2441","n":"超豐","i":"24","p":117.5,"chg":4.44,"tv":3.03,"ma":123.32,"pe":21.76,"dy":2.56,"pb":2.43,"m":[66.27,67.24,85.95,96.18,90.92,92.77,91.89,103.78,136.43,121.32,109.63,127.5]},{"c":"2542","n":"興富發","i":"14","p":40.1,"chg":-0.12,"tv":3.01,"ma":39.27,"pe":9.28,"dy":9.98,"pb":1.71,"m":[35.11,33.38,35.66,34.52,34.47,33.29,30.92,39.81,38.94,40.22,44.51,42.36]},{"c":"6781","n":"AES-KY","i":"28","p":918.0,"chg":0.22,"tv":3.01,"ma":985.57,"pe":21.71,"dy":2.08,"pb":4.43,"m":[1062.29,1249.18,1298.36,1106.56,1175.41,1081.97,1003.28,1121.31,1185.24,969.0,1050.0,1010.0]},{"c":"6155","n":"鈞寶","i":"28","p":71.7,"chg":9.97,"tv":2.99,"ma":69.84,"pe":39.83,"dy":1.12,"pb":3.87,"m":[29.23,35.07,42.75,56.57,50.43,48.05,48.95,58.85,95.81,59.5,56.7,57.0]},{"c":"6949","n":"沛爾生醫*-創","i":"22","p":39.1,"chg":5.11,"tv":2.93,"ma":42.76,"pe":null,"dy":null,"pb":19.95,"m":[355.03,359.98,354.5,433.0,690.0,569.0,798.0,674.0,886.0,994.0,1155.0,53.8]},{"c":"2374","n":"佳能","i":"26","p":66.5,"chg":4.07,"tv":2.88,"ma":65.46,"pe":20.52,"dy":2.99,"pb":2.52,"m":[80.01,73.83,75.28,79.63,79.83,68.27,72.74,78.08,72.45,65.26,68.5,67.3]},{"c":"3535","n":"晶彩科","i":"26","p":96.8,"chg":3.09,"tv":2.88,"ma":94.06,"pe":55.95,"dy":null,"pb":6.81,"m":[75.2,67.3,90.2,104.0,105.5,124.0,128.0,124.5,128.5,88.5,86.8,89.3]},{"c":"3030","n":"德律","i":"31","p":277.0,"chg":-1.07,"tv":2.87,"ma":298.43,"pe":20.98,"dy":2.53,"pb":6.72,"m":[148.71,139.41,188.33,176.1,198.6,249.96,333.61,373.23,350.0,291.5,285.0,268.5]},{"c":"3576","n":"聯合再生","i":"26","p":17.3,"chg":1.76,"tv":2.85,"ma":18.14,"pe":32.04,"dy":null,"pb":2.18,"m":[6.33,6.27,8.29,10.75,18.3,23.1,16.85,17.45,18.05,19.1,17.3,17.7]},{"c":"3005","n":"神基","i":"25","p":124.5,"chg":1.22,"tv":2.74,"ma":119.71,"pe":14.79,"dy":5.45,"pb":3.05,"m":[132.99,114.06,112.16,109.32,105.54,121.63,101.0,102.0,100.5,116.5,117.0,119.0]},{"c":"3023","n":"信邦","i":"28","p":308.0,"chg":0.82,"tv":2.73,"ma":316.5,"pe":23.04,"dy":3.25,"pb":4.55,"m":[223.25,199.52,197.1,180.64,232.94,261.51,273.62,303.64,322.53,298.31,318.5,320.5]},{"c":"6691","n":"洋基工程","i":"31","p":673.0,"chg":0.3,"tv":2.69,"ma":732.29,"pe":20.13,"dy":3.27,"pb":10.95,"m":[394.27,396.92,515.11,520.4,545.1,538.93,597.14,547.75,642.12,635.95,593.0,632.0]},{"c":"8112","n":"至上","i":"29","p":84.5,"chg":1.44,"tv":2.63,"ma":84.16,"pe":6.39,"dy":4.5,"pb":2.08,"m":[52.76,64.26,68.03,68.69,70.85,83.2,81.78,80.56,94.69,86.2,93.5,83.1]},{"c":"2474","n":"可成","i":"31","p":195.5,"chg":0.51,"tv":2.54,"ma":198.71,"pe":13.01,"dy":5.25,"pb":0.76,"m":[185.75,197.15,187.17,196.98,185.88,179.6,202.78,178.64,198.91,191.0,203.5,211.0]},{"c":"2610","n":"華航","i":"15","p":20.35,"chg":-0.25,"tv":2.54,"ma":20.41,"pe":9.42,"dy":3.98,"pb":1.25,"m":[20.0,18.32,19.19,21.4,20.48,18.13,17.5,17.98,20.96,21.45,20.4,20.25]},{"c":"2634","n":"漢翔","i":"15","p":61.7,"chg":1.15,"tv":2.51,"ma":62.76,"pe":29.81,"dy":1.26,"pb":3.16,"m":[55.15,45.83,50.12,56.63,55.75,49.04,48.59,45.68,49.43,71.5,69.3,63.7]},{"c":"7788","n":"松川精密","i":"28","p":289.0,"chg":0.7,"tv":2.51,"ma":305.39,"pe":34.78,"dy":0.69,"pb":3.69,"m":[115.98,104.09,139.77,141.26,181.9,149.19,164.06,183.39,279.05,227.01,248.5,291.0]},{"c":"2385","n":"群光","i":"28","p":101.0,"chg":-1.46,"tv":2.45,"ma":104.29,"pe":11.34,"dy":7.13,"pb":1.65,"m":[123.84,111.97,110.08,112.45,117.19,118.14,118.62,123.36,114.0,104.5,106.0,105.5]},{"c":"2421","n":"建準","i":"28","p":159.5,"chg":0.95,"tv":2.45,"ma":166.32,"pe":17.15,"dy":3.29,"pb":4.34,"m":[133.49,167.58,153.17,145.01,140.24,138.79,141.21,147.01,150.0,128.5,142.5,166.5]},{"c":"8464","n":"億豐","i":"38","p":364.0,"chg":1.53,"tv":2.44,"ma":365.86,"pe":15.9,"dy":4.4,"pb":3.7,"m":[374.67,351.67,365.08,397.66,393.35,367.96,378.5,318.0,346.0,363.0,371.5,370.0]},{"c":"2855","n":"統一證","i":"17","p":55.6,"chg":2.77,"tv":2.43,"ma":57.74,"pe":5.77,"dy":3.79,"pb":1.85,"m":[23.22,23.17,23.36,26.43,29.5,31.04,32.09,38.57,49.89,43.65,47.1,57.3]},{"c":"6902","n":"GOGOLOOK","i":"36","p":154.0,"chg":8.07,"tv":2.43,"ma":141.82,"pe":32.02,"dy":null,"pb":6.72,"m":[81.5,77.5,77.2,77.8,78.0,76.8,98.5,130.5,130.5,120.5,126.5,155.0]},{"c":"2354","n":"鴻準","i":"31","p":63.4,"chg":2.26,"tv":2.4,"ma":63.13,"pe":26.86,"dy":2.37,"pb":0.79,"m":[67.02,62.35,60.5,57.68,57.29,51.65,51.36,57.29,56.42,55.2,60.2,64.9]},{"c":"6414","n":"樺漢","i":"25","p":384.5,"chg":0.26,"tv":2.4,"ma":398.71,"pe":15.97,"dy":3.58,"pb":2.03,"m":[284.34,276.63,289.64,276.63,273.25,260.24,301.2,334.94,381.0,445.5,395.0,375.0]},{"c":"5243","n":"乙盛-KY","i":"26","p":97.7,"chg":1.03,"tv":2.38,"ma":96.69,"pe":18.65,"dy":2.25,"pb":1.9,"m":[75.3,82.91,79.4,79.89,84.77,69.26,116.08,109.25,106.81,86.81,85.16,89.8]},{"c":"6191","n":"精成科","i":"28","p":92.2,"chg":1.88,"tv":2.38,"ma":89.89,"pe":16.06,"dy":2.82,"pb":1.25,"m":[106.8,107.78,116.07,109.24,107.29,93.83,110.7,93.15,100.95,90.5,82.0,83.2]},{"c":"6226","n":"光鼎","i":"26","p":40.7,"chg":-1.81,"tv":2.38,"ma":43.15,"pe":null,"dy":null,"pb":3.75,"m":[6.82,6.49,7.71,9.72,8.92,14.85,14.6,12.5,12.5,18.3,21.2,44.5]},{"c":"2006","n":"東和鋼鐵","i":"10","p":93.3,"chg":2.87,"tv":2.33,"ma":88.41,"pe":12.39,"dy":4.61,"pb":1.99,"m":[58.73,59.29,61.18,65.7,68.53,70.5,70.2,65.5,69.6,71.5,81.6,85.5]},{"c":"3149","n":"正達","i":"26","p":72.7,"chg":1.25,"tv":2.33,"ma":75.24,"pe":null,"dy":null,"pb":6.94,"m":[35.55,31.8,31.57,51.27,48.76,42.41,42.92,52.47,96.88,76.3,65.0,65.1]},{"c":"7750","n":"新代","i":"05","p":1890.0,"chg":3.56,"tv":2.32,"ma":1898.93,"pe":32.49,"dy":0.85,"pb":10.08,"m":[793.83,696.08,838.26,852.08,1229.25,1323.05,1940.0,2405.0,2290.0,2030.0,2215.0,1960.0]},{"c":"6782","n":"視陽","i":"22","p":270.0,"chg":2.86,"tv":2.3,"ma":244.75,"pe":16.36,"dy":3.11,"pb":3.83,"m":[183.71,162.66,167.44,166.01,170.79,200.93,210.02,182.75,188.97,186.1,202.0,248.0]},{"c":"1718","n":"中纖","i":"21","p":11.6,"chg":2.2,"tv":2.28,"ma":11.65,"pe":19.66,"dy":null,"pb":0.65,"m":[6.26,6.8,7.03,7.1,7.13,7.71,6.84,6.47,9.78,13.2,10.7,10.75]},{"c":"6706","n":"惠特","i":"26","p":145.5,"chg":3.93,"tv":2.27,"ma":148.96,"pe":null,"dy":null,"pb":3.08,"m":[71.2,75.6,119.0,116.0,125.5,121.0,148.5,168.5,170.0,109.5,116.5,164.0]},{"c":"2834","n":"臺企銀","i":"17","p":17.9,"chg":0.56,"tv":2.2,"ma":17.65,"pe":13.16,"dy":5.59,"pb":1.13,"m":[14.1,14.24,14.97,14.47,14.88,13.78,15.2,14.79,16.03,16.54,16.55,18.35]},{"c":"3583","n":"辛耘","i":"24","p":620.0,"chg":0.98,"tv":2.2,"ma":697.21,"pe":38.04,"dy":0.93,"pb":5.1,"m":[363.12,299.22,323.99,319.03,355.69,426.04,762.9,853.07,880.81,743.09,704.0,702.0]},{"c":"4916","n":"事欣科","i":"25","p":103.5,"chg":2.48,"tv":2.19,"ma":102.29,"pe":15.85,"dy":0.48,"pb":3.55,"m":[53.3,43.61,56.19,64.34,64.34,61.16,66.83,98.25,104.42,106.41,98.7,105.0]},{"c":"3504","n":"揚明光","i":"26","p":73.9,"chg":-3.02,"tv":2.16,"ma":80.67,"pe":null,"dy":null,"pb":2.96,"m":[59.6,47.45,52.3,56.0,60.7,58.3,74.2,85.8,91.5,63.1,79.7,78.4]},{"c":"3563","n":"牧德","i":"26","p":684.0,"chg":2.4,"tv":2.15,"ma":719.21,"pe":40.14,"dy":2.05,"pb":7.89,"m":[478.61,422.36,495.04,477.85,497.0,711.13,899.72,916.41,715.06,644.0,677.0,660.0]},{"c":"6116","n":"彩晶","i":"26","p":14.7,"chg":0.68,"tv":2.15,"ma":15.19,"pe":null,"dy":null,"pb":1.13,"m":[7.41,6.91,7.42,9.89,8.97,8.89,8.99,10.8,19.95,14.5,13.8,14.8]},{"c":"4915","n":"致伸","i":"28","p":61.6,"chg":-0.16,"tv":2.13,"ma":63.21,"pe":12.44,"dy":7.42,"pb":1.42,"m":[72.21,77.65,73.71,73.62,78.78,68.84,69.4,67.15,71.56,66.0,60.6,65.0]},{"c":"1513","n":"中興電","i":"05","p":162.0,"chg":0.62,"tv":2.09,"ma":165.75,"pe":18.22,"dy":3.7,"pb":3.84,"m":[148.61,146.2,146.68,171.29,162.12,151.99,150.06,149.09,174.67,162.5,166.0,166.5]},{"c":"4576","n":"大銀微系統","i":"05","p":215.0,"chg":5.91,"tv":2.06,"ma":222.68,"pe":65.55,"dy":0.37,"pb":6.0,"m":[114.09,98.35,108.61,123.06,117.58,118.07,193.3,247.11,235.15,191.0,202.5,233.5]},{"c":"4976","n":"佳凌","i":"26","p":39.45,"chg":-0.25,"tv":2.06,"ma":38.64,"pe":null,"dy":null,"pb":2.73,"m":[35.75,29.8,30.75,31.85,31.9,29.65,31.0,32.95,40.95,31.7,38.0,36.75]},{"c":"4961","n":"天鈺","i":"24","p":188.0,"chg":2.73,"tv":1.95,"ma":183.54,"pe":21.12,"dy":4.11,"pb":1.3,"m":[151.08,132.5,139.17,142.51,145.36,138.22,146.79,170.62,169.2,161.5,166.0,181.5]},{"c":"2413","n":"環科","i":"28","p":57.6,"chg":9.92,"tv":1.9,"ma":54.31,"pe":15.36,"dy":0.87,"pb":3.25,"m":[20.96,23.43,33.27,45.03,49.63,56.25,50.22,50.52,56.05,39.94,43.3,54.0]},{"c":"4763","n":"材料*-KY","i":"21","p":46.65,"chg":2.08,"tv":1.87,"ma":46.72,"pe":11.19,"dy":6.54,"pb":2.36,"m":[54.23,49.83,52.07,47.58,45.1,42.9,42.61,39.62,42.71,47.39,46.5,49.65]},{"c":"2406","n":"國碩","i":"26","p":29.9,"chg":6.03,"tv":1.85,"ma":29.98,"pe":166.11,"dy":null,"pb":2.83,"m":[20.65,19.7,26.2,30.4,30.45,37.05,33.7,30.9,35.6,32.1,28.45,30.4]},{"c":"2030","n":"彰源","i":"10","p":28.9,"chg":-1.2,"tv":1.84,"ma":32.67,"pe":14.74,"dy":1.73,"pb":1.5,"m":[13.48,13.38,13.58,15.33,15.62,16.11,16.01,16.88,19.6,17.3,22.3,24.8]},{"c":"9933","n":"中鼎","i":"20","p":43.7,"chg":1.75,"tv":1.77,"ma":43.45,"pe":8.06,"dy":2.17,"pb":1.72,"m":[30.13,30.18,30.56,31.38,29.36,32.97,35.81,38.12,42.11,38.26,40.57,41.35]},{"c":"3714","n":"富采","i":"26","p":62.6,"chg":1.46,"tv":1.76,"ma":65.01,"pe":null,"dy":1.44,"pb":1.06,"m":[35.78,30.7,32.47,34.99,37.85,47.41,72.54,72.93,71.85,52.3,57.3,68.8]},{"c":"2302","n":"麗正","i":"24","p":46.3,"chg":8.18,"tv":1.75,"ma":46.4,"pe":43.27,"dy":0.76,"pb":4.19,"m":[20.0,17.82,17.57,21.19,18.46,18.71,19.21,26.21,47.3,39.6,42.45,44.15]},{"c":"6438","n":"迅得","i":"31","p":172.0,"chg":2.99,"tv":1.72,"ma":170.46,"pe":29.81,"dy":2.91,"pb":2.23,"m":[156.93,113.96,138.12,147.0,150.95,170.68,181.04,161.8,159.5,147.5,144.0,150.5]},{"c":"9914","n":"美利達","i":"37","p":65.6,"chg":-3.53,"tv":1.72,"ma":67.68,"pe":19.01,"dy":4.27,"pb":1.01,"m":[98.35,87.17,83.12,85.53,75.21,65.66,59.4,67.5,70.78,77.52,87.8,67.5]},{"c":"6282","n":"康舒","i":"28","p":42.9,"chg":2.63,"tv":1.68,"ma":43.59,"pe":35.16,"dy":1.86,"pb":1.62,"m":[38.35,37.27,41.54,60.08,51.42,48.33,49.46,52.7,62.83,47.69,44.25,43.35]},{"c":"3094","n":"聯傑","i":"24","p":56.0,"chg":0.72,"tv":1.65,"ma":64.08,"pe":90.32,"dy":0.45,"pb":4.48,"m":[25.68,22.6,24.09,26.18,25.43,23.59,25.88,35.72,41.8,38.65,35.75,56.8]},{"c":"1102","n":"亞泥","i":"01","p":38.05,"chg":0.4,"tv":1.64,"ma":36.76,"pe":10.51,"dy":6.04,"pb":0.73,"m":[34.55,34.93,33.9,33.2,33.34,32.5,32.97,32.64,33.95,33.15,34.95,35.25]},{"c":"8033","n":"雷虎","i":"20","p":163.0,"chg":1.88,"tv":1.6,"ma":167.61,"pe":339.58,"dy":null,"pb":8.24,"m":[123.89,109.14,141.59,151.43,159.78,149.46,148.97,135.5,142.0,214.0,185.5,171.0]},{"c":"6944","n":"兆聯實業","i":"35","p":771.0,"chg":2.12,"tv":1.59,"ma":809.86,"pe":19.16,"dy":2.59,"pb":6.99,"m":[423.66,394.91,517.47,555.3,530.33,624.9,701.31,695.25,809.49,760.32,708.0,712.0]},{"c":"8261","n":"富鼎","i":"24","p":153.5,"chg":1.99,"tv":1.57,"ma":173.86,"pe":23.01,"dy":3.26,"pb":3.2,"m":[103.98,87.03,90.19,96.79,93.93,105.96,126.16,147.84,233.1,243.5,177.5,173.5]},{"c":"4967","n":"十銓","i":"24","p":249.0,"chg":0.2,"tv":1.56,"ma":262.75,"pe":3.7,"dy":3.46,"pb":1.9,"m":[124.47,122.05,144.81,191.79,207.29,253.3,231.02,258.15,275.58,207.29,276.0,276.5]},{"c":"3010","n":"華立","i":"29","p":139.0,"chg":2.58,"tv":1.54,"ma":133.86,"pe":12.42,"dy":3.81,"pb":1.32,"m":[89.16,99.33,109.41,111.32,119.96,124.76,131.48,129.56,126.2,116.0,127.0,125.0]},{"c":"8016","n":"矽創","i":"24","p":298.0,"chg":3.29,"tv":1.54,"ma":294.18,"pe":14.89,"dy":3.86,"pb":2.65,"m":[206.46,170.93,176.69,182.45,189.17,193.02,210.3,285.68,315.0,288.0,296.0,281.5]},{"c":"1597","n":"直得","i":"05","p":142.0,"chg":2.53,"tv":1.53,"ma":146.14,"pe":69.61,"dy":0.49,"pb":5.02,"m":[77.99,69.54,72.62,81.97,79.88,79.88,113.41,165.64,156.68,124.35,133.0,138.0]},{"c":"2402","n":"毅嘉","i":"28","p":60.6,"chg":0.83,"tv":1.53,"ma":60.67,"pe":36.29,"dy":3.3,"pb":2.56,"m":[48.47,44.62,59.55,52.23,53.29,49.15,74.3,60.13,68.71,55.89,54.8,54.0]},{"c":"6919","n":"康霈*","i":"22","p":76.0,"chg":1.06,"tv":1.53,"ma":77.37,"pe":null,"dy":null,"pb":12.84,"m":[164.0,125.0,162.5,164.0,163.5,101.5,111.5,101.5,119.5,105.0,113.5,83.1]},{"c":"2105","n":"正新","i":"11","p":31.9,"chg":-0.62,"tv":1.52,"ma":31.09,"pe":17.53,"dy":5.64,"pb":1.19,"m":[31.44,30.63,28.46,29.59,29.17,28.69,31.72,30.73,30.05,32.25,31.55,30.05]},{"c":"2606","n":"裕民","i":"15","p":72.7,"chg":0.0,"tv":1.52,"ma":75.09,"pe":10.72,"dy":3.85,"pb":1.52,"m":[54.05,52.61,59.03,60.18,61.33,56.54,60.85,62.29,62.0,63.0,72.6,77.3]},{"c":"3596","n":"智易","i":"27","p":158.0,"chg":0.32,"tv":1.52,"ma":157.25,"pe":12.15,"dy":5.7,"pb":2.12,"m":[200.3,174.2,174.2,168.97,179.42,182.26,174.0,184.0,188.0,184.5,161.0,155.0]},{"c":"2363","n":"矽統","i":"24","p":54.0,"chg":0.56,"tv":1.51,"ma":57.12,"pe":100.0,"dy":1.13,"pb":0.57,"m":[57.61,45.85,48.02,56.22,55.24,50.0,56.52,62.05,68.28,56.72,50.7,59.0]},{"c":"2428","n":"興勤","i":"28","p":258.0,"chg":2.79,"tv":1.5,"ma":265.43,"pe":18.34,"dy":2.29,"pb":2.8,"m":[181.65,186.04,173.83,167.0,182.62,157.23,179.69,224.62,303.72,246.59,247.56,258.5]},{"c":"8103","n":"瀚荃","i":"28","p":108.0,"chg":4.35,"tv":1.5,"ma":112.64,"pe":18.88,"dy":2.59,"pb":2.08,"m":[74.37,70.1,87.55,93.18,90.46,82.7,93.08,100.35,94.14,77.6,94.0,128.5]},{"c":"8271","n":"宇瞻","i":"24","p":180.5,"chg":0.0,"tv":1.48,"ma":192.68,"pe":4.49,"dy":2.47,"pb":2.46,"m":[106.99,93.61,96.93,115.79,119.7,183.7,211.55,214.97,210.57,191.5,232.5,204.0]},{"c":"1503","n":"士電","i":"05","p":192.0,"chg":0.52,"tv":1.45,"ma":197.29,"pe":26.45,"dy":2.6,"pb":2.58,"m":[171.84,158.17,169.4,210.41,218.7,198.2,193.32,184.04,239.21,202.59,202.0,198.5]},{"c":"2498","n":"宏達電","i":"27","p":40.55,"chg":1.5,"tv":1.45,"ma":41.29,"pe":15.66,"dy":1.23,"pb":1.29,"m":[52.13,47.28,49.41,45.65,44.76,41.25,40.71,44.96,50.4,41.85,40.95,40.1]},{"c":"2439","n":"美律","i":"27","p":81.6,"chg":2.51,"tv":1.44,"ma":79.21,"pe":14.89,"dy":5.0,"pb":1.21,"m":[96.44,99.77,92.83,102.14,94.07,81.24,84.76,81.53,88.18,80.48,78.39,78.6]},{"c":"2633","n":"台灣高鐵","i":"15","p":26.35,"chg":1.15,"tv":1.44,"ma":25.96,"pe":21.6,"dy":4.36,"pb":2.12,"m":[26.16,26.16,26.73,25.83,26.11,25.2,25.54,24.82,24.82,26.1,26.15,25.7]},{"c":"3545","n":"敦泰","i":"24","p":53.7,"chg":4.47,"tv":1.44,"ma":50.5,"pe":null,"dy":1.51,"pb":1.31,"m":[61.87,48.15,50.85,54.79,50.95,42.79,50.26,60.2,60.2,49.03,50.1,51.7]},{"c":"6689","n":"伊雲谷","i":"36","p":74.8,"chg":2.47,"tv":1.42,"ma":66.05,"pe":34.16,"dy":2.67,"pb":1.75,"m":[68.98,59.23,60.77,57.78,57.2,80.96,69.37,64.54,64.73,60.0,61.1,65.4]},{"c":"2605","n":"新興","i":"15","p":35.5,"chg":0.14,"tv":1.4,"ma":36.21,"pe":7.24,"dy":2.82,"pb":1.08,"m":[23.68,22.13,25.61,27.89,29.87,38.47,33.06,29.58,30.88,31.05,37.8,37.3]},{"c":"5388","n":"中磊","i":"27","p":75.0,"chg":1.76,"tv":1.39,"ma":73.59,"pe":16.78,"dy":3.33,"pb":1.39,"m":[95.97,78.42,80.07,78.71,80.84,76.68,83.6,83.0,82.4,85.1,77.6,72.9]},{"c":"6005","n":"群益證","i":"17","p":31.0,"chg":1.64,"tv":1.39,"ma":32.12,"pe":5.76,"dy":5.52,"pb":1.29,"m":[21.97,21.58,21.4,24.11,27.0,24.33,24.55,27.61,34.77,29.36,30.65,32.25]},{"c":"6472","n":"保瑞","i":"22","p":413.5,"chg":0.12,"tv":1.39,"ma":420.82,"pe":34.09,"dy":2.42,"pb":3.49,"m":[632.1,507.43,489.9,498.67,506.46,470.91,405.65,374.0,411.98,390.56,455.0,420.5]},{"c":"2812","n":"台中銀","i":"17","p":18.6,"chg":0.54,"tv":1.38,"ma":18.69,"pe":11.07,"dy":5.7,"pb":1.17,"m":[20.4,19.3,19.76,18.84,19.16,18.84,18.75,17.46,18.06,18.8,18.85,19.2]},{"c":"8422","n":"可寧衛*","i":"35","p":26.1,"chg":1.36,"tv":1.37,"ma":25.51,"pe":27.19,"dy":4.6,"pb":3.45,"m":[214.96,21.26,23.75,41.13,34.09,27.91,29.2,25.18,27.72,26.4,26.85,26.0]},{"c":"3055","n":"蔚華科","i":"29","p":153.0,"chg":5.88,"tv":1.34,"ma":184.21,"pe":null,"dy":0.33,"pb":10.63,"m":[60.61,56.52,75.86,71.57,66.59,59.71,82.24,116.13,91.71,169.0,108.5,188.0]},{"c":"9910","n":"豐泰","i":"37","p":68.0,"chg":-1.02,"tv":1.32,"ma":67.67,"pe":13.82,"dy":6.03,"pb":2.84,"m":[122.77,120.86,113.21,95.35,89.14,77.67,74.52,66.11,70.7,68.1,70.4,68.4]},{"c":"2465","n":"麗臺","i":"25","p":87.5,"chg":5.68,"tv":1.31,"ma":87.42,"pe":32.29,"dy":null,"pb":6.03,"m":[70.7,52.0,63.4,56.3,52.8,62.8,67.6,83.1,79.4,77.5,85.9,92.0]},{"c":"4551","n":"智伸科","i":"12","p":164.5,"chg":5.11,"tv":1.29,"ma":173.54,"pe":17.26,"dy":2.55,"pb":2.05,"m":[148.02,108.58,114.91,116.86,120.76,124.16,136.82,154.35,220.09,177.72,157.5,158.0]},{"c":"6153","n":"嘉聯益","i":"28","p":18.6,"chg":-0.53,"tv":1.29,"ma":18.15,"pe":null,"dy":null,"pb":1.38,"m":[15.55,14.1,15.55,16.35,16.95,17.05,20.65,18.35,23.95,17.0,16.7,17.4]},{"c":"3717","n":"聯嘉投控","i":"12","p":28.0,"chg":0.9,"tv":1.27,"ma":28.13,"pe":350.0,"dy":0.71,"pb":1.65,"m":[19.62,16.73,16.69,18.98,17.22,19.62,21.82,23.24,22.03,21.85,22.25,24.9]},{"c":"7799","n":"禾榮科","i":"22","p":440.0,"chg":0.46,"tv":1.27,"ma":489.07,"pe":null,"dy":null,"pb":6.24,"m":[722.0,536.0,528.0,420.0,545.0,410.5,407.0,317.0,386.0,425.0,358.5,522.0]},{"c":"2352","n":"佳世達","i":"25","p":29.45,"chg":1.03,"tv":1.26,"ma":29.05,"pe":38.25,"dy":3.4,"pb":1.17,"m":[30.22,25.87,24.08,24.42,25.43,23.5,24.81,26.31,30.42,29.64,28.8,29.6]},{"c":"1402","n":"遠東新","i":"04","p":28.6,"chg":0.35,"tv":1.24,"ma":28.6,"pe":14.82,"dy":4.37,"pb":0.66,"m":[25.74,26.93,26.65,27.03,26.89,25.17,24.79,25.93,27.46,27.35,30.35,27.85]},{"c":"2388","n":"威盛","i":"24","p":67.2,"chg":3.07,"tv":1.23,"ma":68.86,"pe":42.0,"dy":0.07,"pb":1.68,"m":[55.07,48.62,57.66,52.07,50.87,55.27,72.76,85.95,84.4,72.2,73.9,69.7]},{"c":"1477","n":"聚陽","i":"04","p":209.0,"chg":0.72,"tv":1.22,"ma":203.64,"pe":14.27,"dy":7.18,"pb":3.74,"m":[267.38,282.42,281.01,304.03,299.33,267.85,218.32,211.51,207.62,212.0,203.0,191.5]},{"c":"2458","n":"義隆","i":"24","p":130.5,"chg":0.38,"tv":1.22,"ma":134.18,"pe":12.13,"dy":5.42,"pb":3.33,"m":[120.98,120.51,119.57,109.73,111.6,127.55,132.84,153.69,173.08,160.48,140.5,130.5]},{"c":"8215","n":"明基材","i":"26","p":29.15,"chg":-0.17,"tv":1.21,"ma":28.41,"pe":null,"dy":1.03,"pb":1.95,"m":[22.52,18.77,19.01,20.25,20.89,26.52,26.22,27.46,30.92,24.8,23.95,30.05]},{"c":"2889","n":"國票金","i":"17","p":16.9,"chg":-0.29,"tv":1.19,"ma":16.56,"pe":13.85,"dy":3.49,"pb":1.29,"m":[14.54,15.26,15.89,15.84,16.7,15.89,14.49,14.16,14.45,15.17,15.12,16.9]},{"c":"2338","n":"光罩","i":"24","p":46.4,"chg":2.77,"tv":1.16,"ma":46.75,"pe":null,"dy":null,"pb":2.47,"m":[39.1,32.65,35.21,41.26,40.7,50.6,50.3,52.8,54.0,42.9,38.25,49.05]},{"c":"2637","n":"慧洋-KY","i":"15","p":100.5,"chg":1.41,"tv":1.16,"ma":99.83,"pe":11.18,"dy":3.48,"pb":1.51,"m":[60.94,59.89,65.73,69.17,69.27,67.26,71.56,68.79,77.1,81.1,102.0,102.5]},{"c":"3031","n":"佰鴻","i":"26","p":33.4,"chg":2.61,"tv":1.15,"ma":32.47,"pe":36.7,"dy":2.99,"pb":2.0,"m":[20.68,17.75,19.04,19.62,19.53,21.74,30.63,32.32,29.34,24.8,23.75,28.1]},{"c":"1314","n":"中石化","i":"03","p":8.75,"chg":0.69,"tv":1.13,"ma":8.91,"pe":null,"dy":null,"pb":0.44,"m":[7.28,8.26,8.05,8.08,8.46,8.49,7.76,7.2,8.04,8.45,8.23,9.18]},{"c":"6605","n":"帝寶","i":"12","p":132.5,"chg":-1.85,"tv":1.13,"ma":136.11,"pe":8.18,"dy":4.91,"pb":1.09,"m":[127.5,132.73,137.01,159.85,137.01,128.45,124.17,124.65,133.21,131.0,141.5,140.0]},{"c":"9921","n":"巨大","i":"37","p":90.4,"chg":-3.32,"tv":1.1,"ma":92.19,"pe":58.32,"dy":2.01,"pb":1.03,"m":[101.69,92.85,95.6,92.55,82.24,69.76,69.07,69.56,74.18,83.12,105.62,90.5]},{"c":"9945","n":"潤泰新","i":"20","p":29.3,"chg":-0.68,"tv":1.08,"ma":29.37,"pe":5.12,"dy":3.75,"pb":0.52,"m":[28.75,28.13,29.33,27.94,28.28,24.87,23.87,22.43,25.69,26.65,29.4,29.25]},{"c":"2436","n":"偉詮電","i":"24","p":70.3,"chg":3.08,"tv":1.07,"ma":71.64,"pe":12.92,"dy":2.79,"pb":2.95,"m":[50.67,42.06,47.66,48.63,58.55,64.0,73.04,72.75,76.45,59.6,62.9,70.0]},{"c":"2480","n":"敦陽科","i":"30","p":183.5,"chg":1.1,"tv":1.07,"ma":176.43,"pe":20.95,"dy":4.25,"pb":5.96,"m":[156.3,137.77,143.95,133.02,139.67,134.92,132.07,139.67,154.5,159.0,160.0,164.5]},{"c":"6214","n":"精誠","i":"30","p":199.0,"chg":1.27,"tv":1.07,"ma":193.21,"pe":18.58,"dy":3.02,"pb":2.95,"m":[127.82,112.98,123.99,111.06,104.36,109.15,122.07,122.07,135.0,141.5,179.5,191.5]},{"c":"9958","n":"世紀鋼","i":"10","p":86.7,"chg":2.97,"tv":1.06,"ma":88.82,"pe":12.32,"dy":5.19,"pb":1.82,"m":[152.56,127.92,131.71,132.66,121.76,120.34,100.92,97.6,113.71,108.97,100.57,91.9]},{"c":"1409","n":"新纖","i":"04","p":25.25,"chg":0.8,"tv":1.05,"ma":25.6,"pe":11.48,"dy":3.56,"pb":0.85,"m":[12.87,14.79,15.18,14.5,14.99,15.71,16.24,16.34,27.13,23.23,23.61,24.45]},{"c":"3380","n":"明泰","i":"27","p":32.65,"chg":0.93,"tv":1.05,"ma":31.5,"pe":233.21,"dy":1.53,"pb":1.93,"m":[32.25,27.38,31.56,33.88,32.5,35.6,39.98,32.2,35.26,30.35,27.55,33.15]},{"c":"8462","n":"柏文","i":"37","p":163.5,"chg":1.55,"tv":1.05,"ma":157.18,"pe":15.66,"dy":4.45,"pb":5.46,"m":[154.79,149.57,138.64,142.44,135.32,135.8,136.75,132.47,136.0,157.0,175.5,161.5]},{"c":"1795","n":"美時","i":"22","p":176.0,"chg":0.57,"tv":1.03,"ma":178.5,"pe":12.44,"dy":1.53,"pb":1.93,"m":[298.53,273.2,278.07,296.09,280.02,208.43,221.1,193.34,186.52,185.55,191.39,178.0]},{"c":"6861","n":"睿生光電","i":"22","p":247.0,"chg":2.28,"tv":1.03,"ma":265.32,"pe":38.12,"dy":0.81,"pb":6.6,"m":[66.06,56.43,57.62,65.37,94.18,154.97,193.72,424.69,378.5,211.0,187.0,246.0]},{"c":"2207","n":"和泰車","i":"12","p":526.0,"chg":-1.13,"tv":1.02,"ma":527.93,"pe":12.94,"dy":3.8,"pb":3.42,"m":[551.51,595.63,545.75,508.35,536.16,475.73,496.84,446.96,481.0,492.0,518.0,523.0]},{"c":"2915","n":"潤泰全","i":"18","p":57.6,"chg":-0.52,"tv":1.02,"ma":58.26,"pe":4.14,"dy":3.3,"pb":0.37,"m":[50.61,51.38,54.18,49.45,51.48,46.8,43.38,42.46,50.71,52.0,61.1,59.3]},{"c":"9939","n":"宏全","i":"20","p":126.0,"chg":0.8,"tv":1.01,"ma":126.32,"pe":11.45,"dy":4.92,"pb":1.88,"m":[123.68,116.54,113.21,113.21,116.07,111.31,114.16,119.87,125.11,132.5,134.0,126.0]}],"etfs":[{"c":"0050","n":"元大台灣50","i":"ETF","t":"市值型","p":108.15,"chg":0.84,"tv":90.28,"ma":112.2,"pe":null,"dy":1.48,"pb":null,"cd":1.6,"m":[61.94,58.66,62.14,70.42,78.92,75.44,85.48,95.27,110.48,102.5,104.65,111.35]},{"c":"00981A","n":"主動統一台股增長","i":"ETF","t":"主動式","p":28.88,"chg":0.52,"tv":44.32,"ma":30.9,"pe":null,"dy":5.78,"pb":null,"cd":1.67,"m":[13.59,13.93,15.26,15.83,18.16,20.15,25.31,27.66,31.53,27.11,28.09,29.57]},{"c":"0056","n":"元大高股息","i":"ETF","t":"高股息","p":58.75,"chg":2.26,"tv":31.85,"ma":58.18,"pe":null,"dy":6.95,"pb":null,"cd":4.082,"m":[34.16,32.5,34.09,35.48,37.74,36.84,39.88,44.21,52.59,49.55,52.4,57.15]},{"c":"00919","n":"群益台灣精選高息","i":"ETF","t":"高股息","p":32.53,"chg":1.37,"tv":16.76,"ma":32.11,"pe":null,"dy":10.51,"pb":null,"cd":3.42,"m":[18.9,18.65,20.39,21.49,21.98,21.47,22.1,24.8,29.77,28.03,29.77,32.27]},{"c":"00985B","n":"群益ESG投等債0-5","i":"ETF","t":"債券","p":10.24,"chg":-0.19,"tv":12.49,"ma":10.13,"pe":null,"dy":5.77,"pb":null,"cd":0.591,"m":[9.46,9.69,9.83,9.88,9.89,9.94,9.89,9.89,9.96,10.22,10.13,10.05]},{"c":"00632R","n":"元大台灣50反1","i":"ETF","t":"槓桿反向","p":9.72,"chg":-1.42,"tv":7.41,"ma":9.44,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[17.21,17.94,16.87,15.19,13.68,14.12,12.4,11.29,9.65,10.48,10.15,9.55]},{"c":"00878","n":"國泰永續高股息","i":"ETF","t":"高股息","p":35.39,"chg":1.46,"tv":6.67,"ma":35.17,"pe":null,"dy":7.04,"pb":null,"cd":2.49,"m":[19.63,18.92,20.18,21.08,22.27,21.28,23.41,26.88,33.1,31.09,32.38,35.11]},{"c":"00830","n":"國泰費城半導體","i":"ETF","t":"海外","p":82.6,"chg":1.98,"tv":6.53,"ma":87.78,"pe":null,"dy":10.9,"pb":null,"cd":9.0,"m":[46.86,44.49,50.13,55.25,57.6,55.6,67.2,83.2,100.6,86.1,83.85,84.8]},{"c":"00929","n":"復華台灣科技優息","i":"ETF","t":"高股息","p":29.29,"chg":0.0,"tv":6.4,"ma":29.81,"pe":null,"dy":8.64,"pb":null,"cd":2.53,"m":[16.88,15.78,16.46,17.75,18.25,18.43,20.57,24.9,30.49,27.17,27.59,28.68]},{"c":"00927","n":"群益半導體收益","i":"ETF","t":"高股息","p":35.61,"chg":1.48,"tv":6.12,"ma":38.96,"pe":null,"dy":16.09,"pb":null,"cd":5.73,"m":[17.4,16.47,17.69,21.03,22.46,21.91,25.52,32.07,39.37,34.22,33.59,37.29]},{"c":"00918","n":"大華優利高填息30","i":"ETF","t":"主題型","p":34.55,"chg":0.99,"tv":5.79,"ma":34.2,"pe":null,"dy":12.14,"pb":null,"cd":4.195,"m":[19.73,19.11,20.05,20.6,21.05,20.66,21.69,24.33,30.56,30.28,32.23,34.19]},{"c":"00662","n":"富邦NASDAQ","i":"ETF","t":"海外","p":123.8,"chg":0.49,"tv":5.32,"ma":125.51,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[99.05,97.15,103.25,101.8,100.35,99.9,107.9,119.2,123.15,120.05,119.9,121.6]},{"c":"00663L","n":"國泰臺灣加權正2","i":"ETF","t":"槓桿反向","p":105.75,"chg":2.22,"tv":4.67,"ma":113.28,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[44.22,40.1,45.2,55.4,67.15,61.4,77.0,90.55,120.2,98.0,99.5,111.2]},{"c":"00881","n":"國泰台灣科技龍頭","i":"ETF","t":"主題型","p":49.55,"chg":0.9,"tv":4.4,"ma":51.95,"pe":null,"dy":14.63,"pb":null,"cd":7.25,"m":[26.56,25.2,26.95,30.3,34.0,34.08,40.26,45.67,52.57,46.84,48.59,51.8]},{"c":"00675L","n":"富邦臺灣加權正2","i":"ETF","t":"槓桿反向","p":320.05,"chg":2.25,"tv":3.83,"ma":343.16,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[134.45,121.95,137.45,168.2,203.5,186.0,233.35,274.35,364.0,296.55,301.5,337.6]},{"c":"00953B","n":"群益優選非投等債","i":"ETF","t":"債券","p":9.58,"chg":-0.21,"tv":3.79,"ma":9.52,"pe":null,"dy":7.77,"pb":null,"cd":0.744,"m":[8.71,8.89,9.08,9.16,9.13,9.17,9.23,9.25,9.35,9.6,9.54,9.48]},{"c":"006208","n":"富邦台50","i":"ETF","t":"市值型","p":247.6,"chg":0.94,"tv":3.73,"ma":256.98,"pe":null,"dy":3.31,"pb":null,"cd":8.198,"m":[141.31,133.92,142.4,160.94,180.46,172.81,195.71,217.28,252.49,234.55,239.3,254.7]},{"c":"00935","n":"野村臺灣新科技50","i":"ETF","t":"主題型","p":56.4,"chg":1.35,"tv":3.66,"ma":60.05,"pe":null,"dy":5.37,"pb":null,"cd":3.03,"m":[26.6,25.32,27.46,31.58,36.43,36.91,45.52,52.47,62.15,53.63,54.07,59.9]},{"c":"00637L","n":"元大滬深300正2","i":"ETF","t":"槓桿反向","p":16.74,"chg":-0.24,"tv":3.59,"ma":17.59,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[19.94,19.55,20.4,20.19,19.21,19.49,21.04,21.48,22.64,20.9,20.25,19.53]},{"c":"00922","n":"國泰台灣領袖50","i":"ETF","t":"市值型","p":39.98,"chg":1.06,"tv":3.58,"ma":43.2,"pe":null,"dy":10.26,"pb":null,"cd":4.1,"m":[22.28,21.11,22.43,24.7,27.67,26.79,30.67,34.41,40.53,37.13,38.27,41.25]},{"c":"00985A","n":"主動野村台灣50","i":"ETF","t":"主動式","p":20.55,"chg":0.64,"tv":3.37,"ma":23.24,"pe":null,"dy":10.46,"pb":null,"cd":2.15,"m":[11.07,10.97,11.81,13.07,14.53,15.03,17.45,18.91,20.84,18.81,20.26,21.08]},{"c":"00982A","n":"主動群益台灣強棒","i":"ETF","t":"主動式","p":22.08,"chg":2.27,"tv":3.29,"ma":23.31,"pe":null,"dy":9.02,"pb":null,"cd":1.991,"m":[12.33,11.87,12.95,13.78,15.17,15.95,19.52,21.5,24.76,21.47,21.39,22.86]},{"c":"00891","n":"中信關鍵半導體","i":"ETF","t":"主題型","p":35.43,"chg":1.81,"tv":3.25,"ma":37.12,"pe":null,"dy":11.71,"pb":null,"cd":4.15,"m":[16.71,15.78,17.33,20.11,22.76,22.65,27.36,31.22,37.44,32.78,33.65,36.9]},{"c":"00708L","n":"期元大S&P黃金正2","i":"ETF","t":"槓桿反向","p":70.35,"chg":-0.57,"tv":2.86,"ma":71.47,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[92.85,80.1,94.5,113.3,122.55,101.45,101.85,90.0,75.9,70.5,86.75,79.1]},{"c":"00646","n":"元大S&P500","i":"ETF","t":"海外","p":79.2,"chg":0.25,"tv":2.21,"ma":78.41,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[64.55,64.45,67.9,67.75,67.85,66.5,70.35,74.0,74.3,76.15,76.75,76.8]},{"c":"00947","n":"台新臺灣IC設計","i":"ETF","t":"主題型","p":35.18,"chg":2.15,"tv":2.15,"ma":38.55,"pe":null,"dy":7.22,"pb":null,"cd":2.54,"m":[15.35,14.95,16.59,20.48,23.02,23.65,27.26,32.8,40.37,31.61,34.33,37.57]},{"c":"00715L","n":"期街口布蘭特正2","i":"ETF","t":"槓桿反向","p":82.35,"chg":-0.24,"tv":1.9,"ma":74.04,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[9.55,10.13,19.38,21.65,27.51,57.35,46.21,63.2,38.49,47.33,53.15,64.85]},{"c":"00757","n":"統一FANG+","i":"ETF","t":"主題型","p":143.3,"chg":-0.56,"tv":1.86,"ma":145.35,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[119.3,117.3,119.35,112.7,105.25,109.25,117.85,128.35,130.95,132.5,137.3,141.15]},{"c":"00865B","n":"國泰US短期公債","i":"ETF","t":"債券","p":49.97,"chg":-0.46,"tv":1.78,"ma":49.42,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[45.61,46.75,47.37,47.54,47.4,48.27,47.66,48.05,48.16,49.3,48.91,48.76]},{"c":"00712","n":"復華富時不動產","i":"ETF","t":"主題型","p":7.04,"chg":2.33,"tv":1.77,"ma":7.06,"pe":null,"dy":11.58,"pb":null,"cd":0.815,"m":[7.96,8.02,8.52,8.98,8.58,8.27,8.59,8.31,8.36,8.69,8.67,7.87]},{"c":"00713","n":"元大台灣高息低波","i":"ETF","t":"高股息","p":65.3,"chg":0.69,"tv":1.66,"ma":64.1,"pe":null,"dy":5.83,"pb":null,"cd":3.81,"m":[48.3,46.59,48.38,49.19,51.0,49.89,52.1,53.7,59.63,59.63,60.37,63.75]},{"c":"00735","n":"國泰臺韓科技","i":"ETF","t":"海外","p":98.2,"chg":2.29,"tv":1.44,"ma":104.8,"pe":null,"dy":4.07,"pb":null,"cd":4.0,"m":[45.38,43.7,47.39,56.42,69.79,67.31,78.73,96.71,119.21,97.75,103.4,106.95]},{"c":"00940","n":"元大台灣價值高息","i":"ETF","t":"高股息","p":13.38,"chg":1.21,"tv":1.31,"ma":13.31,"pe":null,"dy":4.26,"pb":null,"cd":0.57,"m":[9.0,8.6,8.85,9.25,9.52,9.45,10.15,11.08,12.61,11.94,12.37,13.04]},{"c":"00892","n":"富邦台灣半導體","i":"ETF","t":"主題型","p":40.71,"chg":1.5,"tv":1.23,"ma":42.52,"pe":null,"dy":6.72,"pb":null,"cd":2.736,"m":[19.53,18.47,20.0,22.85,25.92,27.91,35.54,39.39,44.78,39.14,39.04,42.89]},{"c":"00961","n":"FT臺灣永續高息","i":"ETF","t":"高股息","p":13.55,"chg":0.67,"tv":1.2,"ma":13.35,"pe":null,"dy":8.92,"pb":null,"cd":1.209,"m":[8.59,8.36,8.5,9.34,9.4,9.39,9.62,10.64,12.25,12.09,12.87,13.2]},{"c":"0053","n":"元大科技市值","i":"ETF","t":"市值型","p":241.35,"chg":0.88,"tv":1.17,"ma":252.38,"pe":null,"dy":1.24,"pb":null,"cd":3.0,"m":[135.65,127.7,135.75,155.9,175.35,171.7,197.85,222.25,252.15,230.75,238.95,249.3]},{"c":"00642U","n":"期元大S&P石油","i":"ETF","t":"期貨商品","p":34.68,"chg":0.14,"tv":1.01,"ma":32.28,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[14.82,15.25,14.98,15.75,17.63,25.49,25.94,31.36,24.55,26.99,28.75,32.36]},{"c":"00980A","n":"主動野村臺灣優選","i":"ETF","t":"主動式","p":24.42,"chg":1.58,"tv":0.99,"ma":25.62,"pe":null,"dy":7.43,"pb":null,"cd":1.814,"m":[12.94,12.91,13.94,14.45,16.31,16.97,20.05,21.93,25.07,21.7,23.89,25.04]},{"c":"00633L","n":"富邦上証正2","i":"ETF","t":"槓桿反向","p":40.16,"chg":-0.07,"tv":0.98,"ma":42.41,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[49.11,47.8,49.6,49.07,46.8,47.0,50.95,51.95,54.7,50.05,49.01,47.31]},{"c":"00923","n":"群益台ESG低碳50","i":"ETF","t":"主題型","p":39.57,"chg":0.79,"tv":0.95,"ma":41.3,"pe":null,"dy":12.03,"pb":null,"cd":4.76,"m":[22.06,21.01,22.31,24.67,27.86,26.87,31.02,35.37,41.46,37.59,38.66,41.3]},{"c":"009805","n":"台新美國電力基建","i":"ETF","t":"海外","p":14.42,"chg":0.35,"tv":0.9,"ma":15.05,"pe":null,"dy":2.77,"pb":null,"cd":0.4,"m":[12.27,11.91,12.11,13.05,14.46,14.72,15.6,15.97,16.47,15.93,15.22,14.68]},{"c":"00753L","n":"中信中國50正2","i":"ETF","t":"槓桿反向","p":8.12,"chg":-1.1,"tv":0.88,"ma":8.42,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[13.59,12.22,12.35,12.88,11.91,10.59,11.24,10.08,8.92,9.55,9.79,8.95]},{"c":"00893","n":"國泰智能電動車","i":"ETF","t":"主題型","p":44.0,"chg":1.38,"tv":0.87,"ma":45.76,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[32.27,30.31,32.78,33.59,34.37,33.45,38.55,44.93,47.43,44.38,42.66,44.37]},{"c":"00670L","n":"富邦NASDAQ正2","i":"ETF","t":"槓桿反向","p":199.45,"chg":1.86,"tv":0.83,"ma":210.31,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[163.0,148.65,163.8,157.9,152.75,146.2,172.55,206.75,218.0,195.1,197.7,202.6]},{"c":"00665L","n":"富邦恒生國企正2","i":"ETF","t":"槓桿反向","p":8.54,"chg":-0.93,"tv":0.81,"ma":8.69,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[11.85,10.97,10.79,11.14,10.76,9.78,10.43,9.66,8.32,9.34,9.69,9.03]},{"c":"00934","n":"中信成長高股息","i":"ETF","t":"高股息","p":29.51,"chg":1.03,"tv":0.75,"ma":29.95,"pe":null,"dy":9.31,"pb":null,"cd":2.747,"m":[18.41,17.99,18.61,20.07,20.79,20.33,21.85,24.05,27.75,25.67,27.77,29.4]},{"c":"00904","n":"台新臺灣半導體30","i":"ETF","t":"主題型","p":38.48,"chg":1.8,"tv":0.72,"ma":42.23,"pe":null,"dy":12.92,"pb":null,"cd":4.97,"m":[18.81,17.8,19.69,23.96,27.08,27.04,31.02,35.82,42.46,36.87,37.29,40.52]},{"c":"00635U","n":"期元大S&P黃金","i":"ETF","t":"期貨商品","p":42.43,"chg":-0.28,"tv":0.68,"ma":42.78,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[46.76,43.65,47.36,52.1,54.9,50.05,50.3,47.37,43.71,42.26,46.96,44.95]},{"c":"00945B","n":"凱基美國非投等債","i":"ETF","t":"債券","p":14.4,"chg":0.07,"tv":0.66,"ma":14.31,"pe":null,"dy":7.41,"pb":null,"cd":1.067,"m":[13.09,13.38,13.64,13.77,13.75,13.82,13.89,13.92,14.07,14.37,14.27,14.24]},{"c":"00900","n":"富邦特選高股息30","i":"ETF","t":"高股息","p":19.76,"chg":1.33,"tv":0.62,"ma":19.68,"pe":null,"dy":4.68,"pb":null,"cd":0.925,"m":[12.77,12.2,13.06,13.67,14.32,13.91,14.82,16.77,19.52,17.93,18.54,19.75]},{"c":"00984A","n":"主動安聯台灣高息","i":"ETF","t":"主動式高股息","p":15.27,"chg":1.73,"tv":0.58,"ma":15.9,"pe":null,"dy":8.67,"pb":null,"cd":1.324,"m":[9.56,9.28,9.97,10.97,11.65,11.85,13.32,14.15,16.37,14.41,14.7,15.1]},{"c":"00939","n":"統一台灣高息動能","i":"ETF","t":"高股息","p":24.98,"chg":1.34,"tv":0.57,"ma":24.45,"pe":null,"dy":4.31,"pb":null,"cd":1.076,"m":[13.4,12.87,13.93,14.76,15.62,15.2,16.31,18.12,21.45,21.04,22.29,24.28]},{"c":"00882","n":"中信中國高股息","i":"ETF","t":"海外","p":15.01,"chg":-0.6,"tv":0.52,"ma":14.98,"pe":null,"dy":6.66,"pb":null,"cd":1.0,"m":[13.65,14.27,14.3,14.63,15.59,15.29,15.24,15.35,14.99,15.06,15.06,14.79]},{"c":"00738U","n":"期元大道瓊白銀","i":"ETF","t":"期貨商品","p":45.53,"chg":0.53,"tv":0.51,"ma":46.99,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[42.1,41.19,57.05,77.6,71.0,60.25,64.0,60.75,52.95,46.69,55.0,52.45]},{"c":"00896","n":"中信綠能及電動車","i":"ETF","t":"主題型","p":27.4,"chg":1.78,"tv":0.5,"ma":27.93,"pe":null,"dy":14.6,"pb":null,"cd":4.0,"m":[16.56,15.82,16.53,17.89,19.43,19.22,21.84,23.71,27.05,25.13,25.6,27.45]},{"c":"00924","n":"復華S&P500成長","i":"ETF","t":"海外","p":34.02,"chg":0.06,"tv":0.5,"ma":34.25,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[27.92,27.81,29.18,28.84,28.34,27.93,30.03,32.18,32.4,32.6,32.93,33.33]},{"c":"0055","n":"元大MSCI金融","i":"ETF","t":"市值型","p":51.45,"chg":2.29,"tv":0.49,"ma":50.2,"pe":null,"dy":2.43,"pb":null,"cd":1.25,"m":[29.84,29.15,32.44,32.1,34.19,32.36,33.35,33.99,42.92,42.05,44.17,50.65]},{"c":"00894","n":"中信小資高價30","i":"ETF","t":"主題型","p":47.17,"chg":1.05,"tv":0.49,"ma":49.99,"pe":null,"dy":7.31,"pb":null,"cd":3.45,"m":[24.11,23.27,24.84,27.54,31.14,32.8,39.8,43.99,49.48,43.3,45.41,49.03]},{"c":"009803","n":"玉山市值動能50","i":"ETF","t":"市值型","p":20.9,"chg":1.11,"tv":0.49,"ma":21.64,"pe":null,"dy":8.95,"pb":null,"cd":1.87,"m":[11.5,10.95,11.59,12.94,14.67,14.58,16.99,18.76,21.78,19.61,20.15,21.46]},{"c":"006205","n":"富邦上証","i":"ETF","t":"海外","p":38.92,"chg":0.31,"tv":0.48,"ma":38.96,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[37.83,37.65,39.11,41.33,41.22,39.81,40.2,41.51,41.95,40.83,40.5,40.3]},{"c":"009802","n":"富邦旗艦50","i":"ETF","t":"主題型","p":19.69,"chg":1.76,"tv":0.47,"ma":20.02,"pe":null,"dy":2.9,"pb":null,"cd":0.571,"m":[10.66,9.88,10.8,11.45,13.06,12.62,14.66,17.37,19.97,18.2,18.52,20.18]},{"c":"00680L","n":"元大美債20正2","i":"ETF","t":"槓桿反向","p":6.07,"chg":0.33,"tv":0.46,"ma":5.83,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[7.85,7.5,7.22,7.13,7.52,7.23,7.15,6.61,7.05,6.7,6.41,6.31]},{"c":"00692","n":"富邦公司治理","i":"ETF","t":"主題型","p":93.55,"chg":1.19,"tv":0.45,"ma":96.76,"pe":null,"dy":3.39,"pb":null,"cd":3.172,"m":[54.46,51.75,54.59,61.34,68.15,65.36,73.63,81.76,93.85,87.75,89.75,95.55]},{"c":"00733","n":"富邦臺灣中小","i":"ETF","t":"主題型","p":74.7,"chg":4.26,"tv":0.41,"ma":76.0,"pe":null,"dy":2.76,"pb":null,"cd":2.065,"m":[46.66,42.35,44.67,48.55,52.98,55.41,61.76,69.12,78.77,63.82,63.43,67.35]},{"c":"00913","n":"兆豐台灣晶圓製造","i":"ETF","t":"主題型","p":47.93,"chg":2.22,"tv":0.41,"ma":51.3,"pe":null,"dy":7.05,"pb":null,"cd":3.38,"m":[21.42,20.23,22.1,26.86,29.18,29.73,36.19,41.86,54.51,46.31,45.65,51.95]},{"c":"00938","n":"凱基優選30","i":"ETF","t":"主題型","p":27.38,"chg":1.82,"tv":0.41,"ma":27.18,"pe":null,"dy":3.36,"pb":null,"cd":0.92,"m":[16.11,15.5,16.67,17.74,18.93,18.02,19.46,20.64,24.8,23.88,24.88,27.32]},{"c":"00964","n":"中信亞太高股息","i":"ETF","t":"高股息","p":14.75,"chg":-0.87,"tv":0.41,"ma":14.92,"pe":null,"dy":9.36,"pb":null,"cd":1.381,"m":[9.95,10.2,10.41,11.55,12.83,13.14,13.1,13.43,13.86,13.34,14.35,14.64]},{"c":"00910","n":"第一金太空衛星","i":"ETF","t":"主題型","p":50.4,"chg":0.8,"tv":0.38,"ma":54.12,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[43.02,36.3,43.45,55.65,54.45,57.25,71.0,77.25,65.4,54.4,59.6,57.8]},{"c":"00909","n":"國泰數位支付服務","i":"ETF","t":"主題型","p":41.37,"chg":2.35,"tv":0.37,"ma":45.0,"pe":null,"dy":6.65,"pb":null,"cd":2.75,"m":[45.87,35.42,38.02,40.54,34.61,37.34,42.89,47.25,51.3,45.91,46.27,50.6]},{"c":"00954","n":"中信日本半導體","i":"ETF","t":"海外","p":17.31,"chg":0.99,"tv":0.37,"ma":19.48,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[11.46,10.87,12.01,13.85,15.99,14.6,16.43,17.27,22.69,19.73,18.25,18.19]},{"c":"00643","n":"群益深証中小","i":"ETF","t":"主題型","p":16.31,"chg":0.06,"tv":0.36,"ma":16.64,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[15.86,15.56,16.67,18.34,18.18,18.09,19.15,20.39,20.39,18.92,18.63,18.22]},{"c":"00655L","n":"國泰中國A50正2","i":"ETF","t":"槓桿反向","p":27.93,"chg":-0.21,"tv":0.36,"ma":29.49,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[34.22,33.29,34.62,33.96,32.27,32.7,35.57,36.19,38.19,35.08,34.14,32.85]},{"c":"00951","n":"台新日本半導體","i":"ETF","t":"海外","p":16.26,"chg":0.68,"tv":0.35,"ma":18.25,"pe":null,"dy":0.98,"pb":null,"cd":0.16,"m":[10.7,10.18,11.22,12.96,14.89,13.65,15.42,16.2,21.26,18.45,17.15,17.12]},{"c":"00731","n":"復華富時高息低波","i":"ETF","t":"高股息","p":101.7,"chg":1.45,"tv":0.34,"ma":100.12,"pe":null,"dy":3.55,"pb":null,"cd":3.614,"m":[65.39,63.74,67.06,69.52,72.56,69.02,71.01,73.71,90.14,87.14,91.7,99.65]},{"c":"00915","n":"凱基優選高股息30","i":"ETF","t":"高股息","p":33.51,"chg":1.27,"tv":0.34,"ma":33.18,"pe":null,"dy":5.31,"pb":null,"cd":1.78,"m":[21.33,20.36,21.96,22.71,23.54,22.5,24.01,26.53,32.35,30.47,30.84,33.21]},{"c":"00885","n":"富邦越南","i":"ETF","t":"海外","p":17.9,"chg":1.94,"tv":0.33,"ma":17.73,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[16.36,16.29,17.56,18.87,18.8,17.2,18.9,19.26,18.86,17.82,17.79,18.28]},{"c":"009813","n":"貝萊德標普卓越50","i":"ETF","t":"海外","p":11.74,"chg":-0.09,"tv":0.33,"ma":11.71,"pe":null,"dy":0.0,"pb":null,"cd":0,"m":[10.14,10.16,10.57,10.35,10.2,10.02,10.64,11.35,10.99,11.18,11.21,11.41]},{"c":"00952","n":"凱基台灣AI50","i":"ETF","t":"主題型","p":17.99,"chg":1.41,"tv":0.3,"ma":18.33,"pe":null,"dy":5.34,"pb":null,"cd":0.96,"m":[10.87,10.5,11.05,11.76,12.27,12.81,15.38,16.76,18.54,17.08,17.33,18.17]}]};
+// 每位理專的背景檔案與「看得到的資料欄位」（repo/knowledge/advisors.zh.json）
+const PROFILES={
+ "tech": {"career": ["中原大學財務金融學系", "券商自營部交易員 8 年，管理短線部位", "2020 年疫情崩盤時靠停損紀律保住本金"],
+  "risk": ["價格風險：買進後馬上套牢", "流動性：成交量太小、想賣賣不掉"], "criteria": ["趨勢方向（月均價對三個月均價）", "股價與月均價的乖離", "跌破支撐就停損"],
+  "fields": ["p", "ma", "m", "tv"], "db": ["每月收盤價", "近一個月均價", "成交值"],
+  "blind": "不看公司賺不賺錢；盤整時容易被來回洗出場。", "client": "能每天看盤、接受停損的積極型（KYC RR4–RR5）"},
+ "macro": {"career": ["Stanford University 經濟學系", "前央行經濟研究處研究員，做過銀行壓力測試", "經歷 2008 金融海嘯，專看景氣循環"],
+  "risk": ["系統性風險：整個市場一起跌", "利率風險：升息壓抑估值"], "criteria": ["國發會景氣燈號所在階段", "央行利率方向", "PMI 是否站上 50", "產業與 ETF 類型輪動"],
+  "fields": ["light", "rate", "pmi", "i", "t", "pb"], "db": ["景氣對策信號", "央行利率", "製造業 PMI", "產業別／ETF 類型", "股價淨值比"],
+  "blind": "看不到個別公司差異；訊號常提早半年到一年。", "client": "持有 1–2 年、能忍受過程波動的穩健型（RR3–RR4）"},
+ "value": {"career": ["國立臺灣大學會計學系、CFA 持證人", "會計師事務所審計 3 年，看過財報粉飾手法", "投信研究員 12 年，專寫個股報告"],
+  "risk": ["永久性虧損：買到爛公司或買太貴", "盈餘品質：一次性獲利讓本益比看起來很低"], "criteria": ["本益比和同產業中位數比較", "股價淨值比", "安全邊際（同業本益比八折價）"],
+  "fields": ["p", "pe", "pb", "i", "t"], "db": ["本益比", "股價淨值比", "同產業本益比中位數"],
+  "blind": "便宜可能更便宜（價值陷阱）；成長股永遠嫌貴；ETF 不做估值。", "client": "願意等 1–3 年、重視本金安全的穩健型（RR3）"},
+ "mom": {"career": ["Columbia Business School MBA", "紐約避險基金分析師，操作動能策略", "2021 年航運飆股吃到大段，也在 2022 年被修正教訓過"],
+  "risk": ["機會成本：錯過強勢股", "趨勢反轉：高點急殺"], "criteria": ["近 6 個月報酬", "距一年高點的距離", "風險調整後報酬（報酬除以波動）"],
+  "fields": ["p", "m"], "db": ["每月收盤價", "一年高點", "報酬波動度"],
+  "blind": "追高後遇到反轉會跌很快；需要嚴格出場紀律。", "client": "持有 3–6 個月、能執行停損的積極型（RR4–RR5）"},
+ "quant": {"career": ["國立政治大學統計學系碩士", "金控量化交易員，回測過上千組策略", "只相信樣本外驗證過的規則"],
+  "risk": ["模型風險：歷史規律失效", "尾部風險：極端事件比常態分布預期的更常發生"], "criteria": ["現價相對一年均值的 z 分數", "標準差區間", "公司仍有獲利或為分散的 ETF"],
+  "fields": ["p", "m", "pe", "i"], "db": ["價格時間序列", "均值與標準差", "是否獲利"],
+  "blind": "產業結構改變時，過去均值不再有意義，可能是接刀。", "client": "短線、資金分散、接受統計輸贏的積極型（RR4）"},
+ "div": {"career": ["國立高雄科技大學財務管理系", "銀行理專 20 年，陪客戶走過 2008、2022 兩次空頭", "帶過上百位上班族定期定額存股"],
+  "risk": ["現金流中斷：公司砍股利", "行為風險：波動太大讓人賣在低點"], "criteria": ["現金殖利率", "近一年實際配息", "股價波動度", "公司是否有獲利"],
+  "fields": ["p", "dy", "pe", "m", "i", "t", "cd"], "db": ["現金殖利率", "近一年配息（含 ETF 除息紀錄）", "本益比", "月報酬波動"],
+  "blind": "忽略成長性；高殖利率可能是股價大跌或一次性配息造成的。", "client": "5 年以上、追求穩定現金流的保守到穩健型（RR2–RR3）"}
+};
+// 每位理專的課外書架（repo/knowledge/bookshelf.zh.json）：財經以外的公有領域書，替理專加上個人想法
+const SHELF={"_note": "六位理專的課外書架：都是 Project Gutenberg 上美國公有領域的書，刻意挑財經以外的文類（兵法、歷史、哲學、小說、寓言、科普），讓每位理專多一層個性。網頁上的「讀書心得」是依書中觀念寫的中文意譯，不是逐字引文。gid 是 Gutenberg 書號，已於 2026-10-22 逐一查證。", "tech": [{"gid": 132, "title": "The Art of War", "zh": "孫子兵法", "author": "孫武", "genre": "兵法", "trait": "先求不敗再求勝", "idea": "先讓自己立於不敗，再等對手露出破綻。對交易員來說，就是先決定停損，再談獲利。"}, {"gid": 24518, "title": "Memoirs of Extraordinary Popular Delusions and the Madness of Crowds", "zh": "異常流行幻象與群眾瘋狂", "author": "Charles Mackay", "year": 1841, "genre": "歷史", "trait": "對群眾狂熱保持警覺", "idea": "鬱金香狂熱、南海泡沫都說明：人會成群地發瘋，卻只能一個一個慢慢清醒。"}, {"gid": 1661, "title": "The Adventures of Sherlock Holmes", "zh": "福爾摩斯冒險史", "author": "Arthur Conan Doyle", "year": 1892, "genre": "推理小說", "trait": "沒有證據不下結論", "idea": "福爾摩斯說，在掌握資料前就建立理論是大錯，人會開始扭曲事實去配合理論。"}], "macro": [{"gid": 7142, "title": "The History of the Peloponnesian War", "zh": "伯羅奔尼撒戰爭史", "author": "修昔底德", "genre": "歷史", "trait": "相信人性會讓歷史重演", "idea": "修昔底德寫史，是因為相信人性不變，類似的事件會一再發生。景氣循環也是。"}, {"gid": 1946, "title": "On War", "zh": "戰爭論", "author": "克勞塞維茲", "year": 1832, "genre": "兵法", "trait": "接受資訊永遠不完整", "idea": "戰場上的情報多半互相矛盾、甚至是錯的，「摩擦」讓簡單的事都變難。總經數據也總是落後又會修正。"}, {"gid": 25717, "title": "The History of the Decline and Fall of the Roman Empire", "zh": "羅馬帝國衰亡史", "author": "Edward Gibbon", "year": 1776, "genre": "歷史", "trait": "盛世時先想衰退", "idea": "吉朋在〈西羅馬衰亡總論〉裡說，羅馬的衰亡是過度強盛的自然結果，繁榮本身就讓衰敗的因子成熟。"}], "value": [{"gid": 20203, "title": "Autobiography of Benjamin Franklin", "zh": "富蘭克林自傳", "author": "Benjamin Franklin", "genre": "自傳", "trait": "節儉、記帳、每天檢討", "idea": "富蘭克林列了十三項美德，其中「節儉」是不做對人對己無益的花費，他還每天用小本子檢查自己有沒有做到。"}, {"gid": 2680, "title": "Meditations", "zh": "沉思錄", "author": "馬可・奧理略", "genre": "哲學", "trait": "只管自己能控制的事", "idea": "外在的事不由我們決定，能決定的只有自己的判斷與反應。"}, {"gid": 1184, "title": "The Count of Monte Cristo", "zh": "基度山恩仇記", "author": "大仲馬", "year": 1844, "genre": "小說", "trait": "耐心等待價值浮現", "idea": "全書最後一句是「等待與希望」。主角在牢裡等了十四年，才等到翻身的機會。"}], "mom": [{"gid": 103, "title": "Around the World in Eighty Days", "zh": "環遊世界八十天", "author": "Jules Verne", "year": 1873, "genre": "冒險小說", "trait": "守時、不戀棧", "idea": "福格先生照表操課，一班車誤點就立刻換交通工具，從不在原地懊惱。"}, {"gid": 1228, "title": "On the Origin of Species", "zh": "物種起源", "author": "Charles Darwin", "year": 1859, "genre": "科普", "trait": "強者在環境裡勝出", "idea": "能適應環境的變異會被保留下來、越來越多；不適應的會被淘汰。"}, {"gid": 2701, "title": "Moby Dick; Or, The Whale", "zh": "白鯨記", "author": "Herman Melville", "year": 1851, "genre": "小說", "trait": "提防執念", "idea": "亞哈船長執意追白鯨，最後連船帶人一起沉沒。"}], "quant": [{"gid": 58881, "title": "A Philosophical Essay on Probabilities", "zh": "機率的哲學隨筆", "author": "拉普拉斯", "year": 1814, "genre": "數學", "trait": "把直覺換成機率", "idea": "拉普拉斯說機率論說到底只是把常識化為計算；觀察次數越多，結果越接近真正的比例。"}, {"gid": 201, "title": "Flatland: A Romance of Many Dimensions", "zh": "平面國", "author": "Edwin A. Abbott", "year": 1884, "genre": "科幻小說", "trait": "記得自己少看了一個維度", "idea": "平面國的居民看不到第三個維度，就以為世界只有長和寬。"}, {"gid": 11562, "title": "Inquiries into Human Faculty and Its Development", "zh": "人類才能及其發展之探究", "author": "Francis Galton", "year": 1883, "genre": "科學", "trait": "看群體，不看單一個案", "idea": "高爾頓把許多張臉疊成一張「合成照片」，個別差異消失後，才看得出共通的樣子。"}], "div": [{"gid": 14418, "title": "Thrift", "zh": "節儉", "author": "Samuel Smiles", "year": 1875, "genre": "勵志", "trait": "小錢慢慢存成大錢", "idea": "斯邁爾斯認為儲蓄不是吝嗇，而是讓自己不依賴別人、能自立的開始。"}, {"gid": 205, "title": "Walden", "zh": "湖濱散記", "author": "Henry David Thoreau", "year": 1854, "genre": "散文", "trait": "簡單、夠用就好", "idea": "梭羅在湖邊住了兩年，結論是：簡化、再簡化。"}, {"gid": 21, "title": "Three Hundred Aesop's Fables", "zh": "伊索寓言", "author": "伊索", "genre": "寓言", "trait": "貪心會失去手上的", "idea": "〈狗與倒影〉：狗看見水裡的倒影叼著更大的肉，張口去搶，結果嘴裡那塊也掉進河裡。〈螞蟻與蚱蜢〉：夏天存糧的螞蟻，冬天才有得吃。"}]};
+const GUT=id=>`https://www.gutenberg.org/ebooks/${id}`;
+// 依眼前這檔的狀況，挑一本書說出理專自己的想法（第幾本書, 想法）
+const SHELF_VOICE={
+ tech:(s,d)=>{const dev=d.p/d.ma-1;return dev>0.08?[1,`股價已高於月均價 ${pct(dev)}，人群正在追。我寧可等熱度退了再說，不跟著一起發瘋。`]:s>=1?[0,"訊號是好的，但我下單前一定先把停損價寫下來；先求不敗，獲利是對手犯錯送來的。"]:[2,"現在的線型說不出清楚的故事。證據不夠時硬要下結論，只會讓我開始替自己找理由。"]},
+ macro:(s,d)=>/紅/.test(d.light||"")?[2,"景氣正熱的時候，我反而先想衰退會從哪裡開始：負債、庫存、還是估值。"]:/藍/.test(d.light||"")?[0,"景氣低迷不是第一次，也不會是最後一次。歷史告訴我復甦總會來，只是通常比大家想的慢。"]:[1,"手上的數據是落後的，下個月還可能被修正。我會留一部分現金當預備隊，不一次押滿。"],
+ value:(s,d)=>isETF(d)?[0,"買 ETF 我最在意的是每年被扣走多少內扣費用，省下的費用就是穩賺的報酬。"]:s>=2?[2,"便宜的好公司常常要等很久，市場才會發現它的價值。我願意等。"]:s<=-1?[1,"這檔太貴了，但股價怎麼走不是我能控制的。我能控制的是不在這個價位買。"]:[0,"價格合理不代表要急著買。我會像富蘭克林記帳一樣，先寫下買進理由，之後每季對帳。"],
+ mom:(s,d)=>{const r=d.p/d.m[6]-1;return r>0.8?[2,`半年漲了 ${pct(r)}，我提醒自己別像亞哈船長一樣死追不放。設好移動停利，趨勢一斷就下船。`]:s>=1?[1,"強勢股能一直強，是因為它適應了現在的市場。我跟著強者走，但每個月都汰弱留強。"]:[0,"動能不見了就換車，不在原地等它回來。時間也是成本。"]},
+ quant:(s,d)=>{const z=(d.p-mean(d.m))/std(d.m);return Math.abs(z)>1.5?[0,`z 分數 ${z.toFixed(2)} 很極端，但只有 12 個月的樣本，我會把它當機率不是保證，小量分批。`]:s>0?[2,"單一檔的訊號雜訊很大。我寧可同時買幾檔統計上偏便宜的，讓個別差異互相抵銷。"]:[1,"我的模型只看價格這一個維度，看不到公司本身的變化。沒有統計優勢的時候，就不下注。"]},
+ div:(s,d)=>{const y=d.dy||0;return y>8?[2,`殖利率 ${y.toFixed(1)}% 高得不尋常。追更大塊的肉之前，先確定嘴裡這塊不會掉：這種配息能維持嗎？`]:y>=4?[0,"股利領到不是拿去花，而是再買回來。小錢滾久了，就是退休後不用看人臉色的底氣。"]:[1,"殖利率不高，我就不勉強。持股簡單一點、少一點，睡得比較好。"]},
+};
+function bookVoice(k,s,d){const f=SHELF_VOICE[k],b=SHELF[k];if(!f||!b)return "";const [i,t]=f(s,d);return `<div class="book">📖 <b>讀《${b[i].zh}》的心得</b>　${t}</div>`}
+const IND={"01":"水泥","02":"食品","03":"塑膠","04":"紡織纖維","05":"電機機械","06":"電器電纜","08":"玻璃陶瓷","09":"造紙","10":"鋼鐵","11":"橡膠","12":"汽車","14":"建材營造","15":"航運","16":"觀光餐旅","17":"金融保險","18":"貿易百貨","19":"綜合","20":"其他","21":"化學","22":"生技醫療","23":"油電燃氣","24":"半導體","25":"電腦及週邊","26":"光電","27":"通信網路","28":"電子零組件","29":"電子通路","30":"資訊服務","31":"其他電子","32":"文化創意","33":"農業科技","35":"綠能環保","36":"數位雲端","37":"運動休閒","38":"居家生活"};
+const indName=i=>IND[i]||"其他";
+const MONTHS=TW.dates.map(d=>`${+d.slice(4,6)}月`);
+const LIGHTS=[["藍","#6f9be0",-2],["黃藍","#9fc3dc",-1],["綠","#8cc58a",0],["黃紅","#f1c26a",1],["紅","#ec8f88",2]];
+// 總經派依景氣燈號偏好的產業：低迷時布局景氣循環股，過熱時轉向防禦型
+const TILT={low:["10","03","15","01","21","24","28"],mid:["24","25","27","28","17","26"],high:["02","17","23","27","22","18"]};
+const phaseOf=L=>L<=-1?"low":L>=1?"high":"mid";
+// 各產業本益比中位數，給價值派做同業比較
+const ETFS=TW.etfs||[],ALL=[...TW.stocks,...ETFS];
+const isETF=d=>d.i==="ETF";
+const catOf=d=>isETF(d)?`ETF・${d.t}`:indName(d.i);
+// 總經派對 ETF 類型的偏好
+const TILT_ETF={low:["市值型","主題型","主動式"],mid:["市值型","主題型","海外","主動式"],high:["高股息","債券","主動式高股息"]};
+const IND_PE=(()=>{const g={};TW.stocks.forEach(s=>{if(s.pe>0)(g[s.i]=g[s.i]||[]).push(s.pe)});const o={};for(const k in g){const a=g[k].sort((x,y)=>x-y);o[k]=a[Math.floor(a.length/2)]}return o})();
+
+// ---------- 指標 ----------
+function std(a){const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)}
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const fmt=x=>x>=1000?x.toFixed(0):x>=100?x.toFixed(1):x.toFixed(2);
+const pct=x=>`${x>=0?"+":""}${(x*100).toFixed(1)}%`;
+
+// ---------- 六位理專 ----------
+// run(d) 回傳分數 s（−2 到 +2）、理由、進場條件；tb 是選股時同分的排序依據（越大越優先）
+const ADVISORS=[
+ {key:"tech",name:"陳怡君",emoji:"📈",tape:"var(--sky)",horizon:"short",school:"中原大學 財務金融學系",bg:"券商自營部 8 年・技術分析",style:"技術分析・波段（2–8 週）",quip:"線圖會說話，我只是幫它翻譯！",
+  run(d){const ma=d.ma,ma3=mean(d.m.slice(-3)),dev=d.p/ma-1;let s=0,why=[];
+   if(ma>ma3){s+=1;why.push(`月均價 ${fmt(ma)} 高於近三個月均價 ${fmt(ma3)}，趨勢向上`)}else{s-=1;why.push(`月均價 ${fmt(ma)} 低於近三個月均價 ${fmt(ma3)}，趨勢向下`)}
+   if(dev>0.08){s-=1;why.push(`股價高於月均價 ${pct(dev)}，乖離過大，追價風險高`)}else if(ma>ma3&&dev>-0.04&&dev<0.03){s+=1;why.push(`股價拉回到月均價附近（${pct(dev)}），多頭中的買點`)}else why.push(`股價與月均價乖離 ${pct(dev)}`);
+   const entry=ma>ma3?`月均價 <b>${fmt(ma)}</b> 附近分批買，跌破三個月均價 ${fmt(ma3)} 停損`:`等月均價重新站上三個月均價（約 <b>${fmt(ma3)}</b>）再進場`;
+   return {s:clamp(s,-2,2),why,entry,tb:-Math.abs(dev),metrics:{"月線乖離":pct(dev),"月均價":fmt(ma)}}},
+  critique:"價值派王建明：均線是落後指標，等趨勢確認時便宜的價格通常已經過了。"},
+ {key:"macro",name:"林思遠",emoji:"🌏",tape:"var(--matcha)",horizon:"long",school:"Stanford University 經濟學系",bg:"前央行研究員・總經策略",style:"總體經濟循環・長期（1–2 年）",quip:"先看天氣，再決定要不要出門。",
+  run(d){const L=LIGHTS.find(x=>x[0]===d.light)[2],ph=phaseOf(L),fav=isETF(d)?TILT_ETF[ph].includes(d.t):TILT[ph].includes(d.i);let s=0,why=[];
+   const phTxt={low:"景氣低迷，布局景氣循環股",mid:"景氣穩定，偏好成長型電子與金融",high:"景氣過熱，轉向防禦型產業"}[ph];
+   why.push(`「${d.light}燈」：${phTxt}`);
+   if(fav){s+=1;why.push(`${catOf(d)}是這個階段偏好的類型`)}else{s-=1;why.push(`${catOf(d)}不在這個階段的偏好類型`)}
+   if(d.rate<0){s+=1;why.push("降息循環，資金成本下降有利估值")}else if(d.rate>0){s-=1;why.push("升息循環，壓抑估值")}
+   if(d.pmi>=50&&L<=0){s+=0.5;why.push(`PMI ${d.pmi} 站上 50，景氣有回升跡象`)}else if(d.pmi<50)why.push(`PMI ${d.pmi} 低於 50，製造業仍在收縮`);
+   const entry=s>=1?"未來 6–12 個月分批布局，不必猜最低點":"等景氣燈號或利率方向改變再布局";
+   return {s:clamp(s,-2,2),why,entry,tb:fav?-(d.pb||9):-99,metrics:{"產業":catOf(d),"燈號":d.light}}},
+  critique:"技術派陳怡君：總經訊號可能提早一年以上，股價在這段時間可能再跌 30%。"},
+ {key:"value",name:"王建明",emoji:"📒",tape:"var(--apricot)",horizon:"long",school:"國立臺灣大學 會計學系・CFA",bg:"投信研究員 12 年・基本面",style:"價值投資・長期（1–3 年）",quip:"好公司也要有好價格，耐心是我的超能力。",
+  run(d){let s,why=[];if(isETF(d))return {s:0,why:["ETF 是一籃子股票，不適用個股本益比估值",`${d.t}：長期持有更該比較內扣費用與追蹤誤差`],entry:"不做估值判斷，進場時機參考其他理專",tb:-99,metrics:{"類型":d.t}};if(!(d.pe>0))return {s:-1,why:["沒有本益比（近四季虧損或無資料），無法估值，先不碰"],entry:"等公司恢復獲利再評估",tb:-99,metrics:{"本益比":"—"}};
+   const med=IND_PE[d.i]||d.pe,rel=d.pe/med,eps=d.p/d.pe;
+   why.push(`本益比 ${d.pe.toFixed(1)} 倍，${indName(d.i)}同業中位數 ${med.toFixed(1)} 倍`);
+   if(rel<0.7){s=2;why.push("比同業便宜三成以上，具安全邊際")}else if(rel<0.9){s=1;why.push("略低於同業，價格合理偏低")}else if(rel<1.2){s=0;why.push("和同業差不多，合理價")}else if(rel<1.6){s=-1;why.push("比同業貴")}else{s=-2;why.push("比同業貴很多，估值偏高")}
+   if(d.pb&&d.pb<1)why.push(`股價淨值比 ${d.pb}，低於帳面價值`);
+   const cheap=eps*med*0.8;
+   return {s,why,entry:cheap>=d.p?`現價 ${fmt(d.p)} 已低於同業本益比八折價 ${fmt(cheap)}，可分批買；先確認獲利不是一次性的`:`同業本益比八折價 <b>${fmt(cheap)}</b> 以下積極買（現價 ${fmt(d.p)}）`,tb:-rel,metrics:{"本益比":d.pe.toFixed(1),"同業比":(rel*100).toFixed(0)+"%","淨值比":d.pb??"—"}}},
+  critique:"動能派周以恆：便宜可以更便宜，價值陷阱常出現在獲利正在衰退的公司。"},
+ {key:"mom",name:"周以恆",emoji:"🚀",tape:"var(--pink)",horizon:"mid",school:"Columbia Business School MBA",bg:"前紐約避險基金分析師・動能策略",style:"動能趨勢・中期（3–6 個月）",quip:"強者恆強，跟著風向走最省力！",
+  run(d){const ret=d.p/d.m[6]-1,hi=Math.max(...d.m,d.p),dist=d.p/hi-1,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s=0,why=[];
+   if(ret>1.5){why.push(`近 6 個月上漲 ${pct(ret)}，漲幅過大，波動風險高，不加分`)}else if(ret>0.2){s+=1;why.push(`近 6 個月上漲 ${pct(ret)}，動能強`)}else if(ret<-0.1){s-=1;why.push(`近 6 個月下跌 ${pct(ret)}，動能弱`)}else why.push(`近 6 個月 ${pct(ret)}，動能普通`);
+   if(dist>-0.05){s+=1;why.push("貼近一年高點，強者恆強")}else if(dist<-0.25){s-=1;why.push(`距一年高點 ${pct(dist)}，趨勢已破`)}else why.push(`距一年高點 ${pct(dist)}`);
+   const entry=s>=1?`趨勢成立，現價 ${fmt(d.p)} 附近進場，跌破 <b>${fmt(hi*0.9)}</b>（高點回落 10%）出場`:`等股價突破一年高點 <b>${fmt(hi)}</b> 再追進`;
+   return {s:clamp(s,-2,2),why,entry,tb:ret/(vol+0.05),metrics:{"6月報酬":pct(ret),"距高點":pct(dist)}}},
+  critique:"存股派劉淑芬：追高需要紀律停損，一般投資人很難做到，常常買在最高點。"},
+ {key:"quant",name:"張雅雯",emoji:"🎲",tape:"var(--lilac)",horizon:"short",school:"國立政治大學 統計學系碩士",bg:"金控量化交易員・統計套利",style:"均值回歸・短期（數日–4 週）",quip:"我不猜，我只算機率。",
+  run(d){const mu=mean(d.m),sd=std(d.m),z=(d.p-mu)/sd;let s,why=[];
+   why.push(`現價相對一年月收盤平均 ${fmt(mu)} 的 z 分數為 ${z.toFixed(2)}`);
+   if(z<-1.5&&(d.pe>0||isETF(d))){s=2;why.push("明顯低於一年均值，且仍有獲利或為分散的 ETF，統計上有回歸空間")}else if(z<-0.8){s=1;why.push("低於均值，偏便宜")}else if(z>1.8){s=-2;why.push("遠高於一年均值，過度延伸")}else if(z>1){s=-1;why.push("偏高，不追")}else{s=0;why.push("在正常範圍內，沒有統計優勢")}
+   return {s,why,entry:`低於 <b>${fmt(mu-sd)}</b>（均值減一個標準差）分批買，回到均值 ${fmt(mu)} 獲利了結`,tb:-z,metrics:{"z":z.toFixed(2),"一年均值":fmt(mu)}}},
+  critique:"動能派周以恆：在強趨勢裡，「過度延伸」可以持續好幾個月，逆勢放空會受傷。"},
+ {key:"div",name:"劉淑芬",emoji:"🍵",tape:"#ffe0c4",horizon:"long",school:"國立高雄科技大學 財務管理系",bg:"銀行理專 20 年・存股教練",style:"存股・定期定額（5 年以上）",quip:"慢慢來比較快，喝杯茶再說。",
+  run(d){const y=d.dy||0,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s,why=[];
+   why.push(`現金殖利率 ${y.toFixed(2)}%，月報酬波動 ${(vol*100).toFixed(1)}%`);
+   if(!(d.pe>0)&&!isETF(d)){s=-1;why.push("近四季沒有獲利，股利恐難維持")}
+   else if(y>=6&&(isETF(d)||d.pe<20)){s=2;why.push(isETF(d)?"殖利率 6% 以上，加碼買進":"殖利率 6% 以上且本益比合理，加碼買進")}else if(y>=4.5){s=1;why.push("殖利率 4.5% 以上，適合定期定額")}else if(y>=3){s=0;why.push("殖利率普通，維持定期定額即可")}else{s=-1;why.push("殖利率低於 3%，不是存股標的")}
+   if(y>12){s=Math.min(s,1);why.push("殖利率異常高，配息可能含收益平準金或資本利得，未必能持續")}
+   if(vol>0.12)why.push("股價波動偏大，不適合當存股核心");
+   return {s,why,entry:y>0?`每月定期定額；跌到殖利率 6%（約 <b>${fmt(d.p*y/6)}</b>）時加碼`:"沒有配息，不列入存股",tb:y-(vol>0.12?5:0),metrics:isETF(d)?{"殖利率":y.toFixed(2)+"%","近一年配息":(d.cd??"—")+" 元"}:{"殖利率":y.toFixed(2)+"%","本益比":d.pe??"—"}}},
+  critique:"總經派林思遠：高殖利率常出現在景氣循環股的高峰，之後股利可能腰斬。"}
+];
+
+
+// ---------- 理專考場 ----------
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const MACRO={light:"綠",rate:0,pmi:50.5};
+const ASOF=TW.asof,PREV="2026-10-20",MAXSTEP=8;
+const LABEL=s=>s>=1.5?"現在進場":s>=0.5?"分批布局":s>-0.5?"觀望":"暫不進場";
+const byCode=c=>TW.stocks.find(s=>s.c===c);
+const nameOf=s=>`${s.c} ${s.n}`;
+const fx=x=>x==null?"—":typeof x==="number"?(Math.abs(x)>=100?x.toFixed(1):x.toFixed(2)):x;
+
+// 定位、根因、修復的選項；故障的標準答案指向這些代號
+const FIELDS={quote:"今日報價（收盤、漲跌、日期）",hist:"近一年月收盤",val:"估值數字（本益比、殖利率）",whole:"整筆資料都不屬於這檔"};
+const CAUSES={stale:"資料沒更新",missing:"欄位缺值",yieldfmt:"單位或格式錯誤",split:"歷史股價未還原（分割、減資）",swap:"對錯股票（代號對照錯）",sign:"正負號錯誤"};
+const FIXES={refetch:"重新抓今天的資料",abstain:"讓用到空欄位的理專棄權，其他照常",rescale:"把數字換算回正確單位後重算",adjust:"用還原股價重算歷史",flip:"修正正負號後重算",suspend:"暫停這檔、通報資料來源"};
+const FAULTS={
+ stale:{kind:"sym",field:"quote",fix:"refetch",n:7,pre:s=>s.chg!==0,
+  what:"拿到的是前一個交易日的收盤：股價是昨天的、漲跌 0、資料日期停在前一天。",real:"排程在證交所發布資料前就去抓，或抓取失敗沿用舊檔。",
+  make(s){const d=clone(s);d.p=+(s.p/(1+s.chg/100)).toFixed(2);d.chg=0;d.asof=PREV;return d}},
+ missing:{kind:"sym",field:"val",fix:"abstain",n:7,pre:s=>s.pe>0&&s.dy>0,
+  what:"本益比和殖利率都是空的。",real:"來源網站改版，欄位名稱變了，程式讀不到。",
+  make(s){const d=clone(s);d.pe=null;d.dy=null;return d}},
+ yieldfmt:{kind:"fun",field:"val",fix:"rescale",n:7,pre:s=>s.dy>=1.5,
+  what:"殖利率用小數表示（4.5% 存成 0.045），系統又當成百分比，看起來只有 0.045%。",real:"兩個 API 一個給 4.5、一個給 0.045，合併時沒換算。",
+  make(s){const d=clone(s);d.dy=+(s.dy/100).toFixed(4);return d}},
+ split:{kind:"fun",field:"hist",fix:"adjust",n:7,pre:s=>s.p>=30,
+  what:"公司做了 1 拆 4 的股票分割，舊的月收盤沒有除以 4，看起來像某個月股價崩跌七成以上。",real:"分割、減資、除權後沒有用還原股價。",
+  make(s,p){const d=clone(s);for(let i=0;i<p.cut;i++)d.m[i]=+(s.m[i]*4).toFixed(2);return d}},
+ swap:{kind:"fun",field:"whole",fix:"suspend",n:7,pre:()=>true,
+  what:"代號對到另一檔股票的數字，名稱和月均價還是原本那檔。",real:"代號更名、合併或下市後，對照表沒更新。",
+  make(s,p){const d=clone(s),o=byCode(p.o);["p","chg","tv","m","pe","pb","dy"].forEach(k=>d[k]=clone(o[k]));return d}},
+ sign:{kind:"fun",field:"val",fix:"flip",n:7,pre:s=>s.pe>0,
+  what:"本益比被存成負數，看起來像公司在虧錢。",real:"解析數字時把括號或「−」當成虧損標記。",
+  make(s){const d=clone(s);d.pe=-s.pe;return d}},
+};
+
+// ---------- 題庫：固定種子產生 48 題（42 題有故障＋6 題無故障） ----------
+function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const POOL=(()=>{const r=mulberry(20250112),S=TW.stocks,used=new Set(),L=[];
+ const pick=f=>{for(let k=0;k<5000;k++){const s=S[Math.floor(r()*S.length)];if(f(s)&&!used.has(s.c)){used.add(s.c);return s}}return S.find(s=>!used.has(s.c))};
+ for(let i=0;i<7;i++)for(const f of Object.keys(FAULTS)){const s=pick(FAULTS[f].pre),p={f,c:s.c};
+  if(f==="split")p.cut=3+Math.floor(r()*6);
+  if(f==="swap"){let o;do{o=S[Math.floor(r()*S.length)]}while(o.c===s.c);p.o=o.c}
+  L.push(p)}
+ for(let i=0;i<6;i++){const s=pick(i<2?(x=>x.pe==null):(x=>x.pe>0));L.push({f:"noop",c:s.c})}
+ for(let i=L.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[L[i],L[j]]=[L[j],L[i]]}
+ return L.map((p,i)=>({...p,id:i+1}))})();
+const cleanOf=p=>({...clone(byCode(p.c)),asof:ASOF});
+const dataOf=p=>p.f==="noop"?cleanOf(p):{...FAULTS[p.f].make(byCode(p.c),p),asof:ASOF,...(p.f==="stale"?{asof:PREV}:{})};
+
+// ---------- 理專：跟首頁同一套規則 ----------
+const view=(a,d)=>{const v={c:d.c,n:d.n};(PROFILES[a.key]?.fields||Object.keys(d)).forEach(k=>v[k]=d[k]);return v};
+const runA=(a,d)=>a.run(view(a,{...d,...MACRO}));
+const needsNull=(a,d)=>(PROFILES[a.key]?.fields||[]).some(k=>k in d&&d[k]==null);
+function top3(a,d){const U=TW.stocks.map(s=>s.c===d.c?d:s);return U.map(st=>({c:st.c,...runA(a,st)})).sort((x,y)=>y.s-x.s||y.tb-x.tb).slice(0,3).map(r=>r.c)}
+
+// ---------- 查看工具（人和 Claude 用同一組） ----------
+const IND_MED=c=>{const s=byCode(c);return IND_PE[s.i]};
+const TOOLS={
+ quote:d=>({"資料日期":d.asof,"收盤價":d.p,"漲跌幅 %":d.chg,"成交值（億）":d.tv,"本月均價":d.ma}),
+ history:d=>({"月份":MONTHS.slice(0,12),"月收盤":d.m,"今天收盤":d.p}),
+ valuation:d=>({"產業":indName(d.i),"本益比":d.pe,"同業本益比中位數":+(IND_MED(d.c)||0).toFixed(1)||null,"股價淨值比":d.pb,"殖利率 %":d.dy}),
+ advisors:d=>ADVISORS.map(a=>{const r=runA(a,d);return {"理專":`${a.name}（${a.style.split("・")[0]}）`,"判斷":LABEL(r.s),"理由":r.why[0]}}),
+};
+const TOOLNAME={quote:"📄 今日報價",history:"📈 近一年月收盤",valuation:"🧮 估值數字",advisors:"🧑‍💼 六位理專怎麼說"};
+
+// ---------- 自動代理 ----------
+// 基本看門狗＝理專圓桌原本的健康檢查：只看欄位有沒有值
+function basicDog(d){return {steps:1,...(d.pe==null||d.dy==null?{l1:true,l2:"val",l3:"missing",l4:"abstain",why:"本益比或殖利率是空的"}:{l1:false,why:"欄位都有值"})}}
+// 規則看門狗：多幾條範圍與一致性檢查，但沒有檢查資料日期
+function ruleDog(d){const seq=[...d.m,d.p];let drop=1;for(let i=1;i<seq.length;i++)if(seq[i-1]>0)drop=Math.min(drop,seq[i]/seq[i-1]);
+ const r=x=>({steps:3,l1:true,...x});
+ if(d.pe==null||d.dy==null)return r({l2:"val",l3:"missing",l4:"abstain",why:"本益比或殖利率是空的"});
+ if(d.pe<0)return r({l2:"val",l3:"sign",l4:"flip",why:`本益比 ${d.pe} 是負數`});
+ if(d.dy>0&&d.dy<0.3)return r({l2:"val",l3:"yieldfmt",l4:"rescale",why:`殖利率 ${d.dy}% 低得不合理`});
+ if(drop<0.45)return r({l2:"hist",l3:"split",l4:"adjust",why:`有一個月股價只剩前月的 ${(drop*100).toFixed(0)}%`});
+ if(d.ma>0&&Math.abs(d.p/d.ma-1)>0.25)return r({l2:"whole",l3:"swap",l4:"suspend",why:`收盤 ${d.p} 和本月均價 ${d.ma} 差超過 25%`});
+ return {steps:3,l1:false,why:"範圍與一致性檢查都通過"}}
+const AUTO={basic:{name:"🐶 基本看門狗",run:basicDog},rule:{name:"🐕 規則看門狗",run:ruleDog}};
+
+function grade(ans,p){const f=p.f,F=FAULTS[f],bad=f!=="noop";
+ const g={l1:!!ans.l1===bad};
+ if(bad){g.l2=!!ans.l1&&ans.l2===F.field;g.l3=!!ans.l1&&ans.l3===f;g.l4=!!ans.l1&&ans.l4===F.fix}
+ return g}
+
+// ---------- 修復：把選的處理方式套到壞掉的資料上，看理專回不回得來 ----------
+function applyFix(fix,d,p){let x=clone(d),all=false,nul=false;
+ if(fix==="refetch"&&p.f==="stale")x=cleanOf(p);
+ if(fix==="abstain")nul=true;
+ if(fix==="rescale"&&x.dy>0&&x.dy<0.3)x.dy=+(x.dy*100).toFixed(2);
+ if(fix==="adjust"){const seq=[...x.m,x.p];for(let i=1;i<seq.length;i++)if(seq[i-1]>0&&seq[i]/seq[i-1]<0.45){const k=Math.round(seq[i-1]/seq[i]);for(let j=0;j<i;j++)x.m[j]=+(x.m[j]/k).toFixed(2);break}}
+ if(fix==="flip"&&x.pe<0)x.pe=-x.pe;
+ if(fix==="suspend")all=true;
+ const clean=cleanOf(p);
+ return ADVISORS.map(a=>{const r0=runA(a,clean);if(all||(nul&&needsNull(a,x)))return {a,abst:true,ok:true};const r1=runA(a,x);return {a,ok:r1.s===r0.s,s0:r0.s,s1:r1.s}})}
+
+// ---------- 狀態 ----------
+let mode=store.get("labMode","in"),scope="mine",runs=store.get("labRuns",[]),order=store.get("labOrder",null);
+if(!order||order.length!==POOL.length){order=POOL.map(p=>p.id).sort(()=>Math.random()-.5);store.set("labOrder",order)}
+let cur=null,steps=0,crossUsed=false,trace=[],t0=0,done=false;
+const doneIds=()=>new Set(runs.filter(r=>r.who==="you").map(r=>r.pid));
+function nextId(skip){const d=doneIds();const rest=order.filter(i=>!d.has(i)&&i!==skip);return rest.length?rest[0]:order[Math.floor(Math.random()*order.length)]}
+
+function opts(id,name,obj){$(id).innerHTML=Object.entries(obj).map(([k,v])=>`<label class="opt"><input type="radio" name="${name}" value="${k}">${esc(v)}</label>`).join("")}
+opts("o2","l2",FIELDS);opts("o3","l3",CAUSES);opts("o4","l4",FIXES);
+
+function load(id){cur=POOL.find(p=>p.id===id);steps=0;crossUsed=false;trace=[];t0=performance.now();done=false;
+ const s=byCode(cur.c);
+ $("qTitle").textContent=`第 ${cur.id} 題・${nameOf(s)}`;
+ $("ctx").innerHTML=`系統在 <b>${ASOF}</b> 收盤後收到 <b>${esc(nameOf(s))}</b>（${esc(indName(s.i))}）的資料，準備交給六位理專判斷。資料裡<b>可能</b>有一種故障，也可能完全正常。先用工具查看，再回答右邊四個問題。`;
+ $("ans").reset();$("deeper").hidden=true;$("result").hidden=true;$("submit").disabled=true;
+ $("ans").querySelectorAll("input").forEach(i=>i.disabled=false);
+ $("trace").innerHTML="";$("aiOut").innerHTML="";
+ renderHint();renderSteps()}
+function renderSteps(){$("stepN").textContent=steps;$("stepDots").innerHTML=Array.from({length:MAXSTEP},(_,i)=>`<i class="${i<steps?"on":""}"></i>`).join("");
+ const left=MAXSTEP-steps;
+ $("tools").querySelectorAll(".tool").forEach(b=>b.disabled=done||left<1);
+ $("cross").querySelectorAll("[data-g]").forEach(b=>b.disabled=done||crossUsed||left<2);
+ $("doneN").textContent=doneIds().size}
+function renderHint(){const show=mode==="on";$("agentHint").hidden=!show;if(!show)return;const d=dataOf(cur);
+ $("agentHint").innerHTML=`<h3>👀 代理先看過了</h3>${Object.values(AUTO).map(A=>{const r=A.run(d);return `<div><b>${A.name}</b>：${r.l1?`有問題 → ${esc(FIELDS[r.l2])}・${esc(CAUSES[r.l3])}・${esc(FIXES[r.l4])}`:"沒有問題"}<span class="muted">（${esc(r.why)}）</span></div>`}).join("")}<div class="muted" style="font-size:13px;margin-top:4px">代理也會錯。你可以照它的意見答，也可以自己查證後推翻。</div>`}
+
+// 把工具輸出畫成卡片
+function show(kind,out,src2){
+ let body;
+ if(kind==="history"){const v=out["月收盤"].concat(out["今天收盤"]),mx=Math.max(...v),mn=Math.min(...v),W=300,H=70;
+  const pts=v.map((y,i)=>`${(i/(v.length-1)*W).toFixed(1)},${(H-6-(y-mn)/((mx-mn)||1)*(H-12)).toFixed(1)}`).join(" ");
+  body=`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="近一年月收盤走勢"><polyline points="${pts}" fill="none" stroke="var(--sky-deep)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+   <div class="months">${out["月份"].map((m,i)=>`${m} ${fx(out["月收盤"][i])}`).join("・")}・今天 ${fx(out["今天收盤"])}</div>`}
+ else if(kind==="advisors")body=`<ul class="advs">${out.map(r=>`<li><b>${esc(r["理專"])}</b>：${esc(r["判斷"])}　<span class="muted">${esc(r["理由"])}</span></li>`).join("")}</ul>`;
+ else body=`<div class="kv">${Object.entries(out).map(([k,v])=>`<div><small>${esc(k)}</small><b>${esc(fx(v))}</b></div>`).join("")}</div>`;
+ const li=document.createElement("li");if(src2)li.className="src2";
+ li.innerHTML=`<div class="th"><span>${src2?"🔁 第二來源・":""}${TOOLNAME[kind]}</span><span>第 ${steps} 步・${((performance.now()-t0)/1000).toFixed(0)} 秒</span></div>${body}`;
+ $("trace").prepend(li)}
+$("tools").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b||done||steps>=MAXSTEP)return;
+ steps++;const k=b.dataset.t;trace.push(k);show(k,TOOLS[k](dataOf(cur)));renderSteps()});
+$("cross").addEventListener("click",e=>{const b=e.target.closest("[data-g]");if(!b||done||crossUsed||steps>MAXSTEP-2)return;
+ steps+=2;crossUsed=true;const k=b.dataset.g;trace.push("cross:"+k);show(k,TOOLS[k](cleanOf(cur)),true);renderSteps()});
+
+$("ans").addEventListener("change",()=>{const f=new FormData($("ans")),l1=f.get("l1");$("deeper").hidden=l1!=="yes";
+ $("submit").disabled=done||!l1||(l1==="yes"&&!(f.get("l2")&&f.get("l3")&&f.get("l4")))});
+$("skip").addEventListener("click",()=>load(nextId(cur.id)));
+
+$("ans").addEventListener("submit",e=>{e.preventDefault();if(done)return;const f=new FormData($("ans"));
+ const ans={l1:f.get("l1")==="yes",l2:f.get("l2"),l3:f.get("l3"),l4:f.get("l4")};
+ const secs=+((performance.now()-t0)/1000).toFixed(1),g=grade(ans,cur);
+ const rd=ruleDog(dataOf(cur));
+ runs.push({who:"you",mode,pid:cur.id,f:cur.f,c:cur.c,...ans,g,steps,secs,trace:trace.join(" "),dogL1:rd.l1,t:new Date().toISOString()});store.set("labRuns",runs);
+ done=true;$("ans").querySelectorAll("input").forEach(i=>i.disabled=true);$("submit").disabled=true;
+ renderResult(ans,g,secs);renderSteps();renderBoard()});
+
+function cell(lbl,ok,na,txt){return `<div class="${na?"na":ok?"ok":"no"}"><b>${ok?"✅":na?"—":"❌"} ${lbl}</b>${txt}</div>`}
+function renderResult(ans,g,secs){const p=cur,F=FAULTS[p.f],bad=p.f!=="noop",d=dataOf(p),clean=cleanOf(p);
+ let h=`<h3>${bad?`這題的故障是「${esc(CAUSES[p.f])}」`:"這題沒有故障"}</h3><p>${bad?esc(F.what):`資料是 ${ASOF} 的真實收盤快照。${clean.pe==null?"這檔本來就沒有本益比（近四季虧損或沒有資料），不是故障。":""}`}　<span class="muted">你用了 ${steps} 步、${secs} 秒。</span></p>`;
+ h+=`<div class="lv">${cell("偵測",g.l1,false,bad?"有故障":"沒有故障")}${["l2","l3","l4"].map((k,i)=>cell(["定位","根因","修復"][i],g[k],!bad,bad?esc([FIELDS[F.field],CAUSES[p.f],FIXES[F.fix]][i]):"不適用")).join("")}</div>`;
+ if(bad){
+  const changed=ADVISORS.map(a=>({a,r0:runA(a,clean),r1:runA(a,d)})).filter(x=>x.r0.s!==x.r1.s);
+  const lost=ADVISORS.filter(a=>{const A=top3(a,clean),B=top3(a,d);return A.join()!==B.join()});
+  h+=`<h3 style="margin-top:12px">💥 波及範圍</h3><p>沒人發現的話，<b>${changed.length}</b> 位理專的判斷會被帶偏，<b>${lost.length}</b> 位的前三名名單會變。${changed.length===0?"這個故障剛好沒有改變任何判斷，但資料仍然是錯的，下次可能就會。":""}</p>`;
+  h+=`<div class="blast">${ADVISORS.map(a=>{const x=changed.find(c=>c.a===a);return x?`<div class="hit">${a.emoji} ${a.name}<br>${LABEL(x.r0.s)} → <b>${LABEL(x.r1.s)}</b></div>`:`<div>${a.emoji} ${a.name}<br><span class="muted">沒受影響</span></div>`}).join("")}</div>`;
+  if(ans.l1){const fr=applyFix(ans.l4,d,p),ok=fr.filter(x=>x.ok&&!x.abst).length,ab=fr.filter(x=>x.abst).length;
+   h+=`<p style="margin-top:10px">🔧 照你選的「${esc(FIXES[ans.l4])}」處理後：${ok} 位理專回到正確判斷，${ab} 位棄權，${6-ok-ab} 位仍然被帶偏。${ans.l4==="suspend"&&p.f!=="swap"?"暫停整檔最安全，但這檔今天就沒有任何建議了，屬於過度處理。":""}</p>`}}
+ h+=`<h3 style="margin-top:12px">其他作答者怎麼答這題</h3><table class="cmp"><thead><tr><th>作答者</th><th>答案</th><th>理由</th></tr></thead><tbody>${Object.values(AUTO).map(A=>{const r=A.run(d),gg=grade(r,p);
+  return `<tr><td>${A.name}</td><td>${gg.l1?"✅":"❌"} ${r.l1?`有問題・${esc(CAUSES[r.l3])}`:"沒有問題"}</td><td class="muted">${esc(r.why)}</td></tr>`}).join("")}${runs.filter(r=>r.who==="claude"&&r.pid===p.id).slice(-1).map(r=>`<tr><td>🤖 Claude</td><td>${r.g.l1?"✅":"❌"} ${r.l1?`有問題・${esc(CAUSES[r.l3]||r.l3)}`:"沒有問題"}</td><td class="muted">${esc(r.why||"")}</td></tr>`).join("")}</tbody></table>`;
+ h+=`<div class="row" style="margin-top:12px"><button class="btn" type="button" id="next">下一題 →</button></div>`;
+ $("result").innerHTML=h;$("result").hidden=false;$("next").addEventListener("click",()=>load(nextId(cur.id)));$("result").scrollIntoView({behavior:"smooth",block:"nearest"})}
+
+// ---------- 成績表 ----------
+function agg(rows,pidSet){const R=rows.filter(r=>!pidSet||pidSet.has(r.pid)),P=id=>POOL.find(p=>p.id===id);
+ const bad=R.filter(r=>P(r.pid).f!=="noop"),noop=R.filter(r=>P(r.pid).f==="noop"),acc=(a,k)=>a.length?a.filter(r=>r.g[k]).length/a.length:null;
+ return {n:R.length,l1:acc(R,"l1"),l2:acc(bad,"l2"),l3:acc(bad,"l3"),l4:acc(bad,"l4"),fp:noop.length?noop.filter(r=>r.l1).length/noop.length:null,
+  steps:R.length?R.reduce((s,r)=>s+r.steps,0)/R.length:null,secs:R.some(r=>r.secs!=null)?R.reduce((s,r)=>s+(r.secs||0),0)/R.length:null}}
+const autoRows=k=>POOL.map(p=>{const r=AUTO[k].run(dataOf(p));return {pid:p.id,...r,g:grade(r,p),secs:null}});
+const pc=x=>x==null?"—":(x*100).toFixed(0)+"%";
+function renderBoard(){
+ $("scope").querySelectorAll("[data-s]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.s===scope));
+ const mine=runs.filter(r=>r.who==="you"),ids=new Set(mine.map(r=>r.pid));
+ let rows=[];
+ if(scope==="mine"){
+  // 同一題作答多次時只算第一次
+  const first=(arr)=>{const s=new Set();return arr.filter(r=>!s.has(r.pid)&&s.add(r.pid))};
+  rows.push(["🙋 你（人在迴圈中）",agg(first(mine.filter(r=>r.mode==="in")))],["👀 你（人在迴圈上）",agg(first(mine.filter(r=>r.mode==="on")))]);
+  for(const k in AUTO)rows.push([AUTO[k].name,agg(autoRows(k),ids)]);
+  const cl=first(runs.filter(r=>r.who==="claude"));if(cl.length)rows.push(["🤖 Claude",agg(cl)]);
+  $("scopeTxt").textContent=ids.size?`你做過 ${ids.size} 題。看門狗只算同樣這 ${ids.size} 題，才能公平比較。同一題做第二次不重複計分。`:"還沒有作答紀錄。先在上面答幾題，這裡就會出現你和代理的比較。";
+ }else{for(const k in AUTO)rows.push([AUTO[k].name,agg(autoRows(k))]);$("scopeTxt").textContent="兩隻看門狗是固定規則，可以一次跑完全部 48 題（42 題有故障、6 題沒有）。";}
+ rows=rows.filter(([,a])=>a.n>0);
+ const best={};["l1","l2","l3","l4"].forEach(k=>best[k]=Math.max(...rows.map(([,a])=>a[k]??-1)));
+ $("board").innerHTML=rows.length?rows.map(([n,a])=>`<tr><td>${n}</td><td>${a.n}</td>${["l1","l2","l3","l4"].map(k=>`<td class="${a[k]!=null&&a[k]===best[k]&&rows.length>1?"best":""}">${pc(a[k])}</td>`).join("")}<td>${pc(a.fp)}</td><td>${a.steps==null?"—":a.steps.toFixed(1)}</td><td>${a.secs==null?"—":a.secs.toFixed(0)}</td></tr>`).join(""):`<tr><td colspan="9" class="muted">還沒有資料</td></tr>`;
+ renderLoop(mine)}
+// 人在迴圈中／上 的比較與自動化偏誤
+function renderLoop(mine){const P=id=>POOL.find(p=>p.id===id);
+ const on=mine.filter(r=>r.mode==="on"),inn=mine.filter(r=>r.mode==="in");
+ const dogWrong=on.filter(r=>r.dogL1!==(P(r.pid).f!=="noop")),follow=dogWrong.filter(r=>r.l1===r.dogL1);
+ const fix=on.filter(r=>r.dogL1===(P(r.pid).f!=="noop"));
+ const a=agg(inn),b=agg(on);
+ $("loop").innerHTML=`
+  <div class="card"><b>🙋 vs 👀 偵測正確率</b><span class="big">${pc(a.l1)} / ${pc(b.l1)}</span><div class="muted">自己判斷 ${a.n} 題，先看代理 ${b.n} 題</div></div>
+  <div class="card"><b>⏱️ 平均作答秒數</b><span class="big">${a.secs==null?"—":a.secs.toFixed(0)} / ${b.secs==null?"—":b.secs.toFixed(0)}</span><div class="muted">看代理意見有沒有讓你更快</div></div>
+  <div class="card"><b>🧲 代理答錯時，你跟著錯</b><span class="big">${dogWrong.length?pc(follow.length/dogWrong.length):"—"}</span><div class="muted">先看代理的題目中，規則看門狗偵測錯了 ${dogWrong.length} 題，你跟它答一樣的有 ${follow.length} 題。越高代表越依賴代理（自動化偏誤）。</div></div>
+  <div class="card"><b>🤝 代理答對時，你也答對</b><span class="big">${fix.length?pc(fix.filter(r=>r.g.l1).length/fix.length):"—"}</span><div class="muted">代理對、你卻推翻它而答錯的情況越少越好。</div></div>`}
+$("scope").addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;scope=b.dataset.s;renderBoard()});
+
+// ---------- 匯出 ----------
+function csv(){const H=["time","who","mode","problem","fault","code","l1","l2","l3","l4","ok_detect","ok_localize","ok_rca","ok_mitigate","steps","seconds","trace","rule_dog_l1"];
+ const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+ return [H.join(","),...runs.map(r=>[r.t,r.who,r.mode||"",r.pid,r.f,r.c,r.l1,r.l2||"",r.l3||"",r.l4||"",r.g.l1,r.g.l2??"",r.g.l3??"",r.g.l4??"",r.steps,r.secs??"",r.trace||"",r.dogL1??""].map(q).join(","))].join("\n")}
+$("csv").addEventListener("click",async()=>{
+ // 在 Claude 裡用 downloads 能力存檔；在一般網站（GitHub Pages）用下載連結
+ let dl=null;try{dl=window.claude?await window.claude.use("downloads"):null}catch(e){}
+ if(dl){try{await dl.save({filename:"advisor-lab-runs.csv",data:"\ufeff"+csv()});$("csvMsg").textContent=`已存下 ${runs.length} 筆紀錄。`}catch(e){$("csvMsg").textContent="沒有存檔，可以改用「複製 CSV」。"}return}
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv()],{type:"text/csv"}));a.download="advisor-lab-runs.csv";document.body.append(a);a.click();a.remove();$("csvMsg").textContent=`已產生 ${runs.length} 筆紀錄。如果沒有下載，請改用「複製 CSV」。`});
+$("copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(csv());$("csvMsg").textContent=`已複製 ${runs.length} 筆紀錄。`}catch(e){$("csvMsg").textContent="這個瀏覽器不允許複製，請改用下載。"}});
+$("reset").addEventListener("click",()=>{if(!confirm("確定清除這台裝置上的所有作答紀錄？"))return;runs=[];store.set("labRuns",runs);renderBoard();renderSteps()});
+
+$("mode").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;mode=b.dataset.m;store.set("labMode",mode);
+ $("mode").querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===mode));if(!done)renderHint()});
+$("mode").querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===mode));
+
+// 故障庫表
+$("lib").innerHTML=Object.entries(FAULTS).map(([k,F])=>`<tr><td>${esc(CAUSES[k])}</td><td><span class="pill ${F.kind}">${F.kind==="sym"?"表面症狀":"功能故障"}</span></td><td>${F.n}</td><td style="text-align:left;white-space:normal">${esc(F.what)}</td><td style="text-align:left;white-space:normal" class="muted">${esc(F.real)}</td><td style="text-align:left;white-space:normal">${esc(FIXES[F.fix])}</td></tr>`).join("")
+ +`<tr><td>沒有故障</td><td><span class="pill">對照組</span></td><td>6</td><td style="text-align:left;white-space:normal">真實資料原封不動。其中 2 檔本來就沒有本益比。</td><td style="text-align:left;white-space:normal" class="muted">虧損公司、剛上市公司本來就沒有某些數字。</td><td style="text-align:left;white-space:normal">照常使用</td></tr>`;
+
+// ---------- Claude 代理（只在 Claude 裡開啟時可用） ----------
+let ctl=null;
+(async()=>{let sample=null;try{sample=window.claude?await window.claude.use("sample"):null}catch(e){}
+ if(!sample)return;$("aiBox").hidden=false;
+ $("aiStop").addEventListener("click",()=>ctl?.abort());
+ $("aiGo").addEventListener("click",async()=>{const p=cur,d=dataOf(p),out=$("aiOut");let n=0,used=false;const tr=[];const t1=performance.now();
+  const step=(k,c=1)=>{if(n+c>MAXSTEP)throw new Error("已達 8 步上限，請直接作答");n+=c;tr.push(k);out.innerHTML=`<p class="muted">第 ${n} 步：${esc(k)}</p>`};
+  const T=[["get_quote","今日報價：資料日期、收盤價、漲跌幅、成交值、本月均價。","quote"],["get_history","近一年 12 個月的月收盤與今天收盤。","history"],["get_valuation","本益比、同業本益比中位數、股價淨值比、殖利率。","valuation"],["get_advisors","六位理專用這筆資料做出的判斷與理由。","advisors"]]
+   .map(([name,description,k])=>({name,description:description+"算 1 步。",execute(){step(name);return TOOLS[k](d)}}));
+  T.push({name:"cross_check",description:"從第二個資料來源查一組數字（quote、history 或 valuation），算 2 步，每題只能用一次。",
+   inputSchema:{type:"object",properties:{group:{type:"string",enum:["quote","history","valuation"]}},required:["group"]},
+   execute(i){const g=String(i.group);if(used)throw new Error("第二來源每題只能查一次");if(!TOOLS[g]||g==="advisors")throw new Error("group 只能是 quote、history 或 valuation");step("cross_check:"+g,2);used=true;return TOOLS[g](cleanOf(p))}});
+  const prompt=`你是資料品質稽核員。系統在 ${ASOF} 收盤後收到台股 ${nameOf(byCode(p.c))} 的資料，準備交給六位規則型理專判斷。資料裡可能有一種故障，也可能完全正常。
+請用工具查看（總共最多 ${MAXSTEP} 步），然後只回一段 JSON，不要其他文字：
+{"anomaly": true 或 false, "field": "${Object.keys(FIELDS).join("|")}", "cause": "${Object.keys(CAUSES).join("|")}", "fix": "${Object.keys(FIXES).join("|")}", "reason": "一句繁體中文"}
+沒有問題時 field、cause、fix 填 null。
+field：${Object.entries(FIELDS).map(([k,v])=>`${k}=${v}`).join("；")}
+cause：${Object.entries(CAUSES).map(([k,v])=>`${k}=${v}`).join("；")}
+fix：${Object.entries(FIXES).map(([k,v])=>`${k}=${v}`).join("；")}
+注意：虧損或資料不足的公司本來就可能沒有本益比；一年內股價大漲大跌也可能是真的。`;
+  ctl=new AbortController();$("aiGo").disabled=true;$("aiStop").hidden=false;out.innerHTML=`<p class="muted">Claude 思考中…</p>`;
+  try{const {text}=await sample(prompt,{tools:T,signal:ctl.signal,cache:false});
+   const m=text.match(/\{[\s\S]*\}/g);let a=null;try{a=m&&JSON.parse(m[m.length-1])}catch(e){}
+   if(!a)throw {code:"bad_json",text};
+   const ans={l1:!!a.anomaly,l2:a.field||null,l3:a.cause||null,l4:a.fix||null},g=grade(ans,p),secs=+((performance.now()-t1)/1000).toFixed(1);
+   runs.push({who:"claude",pid:p.id,f:p.f,c:p.c,...ans,g,steps:n,secs,trace:tr.join(" "),why:a.reason||"",t:new Date().toISOString()});store.set("labRuns",runs);
+   out.innerHTML=`<p><b>Claude 的答案</b>（${n} 步、${secs} 秒）：${ans.l1?`有問題 → ${esc(FIELDS[ans.l2]||ans.l2)}・${esc(CAUSES[ans.l3]||ans.l3)}・${esc(FIXES[ans.l4]||ans.l4)}`:"沒有問題"}<br><span class="muted">${esc(a.reason||"")}</span></p><p class="muted" style="font-size:13px">${done?`偵測 ${g.l1?"✅":"❌"}`:"你作答送出後，這裡會顯示 Claude 有沒有答對。"}</p>`;
+   if(done)renderResultAgain();renderBoard()}
+  catch(e){out.innerHTML=`<p class="muted">${e.code==="cancelled"?"已停止。":e.code==="not_granted"?"沒有允許使用 Claude，這個功能先關閉。":e.code==="rate_limited"?"Claude 暫時忙碌，稍後再試。":e.code==="bad_json"?"Claude 沒有照格式回答，這題不計分。":"這次沒有完成，稍後再試。"}</p>`;if(e.code==="not_granted")$("aiBox").hidden=true}
+  finally{$("aiGo").disabled=false;$("aiStop").hidden=true;ctl=null}})})();
+function renderResultAgain(){const last=runs.filter(r=>r.who==="you"&&r.pid===cur.id).slice(-1)[0];if(last)renderResult(last,last.g,last.secs)}
+
+{const h=+location.hash.slice(1);load(POOL.some(p=>p.id===h)?h:nextId())}
+renderBoard();
+</script>
+<footer class="sitefoot">示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。 <a href="about.html">關於本站與資料來源</a></footer>
+<script>window.__GL__={"terms":[{"g":"商品","k":"股票","d":"公司的一小部分所有權。公司賺錢，股價和股利可能成長；公司經營不善，也可能大跌甚至下市。"},{"g":"商品","k":"ETF","d":"Exchange Traded Fund，在交易所買賣的基金。一檔 ETF 裡面裝了一籃子股票或債券，買一張就等於分散投資。"},{"g":"商品","k":"市值型 ETF","d":"依公司市值大小決定比重，例如追蹤台灣前 50 大公司的 ETF。台積電這類大公司占比會很高。"},{"g":"商品","k":"高股息 ETF","d":"挑選殖利率較高的股票組成，配息較多。要注意配息可能來自本金或收益平準金，配息高不等於總報酬高。"},{"g":"商品","k":"債券","d":"借錢給政府或公司，定期領利息、到期拿回本金。利率上升時，舊債券的價格會下跌。"},{"g":"商品","k":"定存","d":"把錢放在銀行一段固定期間，換取比活存高的利率。台灣每家銀行每人的存款受存保保障最高 300 萬元。"},{"g":"指標","k":"殖利率","d":"一年股利 ÷ 股價。股價 100 元、配 5 元，殖利率 5%。股價大跌時殖利率會「看起來」變高，要小心。"},{"g":"指標","k":"本益比 (P/E)","d":"股價 ÷ 每股盈餘 (EPS)。代表用幾年的獲利可以買回這個價格。越高代表市場對未來期待越高，也可能越貴。"},{"g":"指標","k":"EPS","d":"每股盈餘，公司稅後淨利 ÷ 股數。代表每一股替你賺了多少錢。"},{"g":"指標","k":"總報酬","d":"價差 + 股利一起算才是真正的報酬。只看配息或只看股價都不完整。"},{"g":"指標","k":"內扣費用","d":"ETF 或基金每年從資產裡直接扣掉的管理費、保管費等，不會另外收你錢，所以常被忽略。"},{"g":"交易","k":"除權息","d":"公司發股利的那天，股價會先扣掉股利金額。之後漲回原價叫「填息」。只是左手換右手，不是白拿。"},{"g":"交易","k":"零股","d":"台股一張是 1,000 股，不到一張的叫零股。盤中和盤後都可以買零股，小額也能投資。"},{"g":"交易","k":"定期定額","d":"每月固定日期、固定金額自動買進。很多券商最低 100 元起。"},{"g":"交易","k":"融資融券","d":"跟券商借錢買股（融資）或借股票來賣（融券）。槓桿會放大盈虧，跌破維持率會被追繳或斷頭。"},{"g":"風險","k":"波動","d":"價格上下跳動的幅度。波動大不一定是壞事，但你要能承受帳面上的大起大落。"},{"g":"風險","k":"通膨","d":"物價每年上漲，錢放著不動購買力會縮水。通膨 2% 的話，100 萬十年後大約只剩 82 萬的購買力。"},{"g":"風險","k":"匯率風險","d":"買美股或外幣資產，台幣升值時換回來會少。外幣定存的高利率可能被匯差吃掉。"},{"g":"風險","k":"資產配置","d":"把錢分在股票、債券、現金等不同資產，讓它們互相抵消一部分的風險。"},{"g":"風險","k":"再平衡","d":"定期把資產比例調回原本的設定。等於自動做到「漲多賣一點、跌多買一點」。"},{"g":"指標","k":"股價淨值比 (P/B)","d":"股價 ÷ 每股淨值。低於 1 代表股價比公司帳面上的淨資產還便宜，但也可能是市場不看好它的獲利能力。"},{"g":"指標","k":"成交值","d":"一天之內這檔股票成交的總金額。成交值大代表買賣的人多，想賣的時候比較容易賣得掉。"},{"g":"股利","k":"填息","d":"除息後股價漲回除息前一天的收盤價。有填息，領到的股利才算真的賺到；一直沒填回來叫「貼息」。"},{"g":"股利","k":"貼息","d":"除息後股價一直沒漲回除息前的價格。領到的股利被股價下跌抵銷，帳面上等於沒賺。"},{"g":"股利","k":"現金增資","d":"公司發行新股向股東籌錢。這不是發股利，股東要自己出錢認購，不認購的話持股比例會被稀釋。"},{"g":"股利","k":"收益平準金","d":"ETF 把新申購資金裡含的「未分配收益」先存起來，用來穩定配息。配息裡平準金占比高，代表不全是成分股真正賺來的股利。"},{"g":"商品","k":"上市／上櫃","d":"上市股票在證交所交易，上櫃股票在櫃買中心交易。上櫃公司通常規模較小，股價波動也可能比較大。"}],"url":"learn.html"};
+// 全站共用：資料日期過期提醒、名詞提示。由 build_site.py 嵌入每一頁，GL 是入門教室的名詞表。
+(()=>{
+  // 資料日期：超過 3 個交易日（只算週一到週五）沒更新就變橘色
+  const b=document.querySelector(".sitenav .asofb[data-asof]");
+  if(b){
+    const d=new Date(b.dataset.asof+"T00:00:00"),now=new Date();let n=0;
+    for(const x=new Date(d);x<now;x.setDate(x.getDate()+1)){const w=x.getDay();if(x>d&&w&&w<6)n++}
+    if(n>3){b.classList.add("stale");b.textContent+="・資料可能過期"}
+  }
+
+  // 左側目錄：☰ 打開，✕、點背景或按 Esc 關閉，關閉後焦點回到 ☰
+  const nb=document.querySelector(".navbtn"),dr=document.getElementById("sitedrawer"),bg=document.querySelector(".drawer-bg");
+  if(nb&&dr){
+    const show=on=>{dr.hidden=bg.hidden=!on;nb.setAttribute("aria-expanded",on);if(on)(dr.querySelector("[aria-current]")||dr.querySelector("a")).focus();else nb.focus()};
+    nb.addEventListener("click",()=>show(true));
+    dr.querySelector(".dclose").addEventListener("click",()=>show(false));
+    bg.addEventListener("click",()=>show(false));
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dr.hidden)show(false)});
+  }
+
+  // 手機上導覽列可橫滑：把目前這一頁捲到看得見的位置
+  const nv=document.querySelector(".sitenav"),cur=nv&&nv.querySelector("[aria-current]");
+  if(cur&&nv.scrollWidth>nv.clientWidth)nv.scrollLeft=cur.offsetLeft-nv.clientWidth/2+cur.offsetWidth/2;
+
+  // 名詞提示：表頭、統計卡標題與 data-gl 元素裡出現的名詞加底線，點一下看白話解釋
+  const GL=window.__GL__||{terms:[],url:""};
+  const SKIP=new Set(["股票","ETF","債券","定存","波動","通膨"]);
+  const T=[];
+  for(const t of GL.terms){
+    if(SKIP.has(t.k))continue;
+    const names=[t.k.replace(/\s*\(.*\)$/,"")];
+    t.k.split("／").forEach(x=>names.push(x));
+    if(/淨值比/.test(t.k))names.push("淨值比");
+    for(const n of new Set(names))if(n.length>=2)T.push([n,t]);
+  }
+  T.sort((a,b)=>b[0].length-a[0].length);
+  const SEL="th,.stats small,.kv small,.fact>span,.eyebrow,[data-gl]";
+  function wrap(el){
+    if(el.dataset.gld)return;el.dataset.gld=1;
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const nodes=[];
+    while(walker.nextNode())nodes.push(walker.currentNode);
+    for(const node of nodes){
+      if(node.parentElement.closest("button,a,.gl-term,input,select,option"))continue;
+      const s=node.nodeValue;let hit=null;
+      for(const [n,t] of T){const i=s.indexOf(n);if(i>=0){hit=[i,n,t];break}}
+      if(!hit)continue;
+      const [i,n,t]=hit,span=document.createElement("span");
+      span.className="gl-term";span.tabIndex=0;span.setAttribute("role","button");span.dataset.k=t.k;span.textContent=n;
+      const after=node.splitText(i);after.nodeValue=after.nodeValue.slice(n.length);node.parentNode.insertBefore(span,after);
+    }
+  }
+  const scan=()=>document.querySelectorAll(SEL).forEach(wrap);
+  let pend=0;new MutationObserver(()=>{if(!pend){pend=1;requestAnimationFrame(()=>{pend=0;scan()})}}).observe(document.body,{childList:true,subtree:true});
+  scan();
+
+  let pop=null;
+  const close=()=>{if(pop){pop.remove();pop=null}};
+  function open(el){
+    close();const t=GL.terms.find(x=>x.k===el.dataset.k);if(!t)return;
+    pop=document.createElement("div");pop.className="gl-pop";pop.setAttribute("role","dialog");
+    const b=document.createElement("b");b.textContent=t.k;const p=document.createElement("div");p.textContent=t.d;pop.append(b,p);
+    if(GL.url){const a=document.createElement("a");a.href=GL.url+"#t-"+encodeURIComponent(t.k);a.target="_blank";a.rel="noopener";a.textContent="在入門教室看更多 →";pop.append(a)}
+    document.body.append(pop);
+    const r=el.getBoundingClientRect(),w=pop.offsetWidth;
+    pop.style.left=Math.max(16,Math.min(scrollX+r.left,scrollX+innerWidth-w-16))+"px";pop.style.top=(scrollY+r.bottom+6)+"px";
+  }
+  document.addEventListener("click",e=>{const el=e.target.closest(".gl-term");if(el){e.stopPropagation();e.preventDefault();open(el)}else if(!e.target.closest(".gl-pop"))close()},true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")close();const el=e.target.closest&&e.target.closest(".gl-term");if(el&&(e.key==="Enter"||e.key===" ")){e.preventDefault();open(el)}});
+})();
+</script>
+
+</body>
+</html>

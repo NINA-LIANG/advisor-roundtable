@@ -1,0 +1,358 @@
+<title>除權息行事曆</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: 理專圓桌的姊妹頁，存股族的月曆。上方劉淑芬的三個提醒 → 行事曆（依日期分組，點一筆在右側試算能領多少）→ 填息追蹤 → 殖利率排行。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
+  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --up:#d9534f; --down:#3f8f4f;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f3faeb 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h2{font-size:22px}
+p{margin:0}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:18px;min-width:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+.muted{color:var(--ink-soft)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-soft)}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+header h1{font-size:clamp(28px,5vw,42px)}
+header p{margin-top:4px;color:var(--ink-soft)}
+.links{display:flex;gap:14px;flex-wrap:wrap}
+.links a{color:var(--sky-deep);font-weight:700}
+a{color:var(--sky-deep)}
+.sec-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.sec-head p{font-size:13.5px;color:var(--ink-soft)}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:2px solid var(--line);border-radius:22px;overflow:hidden;background:#f6fbf1}
+.stats>div{padding:10px 16px;border-right:2px dashed var(--line);min-width:0}
+.stats>div:last-child{border-right:none}
+.stats b{display:block;font-family:var(--f-mono);font-weight:500;font-size:clamp(20px,3vw,28px);line-height:1.3}
+.stats small{font-size:13px;color:var(--ink-soft)}
+@media (max-width:700px){.stats{grid-template-columns:1fr 1fr}.stats>div:nth-child(2){border-right:none}.stats>div:nth-child(-n+2){border-bottom:2px dashed var(--line)}}
+
+.liu{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;background:#fbfff6;border-color:#dcebcd}
+.liu .face{width:58px;height:58px;border-radius:50%;background:var(--matcha);display:grid;place-items:center;font-size:30px}
+.liu h2{font-size:20px}
+.tips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px}
+.tips div{background:#fff;border:2px solid #e6f0dc;border-radius:18px;padding:8px 12px;font-size:14px}
+.tips b{display:block;font-family:var(--f-display);font-weight:400;font-size:16px;margin-bottom:2px}
+@media (max-width:800px){.tips{grid-template-columns:1fr}.liu{grid-template-columns:1fr}}
+
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.search{background:#fff9f4;border:2px solid var(--line);border-radius:999px;padding:6px 14px;flex:1 1 200px;min-width:0;max-width:320px}
+select{background:#fff9f4;border:2px solid var(--line);border-radius:999px;padding:6px 12px;max-width:100%}
+label.ck{display:inline-flex;gap:6px;align-items:center;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:3px 11px;font-size:13.5px}
+.chip[aria-pressed="true"]{background:var(--matcha);border-color:var(--matcha-deep);font-weight:700}
+.tabs{display:flex;gap:8px}
+.tab{border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:5px 16px;font-size:15px;font-family:var(--f-display)}
+.tab[aria-selected="true"]{background:var(--apricot);border-color:var(--apricot-deep)}
+
+.main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:1fr}}
+.days{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.day{border:2px solid var(--line);border-radius:20px;overflow:hidden}
+.day>h3{font-size:16px;padding:6px 14px;background:#fff4e8;display:flex;justify-content:space-between;gap:8px}
+.day>h3 small{font-family:var(--f-body);font-size:12.5px;color:var(--ink-soft)}
+.day.today>h3{background:var(--pink)}
+.ev{display:grid;grid-template-columns:4.6em minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 14px;border-top:1.5px dashed var(--line);cursor:pointer;font-size:14px;width:100%;text-align:left;background:none;border-left:none;border-right:none;border-bottom:none}
+.ev:hover{background:#fff9f1}
+.ev[aria-pressed="true"]{background:#eaf5e0}
+.ev .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev .amt{font-family:var(--f-mono);text-align:right}
+@media (max-width:500px){.ev .tag{display:none}}
+.ev .yy{font-family:var(--f-mono);text-align:right;min-width:4.4em;font-size:13px}
+.code{font-family:var(--f-mono);color:var(--ink-soft)}
+.tag{display:inline-block;font-size:11.5px;border-radius:999px;padding:0 7px;background:var(--lilac);margin-left:4px;vertical-align:1px}
+.tag.e{background:var(--sky)} .tag.b{background:#e8dcc8} .tag.r{background:var(--apricot)}
+.flag{display:inline-block;font-size:12px;border-radius:999px;padding:0 7px;background:#ffe3e3;color:#9b3b3b;margin-left:4px}
+.more{margin-top:10px;border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:4px 16px}
+.empty{padding:26px 10px;text-align:center;color:var(--ink-soft)}
+
+.calc{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px}
+@media (max-width:900px){.calc{position:static}}
+.calc h2{font-size:22px}
+.calc .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.calc input[type=number]{width:7em;background:#fff9f4;border:2px solid var(--line);border-radius:12px;padding:5px 10px;font-family:var(--f-mono)}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kv div{background:#fff9f4;border-radius:14px;padding:6px 10px;min-width:0}
+.kv small{display:block;font-size:12px;color:var(--ink-soft)}
+.kv b{font-family:var(--f-mono);font-weight:500;font-size:18px}
+.kv .big{grid-column:1/-1;background:#eaf5e0}
+.kv .big b{font-size:26px}
+.say{background:#fbfff6;border:2px solid #e6f0dc;border-radius:16px;padding:8px 12px;font-size:14px}
+.say b{font-family:var(--f-display);font-weight:400}
+.note{background:#f5faff;border-radius:16px;padding:8px 12px;font-size:13.5px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1.5px dashed var(--line);white-space:nowrap}
+th{font-size:12.5px;color:var(--ink-soft);font-weight:700;background:var(--card)}
+td.n,th.n{text-align:right;font-family:var(--f-mono)}
+.scroll{overflow-x:auto}
+.fill{display:inline-block;width:80px;height:9px;border-radius:5px;background:#f1e8df;vertical-align:middle;overflow:hidden;margin-right:6px}
+.fill i{display:block;height:100%;background:var(--matcha-deep)}
+.st{font-size:12.5px;border-radius:999px;padding:0 8px}
+.st.ok{background:var(--matcha)} .st.mid{background:var(--apricot)} .st.bad{background:#ffd6d6}
+.pager{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:14px;margin-top:10px}
+.pager button{border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:3px 12px}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+.summary{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
+.summary span{background:#fff9f4;border-radius:999px;padding:2px 12px;font-size:13.5px}
+.foot{font-size:13px;color:var(--ink-soft);text-align:center}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header>
+    <div>
+      <div class="eyebrow">理專圓桌・姊妹頁</div>
+      <h1>除權息行事曆 💰</h1>
+      <p>接下來哪幾檔要配息、能領多少、上次配完有沒有填息，還有誰的殖利率最高。</p>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <section class="box liu" aria-label="劉淑芬的提醒">
+    <div class="face" aria-hidden="true">🍵</div>
+    <div>
+      <div class="eyebrow">存股派理專・劉淑芬</div>
+      <h2>「領股利前，先想這三件事」</h2>
+      <div class="tips">
+        <div><b>除息不是賺錢</b>除息當天股價會扣掉股利，左手換右手。要漲回除息前的價格（填息），這筆股利才算真的賺到。</div>
+        <div><b>殖利率太高要起疑</b>超過 8% 常常是股價大跌，或公司賣地、賣廠的一次性收入。先看本益比和獲利，明年未必還配得出來。</div>
+        <div><b>稅和健保費要算進去</b>單筆股利滿 2 萬元會先扣 2.11% 補充保費，股利還要併入綜所稅（或選 28% 分開計稅）。所得稅率高的人，參加除息不一定划算。</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="main">
+    <section class="box" aria-label="除權息行事曆">
+      <div class="sec-head"><h2>📅 接下來要除權息</h2><p>依交易所公告的除權息日排列</p></div>
+      <div class="filters">
+        <input class="search" id="q" type="search" placeholder="搜尋代號或名稱，例如 0056" aria-label="搜尋">
+        <div class="chips" id="kinds"></div>
+        <label class="ck"><input type="checkbox" id="known"> 只看已公告金額</label>
+      </div>
+      <div class="days" id="days"></div>
+      <div style="text-align:center"><button class="more" id="more" hidden>看更後面的日期</button></div>
+    </section>
+    <aside class="box calc" id="calc" aria-live="polite"></aside>
+  </div>
+
+  <section class="box" aria-label="填息追蹤">
+    <div class="sec-head"><h2>🔁 最近配完息，填回來了嗎？</h2><p>近 60 天除權息的股票與 ETF，用最新收盤價比對除息前價格</p></div>
+    <div class="filters">
+      <input class="search" id="fq" type="search" placeholder="搜尋代號或名稱" aria-label="搜尋填息">
+      <div class="chips" id="fkinds"></div>
+    </div>
+    <div class="summary" id="fsum"></div>
+    <div class="scroll"><table><thead><tr><th>除息日</th><th>代號</th><th class="stick">名稱</th><th class="n">配了</th><th class="n">除息前</th><th class="n">最新收盤</th><th>填息進度</th></tr></thead><tbody id="fbody"></tbody></table></div>
+    <div class="pager" id="fpager"></div>
+  </section>
+
+  <section class="box" aria-label="殖利率排行">
+    <div class="sec-head"><h2>🏆 殖利率排行</h2><p>股票用交易所公布的殖利率；ETF 用近一年實際配息 ÷ 收盤價。「每 10 萬」是假設股利不變、未扣稅與健保費</p></div>
+    <div class="filters">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="y-stock" aria-selected="true">股票</button>
+        <button class="tab" role="tab" id="y-etf" aria-selected="false">ETF</button>
+      </div>
+      <select id="ymkt" aria-label="市場"><option value="">上市＋上櫃</option><option>上市</option><option>上櫃</option></select>
+      <select id="yind" aria-label="產業"></select>
+      <label class="ck" id="ysafe-l"><input type="checkbox" id="ysafe" checked> 排除虧損或殖利率超過 15% 的</label>
+    </div>
+    <div class="scroll" style="margin-top:10px"><table><thead id="yhead"></thead><tbody id="ybody"></tbody></table></div>
+    <div class="pager" id="ypager"></div>
+  </section>
+
+  <p class="foot">資料：證交所、櫃買中心開放資料（除權息預告、除權息計算結果、個股殖利率），<span id="asof"></span> 更新，平日自動更新。估計殖利率用最新收盤價計算，實際以公司公告為準。非投資建議。</p>
+</div>
+
+<script>
+const D=/*DIVIDENDS*/, PX=/*PX*/;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=(v,d=2)=>v==null||isNaN(v)?"—":Number(v).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+const WD="日一二三四五六";
+const TODAY=D.asof;
+const days=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+
+// 分類：股票／ETF／債券 ETF
+function kindOf(code){
+  const p=PX[code];
+  if(p&&p[2]==="e") return /債/.test(p[1])?"b":"e";
+  if(/^00/.test(code)) return /B$/.test(code)?"b":"e";
+  return "s";
+}
+const KLABEL={s:"股票",e:"ETF",b:"債券 ETF"};
+const tagOf=k=>k==="s"?"":`<span class="tag ${k}">${KLABEL[k]}</span>`;
+
+const UP=D.up.map(r=>({d:r[0],code:r[1],name:r[2],mkt:r[3],kd:r[4],cash:r[5],stk:r[6],k:kindOf(r[1]),p:PX[r[1]]?.[0]}));
+const PAST=D.past.map(r=>({d:r[0],code:r[1],name:r[2],mkt:r[3],kd:r[4],pre:r[5],ref:r[6],val:r[7],k:kindOf(r[1]),p:PX[r[1]]?.[0]}));
+
+// 劉淑芬對一筆除權息的看法
+function liuSays(e){
+  if(e.kd==="權"&&!e.cash&&!e.stk) return "這次是<b>現金增資除權</b>，不是發股利：要參加得自己掏錢認購新股。";
+  if(e.cash==null) return "金額還沒公告。ETF 通常在除息前幾天才公布，先別用去年的數字預估。";
+  const y=e.p?e.cash/e.p*100:null;
+  if(e.k==="b") return "債券 ETF 的配息主要來自債券利息，但價格也會跟著利率走。利率上升時，領到的息可能被價差吃掉。";
+  if(y!=null&&y>=5) return `這一次就配 ${fmt(y,1)}%，相當可觀，但除息當天股價會先扣掉 ${fmt(e.cash,2)} 元。要看它多久能填息，才知道是不是真的賺。`;
+  if(e.k==="e") return "ETF 配的錢可能包含「收益平準金」或資本利得，不全是成分股的股利。看配息組成比只看金額可靠。";
+  return "小錢也是錢。存股看的是長期穩定配得出來，不是單次配多少。";
+}
+
+// ---------- 統計 ----------
+const future=UP.filter(e=>e.d>=TODAY);
+const in14=future.filter(e=>days(TODAY,e.d)<=14);
+const evald=PAST.filter(e=>e.d<TODAY&&e.p!=null&&e.pre&&e.val>0);
+const filled=evald.filter(e=>e.p>=e.pre);
+$("stats").innerHTML=[
+  ["今天除權息",UP.filter(e=>e.d===TODAY).length+" 檔"],
+  ["未來 14 天",in14.length+" 檔"],
+  ["近 60 天已填息",evald.length?`${filled.length} / ${evald.length}`:"—"],
+  ["資料日期",D.asof]].map(([k,v])=>`<div><small>${k}</small><b>${v}</b></div>`).join("");
+$("asof").textContent=D.asof;
+
+// ---------- 行事曆 ----------
+let kf="",sel=null,shown=10;
+function chipRow(el,cur,on){
+  const opts=[["","全部"],["s","股票"],["e","ETF"],["b","債券 ETF"]];
+  el.innerHTML=opts.map(([v,t])=>`<button class="chip" data-v="${v}" aria-pressed="${cur===v}">${t}</button>`).join("");
+  el.onclick=ev=>{const b=ev.target.closest(".chip");if(b)on(b.dataset.v)};
+}
+function renderCal(){
+  chipRow($("kinds"),kf,v=>{kf=v;shown=10;renderCal()});
+  const q=$("q").value.trim().toLowerCase(),known=$("known").checked;
+  const list=future.filter(e=>(!kf||e.k===kf)&&(!known||e.cash)&&(!q||e.code.toLowerCase().includes(q)||e.name.toLowerCase().includes(q)));
+  const groups={};list.forEach(e=>(groups[e.d]=groups[e.d]||[]).push(e));
+  const keys=Object.keys(groups).sort();
+  $("days").innerHTML=keys.length?keys.slice(0,shown).map(d=>{
+    const dd=new Date(d+"T00:00:00"),n=days(TODAY,d);
+    const when=n===0?"今天":n===1?"明天":`還有 ${n} 天`;
+    return `<div class="day${n===0?" today":""}"><h3><span>${+d.slice(5,7)}/${+d.slice(8)}（${WD[dd.getDay()]}）</span><small>${when}・${groups[d].length} 檔</small></h3>`+
+      groups[d].map(e=>{
+        const y=e.cash&&e.p?e.cash/e.p*100:null;
+        const amt=e.kd==="權"&&!e.cash?(e.stk?`配股 ${fmt(e.stk*1000,0)} 股/張`:"現金增資"):e.cash==null?'<span class="muted">尚未公告</span>':`${fmt(e.cash,e.cash<1?3:2)} 元`;
+        const flag=y!=null&&y>=5?'<span class="flag">單次 ≥5%</span>':e.kd==="權"&&!e.cash&&!e.stk?'<span class="flag">要掏錢</span>':"";
+        return `<button class="ev" data-k="${e.code}|${e.d}" aria-pressed="${sel===e.code+"|"+e.d}"><span class="code">${e.code}</span><span class="nm"><b>${esc(e.name)}</b>${tagOf(e.k)}${e.mkt==="上櫃"?' <span class="muted" style="font-size:12px">櫃</span>':""}${flag}</span><span class="amt">${amt}</span><span class="yy muted">${y!=null?fmt(y,2)+"%":""}</span></button>`;
+      }).join("")+`</div>`;
+  }).join(""):`<p class="empty">沒有符合的除權息預告。換個分類，或取消「只看已公告金額」試試。</p>`;
+  $("more").hidden=keys.length<=shown;
+}
+$("days").onclick=ev=>{const b=ev.target.closest(".ev");if(!b)return;sel=b.dataset.k;renderCal();renderCalc();if(innerWidth<900)$("calc").scrollIntoView({behavior:"smooth",block:"start"})};
+$("q").oninput=()=>{shown=10;renderCal()};
+$("known").onchange=renderCal;
+$("more").onclick=()=>{shown+=10;renderCal()};
+
+// ---------- 股利試算 ----------
+let lots=1;
+function renderCalc(){
+  const e=sel&&future.find(x=>x.code+"|"+x.d===sel)||future.find(x=>x.cash&&x.k!=="b")||future[0];
+  if(!e){$("calc").innerHTML=`<p class="empty">目前沒有除權息預告。</p>`;return}
+  sel=e.code+"|"+e.d;
+  const shares=lots*1000,cash=(e.cash||0)*shares,nhi=cash>=20000?Math.round(cash*0.0211):0;
+  const y=e.cash&&e.p?e.cash/e.p*100:null;
+  const last=PAST.filter(x=>x.code===e.code&&x.d<TODAY)[0];
+  $("calc").innerHTML=`<div class="eyebrow">股利試算</div>
+    <h2>${esc(e.name)} <span class="code" style="font-size:16px">${e.code}</span></h2>
+    <p class="muted" style="font-size:13.5px">除${e.kd==="權息"?"權息":e.kd}日 ${e.d}・${e.mkt}${e.p?`・最新收盤 ${fmt(e.p)}`:""}</p>
+    <div class="row"><label for="lots">我有</label><input type="number" id="lots" min="0" step="1" value="${lots}"><span>張（1 張 = 1,000 股）</span></div>
+    ${e.cash?`<div class="kv">
+      <div class="big"><small>這次大約領到（扣補充保費後）</small><b>${fmt(cash-nhi,0)} 元</b></div>
+      <div><small>每股配</small><b>${fmt(e.cash,3)}</b></div>
+      <div><small>單次殖利率</small><b>${y!=null?fmt(y,2)+"%":"—"}</b></div>
+      <div><small>二代健保 2.11%</small><b>${nhi?"-"+fmt(nhi,0):"免扣"}</b></div>
+      <div><small>除息參考價約</small><b>${e.p?fmt(e.p-e.cash):"—"}</b></div>
+    </div>`:`<p class="note muted">${e.cash==null?"金額還沒公告，公告後這裡會自動算。":"這次沒有現金股利。"}</p>`}
+    ${last?`<p style="font-size:13.5px">上一次 ${last.d} 配 ${fmt(last.val,3)} 元，${fillText(last)}。</p>`:""}
+    <div class="say"><b>🍵 劉淑芬：</b>${liuSays(e)}</div>
+    <p class="muted" style="font-size:12.5px">要在除權息日的<b>前一個交易日</b>收盤前買進、持有到除權息日，才領得到。股利約在 3～5 週後入帳。</p>`;
+  $("lots").oninput=ev=>{lots=Math.max(0,Math.floor(+ev.target.value||0));const pos=ev.target.selectionStart;renderCalc();const i=$("lots");i.focus();try{i.setSelectionRange(pos,pos)}catch(_){}};
+}
+
+// ---------- 填息追蹤 ----------
+function fillPct(e){return e.p==null||!e.val?null:(e.p-e.ref)/(e.pre-e.ref)*100}
+function fillText(e){
+  if(e.p==null)return "目前沒有最新收盤價";
+  if(e.d>=TODAY)return "今天剛除息";
+  const f=fillPct(e);
+  return f>=100?`已經填息（${days(e.d,TODAY)} 天內）`:f>0?`目前填回 ${fmt(f,0)}%`:"目前還在貼息";
+}
+let fk="",fpage=0;const FPER=15;
+function renderFill(){
+  chipRow($("fkinds"),fk,v=>{fk=v;fpage=0;renderFill()});
+  const q=$("fq").value.trim().toLowerCase();
+  const list=PAST.filter(e=>e.val>0&&(!fk||e.k===fk)&&(!q||e.code.toLowerCase().includes(q)||e.name.toLowerCase().includes(q)));
+  const ev=list.filter(e=>e.d<TODAY&&e.p!=null),ok=ev.filter(e=>fillPct(e)>=100).length,neg=ev.filter(e=>fillPct(e)<=0).length;
+  $("fsum").innerHTML=ev.length?`<span>已填息 <b>${ok}</b></span><span>填息中 <b>${ev.length-ok-neg}</b></span><span>貼息 <b>${neg}</b></span><span class="muted">共 ${ev.length} 檔可比對</span>`:"";
+  const pages=Math.max(1,Math.ceil(list.length/FPER));fpage=Math.min(fpage,pages-1);
+  $("fbody").innerHTML=list.length?list.slice(fpage*FPER,fpage*FPER+FPER).map(e=>{
+    const f=fillPct(e),today=e.d>=TODAY;
+    const st=today||f==null?`<span class="muted" style="font-size:12.5px">${today?"今天除息":"無收盤價"}</span>`
+      :`<span class="fill"><i style="width:${Math.max(0,Math.min(100,f))}%"></i></span><span class="st ${f>=100?"ok":f>0?"mid":"bad"}">${f>=100?"已填息":f>0?fmt(f,0)+"%":"貼息"}</span>`;
+    return `<tr><td class="mono">${e.d.slice(5)}</td><td class="code">${e.code}</td><td class="stick"><b>${esc(e.name)}</b>${tagOf(e.k)}</td><td class="n">${fmt(e.val,3)}</td><td class="n">${fmt(e.pre)}</td><td class="n">${today?"—":fmt(e.p)}</td><td>${st}</td></tr>`;
+  }).join(""):`<tr><td colspan="7" class="empty">沒有符合的紀錄。</td></tr>`;
+  $("fpager").innerHTML=pages>1?`<button data-p="-1" ${fpage?"":"disabled"}>上一頁</button><span class="mono">${fpage+1} / ${pages}</span><button data-p="1" ${fpage<pages-1?"":"disabled"}>下一頁</button>`:"";
+}
+$("fq").oninput=()=>{fpage=0;renderFill()};
+$("fpager").onclick=ev=>{const b=ev.target.closest("button");if(b&&!b.disabled){fpage+=+b.dataset.p;renderFill()}};
+
+// ---------- 殖利率排行 ----------
+const YS=D.yld.map(r=>({code:r[0],name:r[1],mkt:r[2],y:r[3],pe:r[4],pb:r[5],ind:PX[r[0]]?.[1]||"其他",p:PX[r[0]]?.[0]}));
+const YE=D.etf.map(r=>({code:r[0],name:r[1],ind:r[2],cd:r[3],p:PX[r[0]]?.[0]??r[4]})).map(e=>({...e,y:e.cd/e.p*100,mkt:PX[e.code]?.[3]||"上市"}));
+let ym="stock",ypage=0;const YPER=20;
+function yWarn(x){
+  if(ym==="etf") return x.y>=10?'<span class="flag">配息偏高，查來源</span>':"";
+  if(x.y>=15) return '<span class="flag">異常高，可能一次性</span>';
+  if(!x.pe) return '<span class="flag">虧損還配息</span>';
+  if(x.y>=8) return '<span class="flag">偏高，查獲利</span>';
+  return "";
+}
+function renderYld(){
+  $("y-stock").setAttribute("aria-selected",ym==="stock");$("y-etf").setAttribute("aria-selected",ym==="etf");
+  $("ysafe-l").hidden=ym==="etf";$("ymkt").hidden=ym==="etf";
+  const src=ym==="stock"?YS:YE,cur=$("yind").value;
+  const inds=[...new Set(src.map(x=>x.ind))].sort((a,b)=>a.localeCompare(b,"zh-Hant"));
+  $("yind").innerHTML=`<option value="">${ym==="stock"?"全部產業":"全部類型"}</option>`+inds.map(i=>`<option ${i===cur?"selected":""}>${esc(i)}</option>`).join("");
+  const mk=$("ymkt").value,ind=$("yind").value,safe=$("ysafe").checked;
+  const list=src.filter(x=>x.y>0&&(ym==="etf"||!mk||x.mkt===mk)&&(!ind||x.ind===ind)&&(ym==="etf"||!safe||(x.pe&&x.y<15))).sort((a,b)=>b.y-a.y);
+  const pages=Math.max(1,Math.ceil(list.length/YPER));ypage=Math.min(ypage,pages-1);
+  $("yhead").innerHTML=ym==="stock"
+    ?`<tr><th class="n">#</th><th>代號</th><th class="stick">名稱</th><th>產業</th><th class="n">殖利率</th><th class="n">每 10 萬一年約領</th><th class="n">本益比</th><th class="n">淨值比</th><th class="n">收盤</th></tr>`
+    :`<tr><th class="n">#</th><th>代號</th><th class="stick">名稱</th><th>類型</th><th class="n">近一年殖利率</th><th class="n">每 10 萬一年約領</th><th class="n">近一年配息</th><th class="n">收盤</th></tr>`;
+  $("ybody").innerHTML=list.length?list.slice(ypage*YPER,ypage*YPER+YPER).map((x,i)=>ym==="stock"
+    ?`<tr><td class="n muted">${ypage*YPER+i+1}</td><td class="code">${x.code}</td><td class="stick"><b>${esc(x.name)}</b>${x.mkt==="上櫃"?' <span class="muted" style="font-size:12px">櫃</span>':""}${yWarn(x)}</td><td>${esc(x.ind)}</td><td class="n"><b>${fmt(x.y)}%</b></td><td class="n">${fmt(x.y*1000,0)} 元</td><td class="n">${x.pe?fmt(x.pe):"虧損"}</td><td class="n">${fmt(x.pb)}</td><td class="n">${fmt(x.p)}</td></tr>`
+    :`<tr><td class="n muted">${ypage*YPER+i+1}</td><td class="code">${x.code}</td><td class="stick"><b>${esc(x.name)}</b>${yWarn(x)}</td><td><span class="tag">${esc(x.ind)}</span></td><td class="n"><b>${fmt(x.y)}%</b></td><td class="n">${fmt(x.y*1000,0)} 元</td><td class="n">${fmt(x.cd,3)}</td><td class="n">${fmt(x.p)}</td></tr>`).join("")
+    :`<tr><td colspan="9" class="empty">沒有符合的標的。</td></tr>`;
+  $("ypager").innerHTML=pages>1?`<button data-p="-1" ${ypage?"":"disabled"}>上一頁</button><span class="mono">${ypage+1} / ${pages}</span><button data-p="1" ${ypage<pages-1?"":"disabled"}>下一頁</button>`:"";
+}
+$("y-stock").onclick=()=>{ym="stock";ypage=0;$("yind").value="";renderYld()};
+$("y-etf").onclick=()=>{ym="etf";ypage=0;$("yind").value="";renderYld()};
+["ymkt","yind","ysafe"].forEach(id=>$(id).onchange=()=>{ypage=0;renderYld()});
+$("ypager").onclick=ev=>{const b=ev.target.closest("button");if(b&&!b.disabled){ypage+=+b.dataset.p;renderYld()}};
+
+{const h=decodeURIComponent(location.hash.slice(1));if(/^\w{4,6}$/.test(h)){$("q").value=h;$("fq").value=h;const e=future.find(x=>x.code===h);if(e)sel=e.code+"|"+e.d}}
+renderCal();renderCalc();renderFill();
+// 殖利率排行在頁面最下方，等瀏覽器有空再畫
+(window.requestIdleCallback||(f=>setTimeout(f,60)))(renderYld);
+</script>
+<!--SITE-FOOT-->

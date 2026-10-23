@@ -1,0 +1,244 @@
+<title>投資人氣小報</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: 一份報紙。報頭 → 頭條（定期定額 ETF 榜）→ 三欄內頁（個股榜、受益人數、錢放哪裡）→ 市場溫度 → 編輯小語。
+   紙色底＋細黑線分欄，馬卡龍色只當版面標籤，跟理專圓桌是同一家人但讀起來像報紙。刻意只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --paper:#fffaf2; --ink:#2f2722; --ink-soft:#7a685b; --rule:#2f2722; --hair:#e6d8c9;
+  --pink:#f7b7c5; --pink-deep:#c45d78; --apricot:#ffd9a0; --matcha:#c5ddb0; --sky:#b5d8f2; --sky-deep:#3f7aa6; --lilac:#d9cdf2;
+  --f-head:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{background:#efe6da}
+body{margin:0;background:#efe6da;color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.paper{max-width:1080px;margin:0 auto;background:var(--paper);padding:22px clamp(16px,3vw,36px) 30px;box-shadow:0 2px 0 rgba(0,0,0,.05),0 18px 40px rgba(80,50,30,.12)}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance}
+a{color:var(--sky-deep)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-soft)}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:2px}
+
+/* 報頭 */
+.mast{text-align:center;border-bottom:3px double var(--rule);padding-bottom:10px}
+.mast .top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--ink-soft);border-bottom:1px solid var(--rule);padding-bottom:6px;margin-bottom:8px}
+.mast h1{font-size:clamp(38px,8vw,72px);font-weight:900;letter-spacing:.12em;line-height:1.1}
+.mast .motto{font-size:13px;letter-spacing:.3em;color:var(--ink-soft)}
+.nav{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 18px;font-size:13px;border-bottom:1px solid var(--rule);padding:6px 0;margin-bottom:18px}
+.nav a{font-weight:700;text-decoration:none}
+
+.kicker{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.12em;padding:1px 10px;border-radius:999px;margin-bottom:6px}
+.k-pink{background:var(--pink)}.k-sky{background:var(--sky)}.k-matcha{background:var(--matcha)}.k-apricot{background:var(--apricot)}.k-lilac{background:var(--lilac)}
+
+/* 頭條 */
+.lead{display:grid;grid-template-columns:1.35fr 1fr;gap:28px;border-bottom:1px solid var(--rule);padding-bottom:20px}
+@media (max-width:840px){.lead{grid-template-columns:1fr}}
+.lead h2{font-size:clamp(26px,4.4vw,42px);font-weight:900;line-height:1.2;margin-bottom:8px}
+.lead .deck{font-size:17px;color:var(--ink-soft);margin:0 0 12px}
+.lead p{margin:0 0 10px}
+.dropcap::first-letter{font-family:var(--f-head);font-weight:900;font-size:3.1em;float:left;line-height:1;margin:4px 8px 0 0}
+
+/* 長條榜 */
+.bars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.bars li{display:grid;grid-template-columns:22px minmax(0,8.5em) minmax(0,1fr) auto;gap:8px;align-items:center;font-size:14px}
+.bars .n{font-family:var(--f-head);font-weight:700;text-align:right;color:var(--ink-soft)}
+.bars .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .nm small{color:var(--ink-soft);font-family:var(--f-mono);font-size:11px;margin-right:4px}
+.bars .bar{height:12px;background:var(--hair);border-radius:2px;overflow:hidden}
+.bars .bar i{display:block;height:100%}
+.bars .v{font-family:var(--f-mono);font-size:13px;text-align:right;min-width:6.5em}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--ink-soft);margin:8px 0 0}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px;background:var(--c)}
+.figcap{font-size:12px;color:var(--ink-soft);margin-top:6px;border-top:1px solid var(--hair);padding-top:4px}
+
+/* 內頁三欄 */
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:18px}
+.cols>article{padding:0 18px;border-left:1px solid var(--rule);min-width:0}
+.cols>article:first-child{padding-left:0;border-left:none}
+.cols>article:last-child{padding-right:0}
+@media (max-width:900px){.cols{grid-template-columns:1fr}.cols>article{padding:16px 0;border-left:none;border-top:1px solid var(--rule)}.cols>article:first-child{border-top:none;padding-top:0}}
+.cols h3{font-size:22px;font-weight:900;line-height:1.3;margin-bottom:6px}
+.cols p{margin:0 0 10px}
+.big{font-family:var(--f-head);font-weight:900;font-size:clamp(34px,5vw,48px);line-height:1.1}
+.big small{font-size:.4em;font-weight:700;margin-left:4px}
+.split{display:flex;height:22px;border-radius:3px;overflow:hidden;margin:6px 0 4px}
+.split i{display:block;height:100%}
+.splitkey{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px}
+.splitkey span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px;background:var(--c)}
+
+/* 市場溫度 */
+.temp{margin-top:20px;border-top:3px double var(--rule);padding-top:14px}
+.temp h2{font-size:24px;font-weight:900;margin-bottom:10px}
+.gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+.gauges>div{padding:4px 14px;border-left:1px solid var(--hair);min-width:0}
+.gauges>div:first-child{border-left:none;padding-left:0}
+.gauges b{display:block;font-family:var(--f-head);font-size:clamp(24px,3.6vw,34px);font-weight:900;line-height:1.2}
+.gauges small{font-size:12px;color:var(--ink-soft)}
+@media (max-width:760px){.gauges{grid-template-columns:1fr 1fr;row-gap:12px}.gauges>div:nth-child(3){border-left:none;padding-left:0}}
+
+.editor{margin-top:20px;background:#fff3e2;border:1px solid var(--rule);padding:14px 18px}
+.editor h2{font-size:20px;font-weight:900;margin-bottom:6px}
+.editor ol{margin:0;padding-left:1.3em}
+.editor li{margin-bottom:4px}
+footer{margin-top:18px;font-size:12px;color:var(--ink-soft);border-top:1px solid var(--rule);padding-top:8px}
+footer ul{margin:4px 0 8px;padding-left:1.2em}
+</style>
+
+<div class="paper">
+  <!--SITE-NAV-->
+  <header class="mast">
+    <div class="top"><span id="issue"></span><span>理專圓桌 · 每月一期 · <span id="nextIssue"></span></span><span>純資訊分享　不構成投資建議</span></div>
+    <h1>投資人氣小報</h1>
+    <div class="motto">看看大家把錢放在哪裡</div>
+  </header>
+
+  <section class="lead">
+    <div>
+      <span class="kicker k-pink">頭版｜定期定額</span>
+      <h2 id="leadH"></h2>
+      <p class="deck" id="leadDeck"></p>
+      <p class="dropcap" id="leadP1"></p>
+      <p id="leadP2"></p>
+    </div>
+    <figure style="margin:0">
+      <ol class="bars" id="etfBars"></ol>
+      <div class="legend" id="etfLegend"></div>
+      <figcaption class="figcap" id="etfCap"></figcaption>
+    </figure>
+  </section>
+
+  <div class="cols">
+    <article>
+      <span class="kicker k-sky">個股版</span>
+      <h3 id="stkH"></h3>
+      <p id="stkP"></p>
+      <ol class="bars" id="stkBars"></ol>
+      <p class="figcap" id="stkCap"></p>
+    </article>
+    <article>
+      <span class="kicker k-lilac">ETF 版｜誰的股東最多</span>
+      <h3 id="holdH"></h3>
+      <p id="holdP"></p>
+      <ol class="bars" id="holdBars"></ol>
+      <p class="figcap" id="holdCap"></p>
+    </article>
+    <article>
+      <span class="kicker k-matcha">理財版｜錢放在哪裡</span>
+      <h3 id="wealthH"></h3>
+      <div class="big" id="wealthBig"></div>
+      <p id="wealthP"></p>
+      <div class="split" id="growthSplit" aria-hidden="true"></div>
+      <p id="growthP" style="font-size:14px"></p>
+      <hr style="border:none;border-top:1px solid var(--hair);margin:14px 0">
+      <span class="kicker k-apricot">基金</span>
+      <h3 id="offH" style="font-size:19px"></h3>
+      <div class="split" id="offSplit" role="img"></div>
+      <div class="splitkey" id="offKey"></div>
+      <p id="offP" style="margin-top:8px"></p>
+    </article>
+  </div>
+
+  <section class="temp" aria-label="市場溫度">
+    <h2 id="tempH">🌡️ 市場溫度計</h2>
+    <div class="gauges" id="gauges"></div>
+  </section>
+
+  <section class="editor">
+    <h2>✍️ 編輯小語：人氣不等於報酬</h2>
+    <ol>
+      <li><b>人多不代表會漲。</b>受益人數和定期定額戶數，說的是「多少人在買」，不是「買了會賺多少」。</li>
+      <li><b>高股息 ETF 的人氣跟著配息跑。</b>配息公告一出，股東數常常單月增減好幾萬人。追配息前，先看填息紀錄與總報酬（含息）。</li>
+      <li><b>熱門標的很集中。</b>市值型 ETF 裡台積電權重很高，個股定期定額又以台積電和金融股為主；全部買熱門，等於把雞蛋放在同幾個籃子。</li>
+      <li><b>基金看「計價幣別」。</b>國人持有的境外基金近九成是美元計價，報酬會連帶受匯率影響；南非幣等高息貨幣的匯損也可能吃掉配息。</li>
+    </ol>
+  </section>
+
+  <footer>
+    <div>資料來源</div>
+    <ul id="srcs"></ul>
+    <div>本報只整理公開統計，不推薦任何標的，也不收廣告。數字為各來源的最新一期，更新日期見各圖說。</div>
+  </footer>
+</div>
+
+<script>
+const D=/*NEWS*/;
+const $=id=>document.getElementById(id);
+const wan=n=>n>=1e8?(n/1e8).toFixed(n>=1e10?0:1)+" 億":n>=1e4?(n/1e4).toFixed(n>=1e6?0:1)+" 萬":n.toLocaleString("zh-TW");
+const zhao=n=>(n/1e12).toFixed(2)+" 兆";
+const ym=s=>{const [y,m]=s.split("-");return `${y} 年 ${+m} 月`};
+const TYPE_C={"市值型":"#3f7aa6","高股息":"#c45d78","主動式":"#8a6fc4","主題型":"#d79a3a","海外":"#5f9147"};
+const IND_C={"金融":"#5f9147","半導體":"#3f7aa6","電子":"#8a6fc4","電信":"#d79a3a","航運":"#c45d78"};
+function bars(el,rows,colorOf,fmt,max){
+  max=max||Math.max(...rows.map(r=>r[2]));
+  el.innerHTML=rows.map((r,i)=>`<li><span class="n">${i+1}</span><span class="nm"><small>${r[0]}</small>${r[1]}</span>
+    <span class="bar" aria-hidden="true"><i style="width:${Math.max(1.5,r[2]/max*100)}%;background:${colorOf(r)}"></i></span><span class="v">${fmt(r[2])}</span></li>`).join("");
+}
+function legend(el,map){el.innerHTML=Object.entries(map).map(([k,c])=>`<span style="--c:${c}">${k}</span>`).join("")}
+
+$("issue").textContent=`${ym(D.issue)}號 · ${D.issue} 出刊`;
+// 證交所約在每月第 7 個營業日公布上月定期定額排行，下一期跟著它出刊
+{const [y,m]=D.issue.split("-").map(Number),n=new Date(y,m,1);$("nextIssue").textContent=`下期預計 ${n.getFullYear()} 年 ${n.getMonth()+1} 月 10 日前後`}
+
+// 頭版：定期定額 ETF
+const e=D.dca_etf, first=e[0], etfTotal=e.reduce((s,r)=>s+r[2],0);
+const byType={};for(const r of e) byType[r[3]]=(byType[r[3]]||0)+r[2];
+const hi=byType["高股息"]||0, mk=byType["市值型"]||0;
+$("leadH").textContent=`${first[1]}定期定額衝上 ${wan(first[2])}戶，台灣人最愛「一次買整個台股」`;
+$("leadDeck").textContent=`${ym(D.dca_month)}定期定額前 20 名 ETF 中，市值型合計 ${wan(mk)}戶，是高股息型（${wan(hi)}戶）的 ${(mk/hi).toFixed(1)} 倍。`;
+$("leadP1").textContent=`證交所每月公布定期定額扣款戶數最多的股票與 ETF。${ym(D.dca_month)}，${first[1]}（${first[0]}）以 ${first[2].toLocaleString("zh-TW")} 戶遙遙領先，是第 2 名的 ${(first[2]/e[1][2]).toFixed(1)} 倍。第 2、3 名是兩檔高股息 ETF：${e[1][1]}與${e[2][1]}，各約 ${wan(e[1][2])}戶。`;
+const actives=e.filter(r=>r[3]==="主動式"), abroad=e.filter(r=>r[3]==="海外");
+$("leadP2").textContent=`值得注意的是主動式 ETF：${actives.map(r=>`${r[1]}（${wan(r[2])}戶）`).join("、")}已經擠進前 20。投資海外的則有 ${abroad.map(r=>r[1]).join("、")}，合計約 ${wan(abroad.reduce((s,r)=>s+r[2],0))}戶。這個月全市場定期定額扣款總金額 ${wan(D.market.dca_amount)}元。`;
+bars($("etfBars"),e.slice(0,12),r=>TYPE_C[r[3]]||"#999",v=>wan(v)+"戶");
+legend($("etfLegend"),TYPE_C);
+$("etfCap").textContent=`圖：${ym(D.dca_month)}定期定額交易戶數前 12 名 ETF。資料：證交所。`;
+
+// 個股版
+const s=D.dca_stock, fin=s.filter(r=>r[3]==="金融");
+$("stkH").textContent=`台積電一檔抵 ${Math.floor(s[0][2]/s[1][2])} 個玉山金；前 20 名金融股占 ${fin.length} 席`;
+$("stkP").textContent=`個股定期定額，${s[0][1]}有 ${wan(s[0][2])}戶，第二名${s[1][1]}只有 ${wan(s[1][2])}戶。前 20 名裡有 ${fin.length} 檔是金控或銀行，合計 ${wan(fin.reduce((a,r)=>a+r[2],0))}戶，存股族偏好「穩定配息的金融股」很明顯。`;
+bars($("stkBars"),s.slice(0,10),r=>IND_C[r[3]]||"#999",v=>wan(v)+"戶");
+$("stkCap").textContent=`圖：${ym(D.dca_month)}定期定額前 10 名個股（顏色：綠＝金融、藍＝半導體、紫＝電子）。資料：證交所。`;
+
+// ETF 受益人數
+const h=D.holders, million=h.filter(r=>r[2]>=1e6);
+$("holdH").textContent=`${million.length} 檔 ETF 股東破百萬，${h[0][1]}獨大`;
+const hAct=h.filter(r=>/A$/.test(r[0]));
+$("holdP").textContent=`受益人數就是「有多少人持有」。${h[0][1]}約 ${wan(h[0][2])}人，超過第 2 名的兩倍。主動式 ETF 竄升最快：${hAct.slice(0,2).map(r=>`${r[1]}（${wan(r[2])}人）`).join("、")}人氣衝得很快。槓桿型的${(h.find(r=>/L$/.test(r[0]))||["",""])[1]}也有 ${wan((h.find(r=>/L$/.test(r[0]))||[0,0,0])[2])}人持有，要留意它不適合長抱。`;
+bars($("holdBars"),h.slice(0,10),r=>/A$/.test(r[0])?TYPE_C["主動式"]:/高息|股息|收益|優息|高填息/.test(r[1])?TYPE_C["高股息"]:TYPE_C["市值型"],v=>wan(v)+"人");
+$("holdCap").textContent=`圖：受益人數前 10 名 ETF（${ym(D.holders_asof)}，集保資料，玩股網整理）。`;
+
+// 理財版
+const w=D.wealth;
+$("wealthH").textContent=`人均金融資產全球第 ${w.rank}，證券占三成五`;
+$("wealthBig").innerHTML=`${(w.per_capita_twd/1e4).toFixed(0)}<small>萬元／人</small>`;
+$("wealthP").textContent=`${w.src}估算，2025 年台灣人均金融資產淨值約 ${(w.per_capita_twd/1e4).toFixed(0)} 萬元，排名全球第 ${w.rank}。證券類資產占家庭金融資產 ${w.securities_share}%，高於亞洲平均 ${w.asia_avg}%，但仍低於全球平均 ${w.global_avg}%。`;
+const g=Object.entries(w.growth), gmax=Math.max(...g.map(x=>x[1])), gc=["#3f7aa6","#d79a3a","#5f9147"];
+$("growthSplit").style.cssText+="height:auto;display:grid;gap:4px;background:none";
+$("growthSplit").innerHTML=g.map(([k,v],i)=>`<div style="display:grid;grid-template-columns:7em 1fr 3.5em;gap:6px;align-items:center;font-size:13px"><span>${k}</span><span style="height:10px;background:var(--hair);border-radius:2px;overflow:hidden"><i style="display:block;height:100%;width:${v/gmax*100}%;background:${gc[i]}"></i></span><span class="mono">+${v}%</span></div>`).join("");
+$("growthSplit").removeAttribute("aria-hidden");
+$("growthP").textContent="2025 年各類資產成長率：錢明顯從存款、保險往股票與 ETF 移動。";
+const o=D.offshore, oc=["#3f7aa6","#8a6fc4","#c45d78","#d79a3a"];
+$("offH").textContent=`國人持有境外基金 ${zhao(o.total)}元`;
+$("offSplit").setAttribute("aria-label",o.by_type.map(([k,v])=>`${k} ${(v/o.total*100).toFixed(0)}%`).join("、"));
+$("offSplit").innerHTML=o.by_type.map(([k,v],i)=>`<i style="width:${v/o.total*100}%;background:${oc[i]}"></i>`).join("");
+$("offKey").innerHTML=o.by_type.map(([k,v],i)=>`<span style="--c:${oc[i]}">${k} ${(v/o.total*100).toFixed(0)}%</span>`).join("");
+$("offP").textContent=`股票型、平衡型、債券型三分天下；其中非投資等級債（高收益債）${zhao(o.hy_bond)}元。美元計價占 ${(o.usd/o.total*100).toFixed(0)}%，南非幣計價也還有 ${wan(o.zar)}元。（${ym(o.month)}底，投信投顧公會）`;
+
+// 市場溫度
+const m=D.market, chg=(m.dca_amount/m.dca_amount_prev-1)*100;
+$("tempH").textContent=`🌡️ 市場溫度計（${ym(m.month)}）`;
+$("gauges").innerHTML=[
+  [m.retail_share+"%","散戶（自然人）成交比重",`外資 ${m.foreign_share}%`],
+  [m.daytrade_share+"%","當沖成交值占比",`平均每天 ${wan(m.daytrade_accounts)}戶當沖`],
+  [wan(m.active_accounts)+"戶","當月有交易的帳戶",""],
+  [wan(m.dca_amount)+"元","定期定額扣款金額",`比上月 ${chg>=0?"+":""}${chg.toFixed(1)}%`],
+].map(([b,t,s])=>`<div><small>${t}</small><b>${b}</b><small>${s}</small></div>`).join("");
+
+$("srcs").innerHTML=D.sources.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${t}</a></li>`).join("");
+</script>
+<!--SITE-FOOT-->

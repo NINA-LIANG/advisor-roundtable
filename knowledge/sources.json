@@ -1,0 +1,23 @@
+{
+  "_note": "理專知識庫的來源清單。只收錄可合法放進 AI 系統的內容：美國公有領域書籍與美國政府出版品。OpenStax 教科書雖免費，但其授權明文禁止未經書面許可餵給大型語言模型，因此只列為給人閱讀的延伸讀物，不進入知識庫。",
+  "checked_on": "2026-10-22",
+  "ingest": [
+    {"id": "smith-wealth", "title": "An Inquiry into the Nature and Causes of the Wealth of Nations", "author": "Adam Smith", "year": 1776, "gutenberg_id": 3300, "license": "US public domain", "advisors": ["macro", "value"], "topics": ["分工", "價格與市場", "資本累積"]},
+    {"id": "ricardo-principles", "title": "On The Principles of Political Economy, and Taxation", "author": "David Ricardo", "year": 1817, "gutenberg_id": 33310, "license": "US public domain", "advisors": ["macro"], "topics": ["比較利益", "地租", "貨幣與物價"]},
+    {"id": "mill-principles", "title": "Principles of Political Economy", "author": "John Stuart Mill", "year": 1848, "gutenberg_id": 30107, "license": "US public domain", "advisors": ["macro"], "topics": ["信用", "商業危機", "利率"]},
+    {"id": "fetter-principles", "title": "The Principles of Economics, with Applications to Practical Problems", "author": "Frank A. Fetter", "year": 1904, "gutenberg_id": 40077, "license": "US public domain", "advisors": ["macro", "value"], "topics": ["資本化價值", "利息", "時間偏好"]},
+    {"id": "straker-money-market", "title": "The Money Market", "author": "F. Straker", "gutenberg_id": 61605, "license": "US public domain", "advisors": ["macro"], "topics": ["貨幣市場", "銀行利率", "資金鬆緊"]},
+    {"id": "warren-bank-of-england", "title": "The Story of the Bank of England", "author": "Henry Warren", "gutenberg_id": 63449, "license": "US public domain", "advisors": ["macro"], "topics": ["中央銀行", "最後貸款者"]},
+    {"id": "duguid-stock-exchange", "title": "The Stock Exchange", "author": "Charles Duguid", "gutenberg_id": 59042, "license": "US public domain", "advisors": ["value", "tech"], "topics": ["交易所運作", "股票與債券", "投資與投機的差別"]},
+    {"id": "selden-psychology", "title": "Psychology of the Stock Market", "author": "G. C. Selden", "year": 1912, "gutenberg_id": 75570, "license": "US public domain", "advisors": ["tech", "mom", "quant"], "topics": ["群眾心理", "過度反應", "逆向操作"]},
+    {"id": "harper-speculation", "title": "The Psychology of Speculation: The Human Element in Stock Market Transactions", "author": "Henry Howard Harper", "year": 1926, "gutenberg_id": 73647, "license": "US public domain", "advisors": ["mom", "tech"], "topics": ["投機心理", "追高殺低", "紀律"]},
+    {"id": "harper-1929", "title": "After the Stock Market Crash of November, 1929", "author": "Henry Howard Harper", "year": 1930, "gutenberg_id": 73648, "license": "US public domain", "advisors": ["mom", "macro"], "topics": ["泡沫破裂", "槓桿風險"]},
+    {"id": "gibson-cycles", "title": "The Cycles of Speculation", "author": "Thomas Gibson", "gutenberg_id": 75687, "license": "US public domain", "advisors": ["macro", "tech", "quant"], "topics": ["景氣與股市循環", "循環的階段"]},
+    {"id": "sec-roadmap", "title": "Saving and Investing: A Roadmap To Your Financial Security", "author": "U.S. SEC Office of Investor Education and Advocacy", "url": "https://www.sec.gov/investor/pubs/sec-guide-to-savings-and-investing.pdf", "license": "US government work, public domain", "advisors": ["div", "value"], "topics": ["財務目標", "複利", "資產配置", "分散", "費用"]},
+    {"id": "investor-gov-intro", "title": "Introduction to Investing", "author": "Investor.gov (U.S. SEC)", "url": "https://www.investor.gov/introduction-investing", "license": "US government work, public domain", "advisors": ["div"], "topics": ["定期投資", "複利", "資產配置與分散"]}
+  ],
+  "read_only": [
+    {"title": "Principles of Finance 2e", "publisher": "OpenStax", "url": "https://openstax.org/details/books/principles-finance-2e", "license": "CC BY-NC-SA 4.0；明文禁止未經許可用於 LLM 或生成式 AI", "why": "本益比、股利折現、效率市場、風險與報酬的最佳免費入門教材，適合作者自己讀，不放進系統"},
+    {"title": "Principles of Economics 3e", "publisher": "OpenStax", "url": "https://openstax.org/details/books/principles-economics-3e", "license": "同上", "why": "貨幣政策、利率與總需求的章節（第 28 章）"}
+  ]
+}

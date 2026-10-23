@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body>
+<title>存款利率比較</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: 理專圓桌的姊妹頁，像一張銀行牌告看板。上方選存款種類／期別／金額 → 排行榜 → 全期別對照表 → 優利專案。刻意只做淺色主題，與另外兩頁一致。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
+  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#eef6ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h2{font-size:22px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px;min-width:0}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+.muted{color:var(--ink-soft)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-soft)}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+header h1{font-size:clamp(28px,5vw,42px)}
+header p{margin:4px 0 0;color:var(--ink-soft)}
+.links{display:flex;gap:14px;flex-wrap:wrap}
+.links a{color:var(--sky-deep);font-weight:700}
+
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px}
+@media (max-width:820px){.controls{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>span{font-size:13px;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:5px 13px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--sky);border-color:var(--sky-deep);font-weight:700}
+.chip:disabled{opacity:.4;cursor:not-allowed}
+input{background:#fff9f4;border:2px solid var(--line);border-radius:14px;padding:8px 12px;width:100%;min-width:0}
+.amt{display:flex;gap:8px;align-items:center}
+.amt input{max-width:220px}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:2px solid var(--line);border-radius:22px;overflow:hidden}
+.stats>div{padding:12px 16px;background:#f5faff;border-right:2px dashed var(--line);min-width:0}
+.stats>div:last-child{border-right:none}
+.stats b{display:block;font-family:var(--f-mono);font-weight:500;font-size:clamp(20px,3vw,28px);line-height:1.3}
+.stats small{font-size:13px;color:var(--ink-soft)}
+@media (max-width:760px){.stats{grid-template-columns:1fr 1fr}.stats>div:nth-child(2){border-right:none}.stats>div:nth-child(-n+2){border-bottom:2px dashed var(--line)}}
+.warn{background:#fff0f3;border:2px dashed var(--pink-deep);color:#9b4a5d;border-radius:18px;padding:9px 14px;font-size:14px}
+
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rank li{display:grid;grid-template-columns:34px minmax(0,190px) minmax(0,1fr) 78px 110px;gap:10px;align-items:center;padding:6px 10px;border-radius:14px}
+.rank li:nth-child(odd){background:#fff9f4}
+.rank .pos{font-family:var(--f-display);font-size:18px;text-align:center}
+.rank .bn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .bar{height:14px;border-radius:999px;background:var(--line);overflow:hidden}
+.rank .bar i{display:block;height:100%;border-radius:999px;background:var(--sky-deep)}
+.rank li.top .bar i{background:var(--pink-deep)}
+.rank .r,.rank .int{text-align:right}
+.tag{display:inline-block;font-size:11px;padding:0 7px;border-radius:999px;margin-left:6px;vertical-align:2px;background:var(--line)}
+.tag.公股{background:var(--matcha)}.tag.純網銀{background:var(--lilac)}.tag.郵局{background:var(--apricot)}.tag.外商{background:var(--sky)}
+@media (max-width:640px){.rank li{grid-template-columns:26px minmax(0,1fr) 64px;grid-template-areas:"p n r" "p b i"}
+  .rank .pos{grid-area:p}.rank .bn{grid-area:n}.rank .bar{grid-area:b}.rank .r{grid-area:r}.rank .int{grid-area:i;font-size:13px}}
+
+.tablewrap{overflow-x:auto;border-radius:16px;border:2px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+thead th{background:#f5faff;font-weight:700}
+td.best{background:#ffe3ea;font-weight:700}
+td.na{color:#cbb9ab}
+.promos{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.promo{border:2px solid var(--line);border-radius:18px;padding:12px 14px;background:#fffaf2}
+.promo b{font-family:var(--f-mono);font-size:22px;font-weight:500;color:var(--pink-deep)}
+details summary{cursor:pointer;font-weight:700}
+footer{font-size:13px;color:var(--ink-soft)}
+footer a{color:var(--sky-deep)}
+</style>
+
+<div class="wrap">
+  <style>/* 全站共用：導覽列、資料日期、名詞提示、表格、漲跌符號、觸控大小、頁尾聲明。由 build_site.py 嵌入每一頁。 */
+.sitenav{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#fffdfa;border:2px solid #f1e2d6;border-radius:22px;padding:8px 14px;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;font-size:14px;line-height:1.4;color:#4a3b32;box-shadow:0 4px 0 rgba(74,59,50,.05)}
+.sitenav a{color:#4a3b32;text-decoration:none;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.sitenav a:hover{background:#fff1e3}
+.sitenav a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.sitenav .brand{font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-size:17px;padding-left:2px}
+.sitenav .grp{display:flex;align-items:center;gap:2px}
+.sitenav .grp>span{font-size:11.5px;color:#8a7566;background:#f6efe8;border-radius:6px;padding:1px 6px;margin-right:2px}
+.sitenav .asofb{margin-left:auto;font-size:12.5px;color:#5f9147;background:#eef6e6;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.sitenav .asofb.stale{color:#9a5a00;background:#ffe8c4}
+@media (max-width:760px){
+  .sitenav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-radius:18px}
+  .sitenav::-webkit-scrollbar{display:none}
+  .sitenav .asofb{margin-left:0}
+}
+
+/* 名詞提示 */
+.gl-term{text-decoration:underline dotted #8a7566;text-underline-offset:3px;cursor:help}
+.gl-pop{position:absolute;z-index:50;max-width:min(320px,calc(100vw - 32px));background:#fffdfa;color:#4a3b32;border:2px solid #f1e2d6;border-radius:18px;
+  box-shadow:0 10px 30px rgba(74,59,50,.18);padding:10px 14px;font:14px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;text-align:left;white-space:normal}
+.gl-pop b{display:block;font-size:15px;margin-bottom:2px}
+.gl-pop a{display:inline-block;margin-top:4px;color:#4a87b5;font-weight:700}
+
+/* 漲跌：顏色之外再加符號 */
+.pc.up::before{content:"▲ ";font-size:.8em}
+.pc.down::before{content:"▼ ";font-size:.8em}
+
+/* 可橫滑的表格：左右出現陰影提示還有內容，名稱欄固定 */
+.scroll{background:
+  linear-gradient(to right,#fffdfa 30%,rgba(255,253,250,0)) left/40px 100% no-repeat local,
+  linear-gradient(to left,#fffdfa 30%,rgba(255,253,250,0)) right/40px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%,rgba(74,59,50,.16),transparent) left/14px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%,rgba(74,59,50,.16),transparent) right/14px 100% no-repeat scroll}
+@media (max-width:760px){
+  .scroll .stick{position:sticky;left:0;z-index:1;background:#fffdfa;box-shadow:4px 0 6px -4px rgba(74,59,50,.25);max-width:9.5em;overflow:hidden;text-overflow:ellipsis}
+  .scroll tr[aria-selected="true"] .stick{background:#e8f3fc}
+}
+
+/* 觸控裝置：按鈕、晶片至少 44 像素高 */
+@media (pointer:coarse){
+  .chip,.tab,.pager button,.more,select,.sitenav a{min-height:44px;display:inline-flex;align-items:center}
+}
+
+.sitefoot{max-width:1200px;margin:22px auto 0;font-size:12.5px;line-height:1.7;color:#8a7566;text-align:center;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.sitefoot a{color:#4a87b5}
+.paper>.sitenav{margin-bottom:14px}
+
+/* 左側目錄：從左邊滑出，分組、圖示、右側數字 */
+.navbtn{border:none;background:#fff1e3;border-radius:12px;width:36px;height:36px;font-size:18px;line-height:1;color:#4a3b32;cursor:pointer;flex:none}
+.navbtn:hover{background:#ffd9a0}
+.drawer-bg{position:fixed;inset:0;background:rgba(74,59,50,.35);z-index:90}
+.drawer{position:fixed;top:0;left:0;bottom:0;z-index:91;width:min(340px,86vw);overflow-y:auto;background:#fffaf4;border-right:2px solid #f1e2d6;
+  box-shadow:8px 0 30px rgba(74,59,50,.18);padding:16px 14px 24px;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:#4a3b32;
+  padding-left:max(14px,env(safe-area-inset-left,0px));animation:drawerIn .2s ease-out}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.drawer{animation:none}}
+.dhead{display:flex;align-items:center;gap:10px;padding:2px 4px 14px;border-bottom:2px dashed #f1e2d6;margin-bottom:6px}
+.dlogo{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffd9a0,#f7b7c5);display:grid;place-items:center;font-size:22px;flex:none}
+.dhead b{display:block;font-family:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;font-weight:400;font-size:20px;line-height:1.2}
+.dhead small{color:#8a7566;font-size:12.5px;letter-spacing:.04em}
+.dclose{margin-left:auto;border:none;background:none;font-size:20px;color:#8a7566;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.dclose:hover{background:#fff1e3}
+.dgrp{padding:10px 0 4px}
+.dgrp h4{margin:0 6px 4px;font-size:13px;font-weight:700;color:#8a7566;display:flex;gap:8px;align-items:baseline}
+.dgrp h4 small{font-weight:400;font-size:12px}
+.drawer a{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:46px;padding:6px 10px;border-radius:14px;color:#4a3b32;text-decoration:none;font-size:16px}
+.drawer a:hover{background:#fff1e3}
+.drawer a[aria-current="page"]{background:#ffd9a0;font-weight:700}
+.drawer a i{font-style:normal;font-size:18px;text-align:center}
+.drawer a small{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;color:#8a7566}
+.dnote{margin:14px 8px 0;font-size:12px;color:#8a7566}
+</style>
+<div class="drawer-bg" hidden></div><aside class="drawer" id="sitedrawer" aria-label="網站目錄" hidden><div class="dhead"><span class="dlogo" aria-hidden="true">✨</span><div><b>理專圓桌</b><small>Advisor Roundtable</small></div><button class="dclose" type="button" aria-label="關閉目錄">✕</button></div><div class="dgrp"><h4>學<small>打好基本功</small></h4><a href="learn.html"><i aria-hidden="true">🌱</i><span>入門教室</span><small>27</small></a><a href="news.html"><i aria-hidden="true">📰</i><span>人氣小報</span><small>月刊</small></a></div><div class="dgrp"><h4>查<small>看懂市場資料</small></h4><a href="market.html"><i aria-hidden="true">📇</i><span>台股全覽</span><small>2,352</small></a><a href="dividend.html"><i aria-hidden="true">💰</i><span>除權息行事曆</span><small>45</small></a><a href="rates.html" aria-current="page"><i aria-hidden="true">🏦</i><span>存款利率</span><small>37</small></a></div><div class="dgrp"><h4>做<small>練習自己判斷</small></h4><a href="index.html"><i aria-hidden="true">✨</i><span>理專圓桌</span><small>6</small></a><a href="sim.html"><i aria-hidden="true">🐷</i><span>百萬模擬倉</span><small>100萬</small></a><a href="lab.html"><i aria-hidden="true">🧪</i><span>理專考場</span><small>48 題</small></a></div><div class="dgrp"><h4>站<small>認識這個網站</small></h4><a href="about.html"><i aria-hidden="true">📖</i><span>關於本站</span><small></small></a></div><p class="dnote">示範與教育用途，非投資建議</p></aside>
+<nav class="sitenav" aria-label="網站導覽"><button class="navbtn" type="button" aria-controls="sitedrawer" aria-expanded="false" aria-label="打開目錄">☰</button><a class="brand" href="index.html">✨ 理專圓桌</a><div class="grp"><span>學</span><a href="learn.html">入門教室</a><a href="news.html">人氣小報</a></div><div class="grp"><span>查</span><a href="market.html">台股全覽</a><a href="dividend.html">除權息</a><a href="rates.html" aria-current="page">存款利率</a></div><div class="grp"><span>做</span><a href="index.html">理專圓桌</a><a href="sim.html">百萬模擬倉</a><a href="lab.html">理專考場</a></div><a href="about.html">關於本站</a><span class="asofb" data-asof="2026-10-22">資料日期 2026-10-22</span></nav>
+  <header>
+    <div>
+      <div class="eyebrow">理專圓桌 · 姊妹頁</div>
+      <h1>🏦 存款利率比較</h1>
+      <p>台灣各家銀行新臺幣牌告利率，<span id="asof"></span> 更新</p>
+    </div>
+  </header>
+
+  <section class="box controls" aria-label="篩選">
+    <div class="field"><span>存款種類</span><div class="chips" id="kind"></div></div>
+    <div class="field"><span>存期</span><div class="chips" id="term"></div></div>
+    <div class="field"><span>利率</span><div class="chips" id="fix"></div></div>
+    <div class="field"><span>銀行類型</span><div class="chips" id="cat"></div></div>
+    <div class="field"><span>存入金額（元）</span>
+      <div class="amt"><input id="amt" type="text" inputmode="numeric" value="1,000,000" aria-label="存入金額"><span class="muted" id="amtTxt"></span></div>
+    </div>
+  </section>
+
+  <section class="stats" aria-label="摘要">
+    <div><small>最高</small><b id="sMax">–</b><small id="sMaxN"></small></div>
+    <div><small>平均</small><b id="sAvg">–</b><small id="sCnt"></small></div>
+    <div><small>最高 vs 最低，一年利息差</small><b id="sGap">–</b><small>以上方金額計</small></div>
+    <div><small>放活儲一年（臺灣銀行）</small><b id="sBase">–</b><small>對照組</small></div>
+  </section>
+  <p class="warn" id="warn" hidden></p>
+
+  <section class="box">
+    <h2 id="rankTitle">排行榜</h2>
+    <p class="muted" id="rankSub" style="margin:4px 0 12px"></p>
+    <ol class="rank" id="rank"></ol>
+  </section>
+
+  <section class="box">
+    <h2>全期別對照表</h2>
+    <p class="muted" style="margin:4px 0 12px">同一種存款、所有存期一次看。每一欄最高的格子標粉紅色；「–」是該銀行沒有掛這個期別或資料還沒抓到。</p>
+    <div class="tablewrap"><table id="grid"></table></div>
+  </section>
+
+  <section class="box">
+    <h2>🎀 優利專案</h2>
+    <p class="muted" style="margin:4px 0 12px">比牌告高，但多半限新資金、限額度或有期限。<span id="promoAsof"></span></p>
+    <div class="promos" id="promos"></div>
+  </section>
+
+  <section class="box">
+    <details>
+      <summary>📘 看懂利率表的 6 件事</summary>
+      <ul>
+        <li><b>活期 vs 活儲</b>：活期存款公司行號也能開；個人一般開的是「活期儲蓄存款」，利率較高。</li>
+        <li><b>定存 vs 定儲</b>：存一年以上，選「定期儲蓄存款」通常比較高，但只限個人與非營利團體。</li>
+        <li><b>固定 vs 機動</b>：固定利率存進去就不變；機動利率會跟著銀行牌告調整。預期降息選固定、預期升息選機動。</li>
+        <li><b>大額門檻</b>：多數銀行 300 萬或 500 萬以上改用「大額」利率，常常只剩一般利率的一半。大錢可以拆成幾張單、或分到不同銀行。</li>
+        <li><b>二代健保</b>：單筆利息超過 2 萬元，會先扣 2.11% 補充保費。拆單或選按月領息可以避開。</li>
+        <li><b>提前解約</b>：只會少拿利息（通常打八折），不會虧本金。</li>
+      </ul>
+    </details>
+  </section>
+
+  <footer>
+    <p id="srcNote"></p>
+    <p>資料來源：各銀行官網牌告、<a href="https://cpx.cbc.gov.tw/BIRWEB/" target="_blank" rel="noopener">中央銀行牌告利率資訊網</a>；部分銀行與優利專案參考 <a href="https://rich01.com/twd-deposit-all/" target="_blank" rel="noopener">市場先生整理</a>。利息試算為單利概算，實際以銀行計算為準。本頁只整理公開資訊，非投資建議。</p>
+  </footer>
+</div>
+
+<script>
+const R={"asof":"2026-10-22","note":"各銀行官網牌告（一般金額，未達大額門檻）。第一份快照由人工整理，之後由 scripts/fetch_rates.py 從中央銀行「牌告利率資訊網」每日更新。","banks":[{"n":"臺灣銀行","k":"公股","src":"https://rate.bot.com.tw/twd","d":{"活期":0.705,"活儲":0.825,"薪轉":0.885},"td":{"1":[1.225,1.225],"3":[1.29,1.285],"6":[1.465,1.46],"9":[1.58,1.575],"12":[1.7,1.69],"24":[1.73,1.73],"36":[1.745,1.745]},"ts":{"12":[1.725,1.715],"24":[1.75,1.75],"36":[1.785,1.785]},"note":"數位存款帳戶 10 萬內＝定儲一年機動＋0.36%"},{"n":"臺灣土地銀行","k":"公股","src":"https://rate.landbank.com.tw/zh-TW/TWDInfo?mid=23","d":{"活期":0.705,"活儲":0.825,"薪轉":0.885},"td":{"1":[1.225,1.225],"3":[1.285,1.285],"6":[1.46,1.46],"9":[1.575,1.575],"12":[1.7,1.7],"24":[1.705,1.71],"36":[1.715,1.72]},"ts":{"12":[1.725,1.725],"24":[1.735,1.74],"36":[1.745,1.75]}},{"n":"合作金庫","k":"公股","src":"https://www.tcb-bank.com.tw/personal-banking/deposit-exchange/deposit-rate/deposit-loans-rate/twd-deposit-rate","d":{"活期":0.705,"活儲":0.825,"薪轉":0.875},"td":{"1":[1.225,null],"3":[1.285,1.285],"6":[1.465,1.46],"9":[1.58,null],"12":[1.7,null],"24":[1.705,null],"36":[1.71,null]},"ts":{"12":[1.725,1.715],"24":[1.73,1.73],"36":[1.745,1.745]},"note":"數位存款帳戶活儲 1.5%（限額）"},{"n":"第一銀行","k":"公股","src":"https://ebank.firstbank.com.tw/BATcpibWeb/html/FQ1001.html","d":{"活期":0.705,"活儲":0.855,"薪轉":0.885},"td":{"1":[1.225,1.225],"3":[1.285,1.285],"6":[1.435,1.435],"9":[1.545,1.545],"12":[1.7,1.69],"24":[1.715,1.715],"36":[1.715,1.715]},"ts":{"12":[1.755,1.715],"24":[1.76,1.895],"36":[1.77,1.895]}},{"n":"華南銀行","k":"公股","src":"https://event.hncb.com.tw/wps/portal/HNCB/interest-rate/nt-interest-rate/","d":{"活期":0.705,"活儲":0.855,"薪轉":0.885},"td":{"1":[1.225,null],"3":[1.285,1.285],"6":[1.435,1.435],"9":[1.545,null],"12":[1.7,null],"24":[1.7,null],"36":[1.705,null]},"ts":{"12":[1.76,1.72],"24":[1.76,1.76],"36":[1.76,1.895]}},{"n":"彰化銀行","k":"公股","src":"https://www.bankchb.com/frontend/G0210_020104_query.jsp","d":{"活期":0.705,"活儲":0.855,"薪轉":0.885},"td":{"1":[1.225,1.225],"3":[1.285,1.285],"6":[1.435,1.435],"9":[1.545,1.545],"12":[1.7,1.69],"24":[1.71,1.715],"36":[1.715,1.715]},"ts":{"12":[1.755,1.715],"24":[1.76,1.795],"36":[1.77,1.895]}},{"n":"兆豐銀行","k":"公股","src":"https://www.megabank.com.tw/personal/savings/deposit-service/rate/twd-rate","d":{"活期":0.675,"活儲":0.805,"薪轉":0.86},"td":{"1":[1.225,1.225],"3":[1.285,1.285],"6":[1.445,1.445],"9":[1.565,1.565],"12":[1.7,1.69],"24":[1.7,1.705],"36":[1.7,1.705]},"ts":{"12":[1.725,1.715],"24":[1.725,1.725],"36":[1.725,1.73]}},{"n":"中華郵政","k":"郵局","src":"https://ipost.post.gov.tw/pst/index.html","d":{"活儲":0.83},"td":{"1":[1.215,null],"3":[1.285,1.285],"6":[1.45,1.435],"9":[1.48,null],"12":[1.725,1.685],"24":[1.74,1.72],"36":[1.74,1.74]},"ts":{},"note":"郵局叫「定期儲金」，存簿儲金在 100 萬內利息免稅"},{"n":"國泰世華","k":"民營","src":"https://www.cathaybk.com.tw/cathaybk/personal/product/deposit/rate/","d":{"活期":0.635,"活儲":0.695,"薪轉":0.745},"td":{"1":[1.205,1.225],"3":[1.245,1.285],"6":[1.375,1.425],"9":[1.495,1.56],"12":[1.645,1.69],"24":[1.645,1.69],"36":[1.645,1.69]},"ts":{"12":[1.665,1.715],"24":[1.665,1.715],"36":[1.665,1.715]}},{"n":"中國信託","k":"民營","src":"https://tw.stock.yahoo.com/bank/8220000","d":{"活期":0.645,"活儲":0.725},"td":{"1":[1.215,1.225],"3":[1.245,1.285],"6":[1.375,1.435],"9":[1.495,1.545],"12":[1.65,1.69],"24":[1.655,1.695],"36":[1.655,1.695]},"ts":{"12":[1.675,1.715],"24":[1.68,1.72],"36":[1.68,1.72]}},{"n":"台北富邦","k":"民營","src":"https://tw.stock.yahoo.com/bank/0120000","d":{"活期":0.635,"活儲":0.695},"td":{"1":[1.195,1.225],"3":[1.255,1.285],"6":[1.415,1.455],"9":[1.545,1.585],"12":[1.65,1.69],"24":[1.65,1.69],"36":[1.65,1.69]},"ts":{"12":[1.675,1.715],"24":[1.675,1.715],"36":[1.675,1.715]}},{"n":"玉山銀行","k":"民營","src":"https://www.esunbank.com/zh-tw/personal/deposit/rate/twd/deposit-rate","d":{"活期":0.635,"活儲":0.715,"薪轉":0.755},"td":{"1":[1.225,1.225],"3":[1.28,1.28],"6":[1.445,1.425],"9":[1.585,1.565],"12":[1.705,1.685],"24":[1.705,1.685],"36":[1.705,1.685]},"ts":{"12":[1.735,1.715],"24":[1.735,1.715],"36":[1.735,1.715]}},{"n":"台新銀行","k":"民營","src":"https://www.taishinbank.com.tw/TSB/personal/deposit/lookup/NTD/","d":{"活期":0.655,"活儲":0.725,"薪轉":0.74},"td":{"1":[1.215,1.225],"3":[1.235,1.275],"6":[1.365,1.425],"9":[1.505,1.555],"12":[1.635,1.685],"24":[1.635,1.685],"36":[1.635,1.66]},"ts":{"12":[1.665,1.715],"24":[1.665,1.715],"36":[1.665,1.715]},"note":"Richart 等 Money Market 活儲 50 萬以上 0.955%～1.235%"},{"n":"LINE Bank","k":"純網銀","src":"https://accessibility.linebank.com.tw/interest-rate","d":{"活儲":0.755,"薪轉":0.885},"td":{"1":[1.225,1.225],"3":[1.29,1.285],"6":[1.485,1.48],"9":[1.6,1.605]},"ts":{"12":[1.81,1.77],"24":[1.82,1.78],"36":[1.82,1.78]}},{"n":"樂天銀行","k":"純網銀","src":"https://www.rakuten-bank.com.tw/portal/product/interest","d":{"活儲":0.65},"td":{"1":[1.25,null],"3":[1.375,null],"6":[1.475,null],"12":[1.775,null],"24":[1.785,null],"36":[1.805,null]},"ts":{},"note":"定存皆為固定利率；另有新戶、優存專案"},{"n":"將來銀行","k":"純網銀","src":"https://www.nextbank.com.tw/rate","d":{},"td":{"3":[null,1.3],"6":[null,1.475]},"ts":{"12":[null,1.81],"24":[null,1.81],"36":[null,1.81]},"note":"官網資料以程式載入，暫取市場先生 10/1 整理"},{"n":"陽信銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.46]},"ts":{"12":[null,1.725],"24":[null,1.76],"36":[null,1.77]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"新光銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.46]},"ts":{"12":[null,1.715],"24":[null,1.75],"36":[null,1.775]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"台中商銀","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.46]},"ts":{"12":[null,1.715],"24":[null,1.725],"36":[null,1.725]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"王道銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.255],"6":[null,1.455]},"ts":{"12":[null,1.715],"24":[null,1.72],"36":[null,1.725]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"永豐銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.445]},"ts":{"12":[null,1.715],"24":[null,1.715],"36":[null,1.715]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"台灣企銀","k":"公股","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.435]},"ts":{"12":[null,1.715],"24":[null,1.745],"36":[null,1.82]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"凱基銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.435]},"ts":{"12":[null,1.715],"24":[null,1.735],"36":[null,1.735]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"遠東銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.435]},"ts":{"12":[null,1.715],"24":[null,1.715],"36":[null,1.735]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"三信商銀","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.275],"6":[null,1.43]},"ts":{"12":[null,1.715],"24":[null,1.73],"36":[null,1.74]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"上海銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.275],"6":[null,1.415]},"ts":{"12":[null,1.715],"24":[null,1.72],"36":[null,1.725]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"聯邦銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.255],"6":[null,1.405]},"ts":{"12":[null,1.715],"24":[null,1.795],"36":[null,1.895]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"華泰商銀","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.275],"6":[null,1.425]},"ts":{"12":[null,1.705],"24":[null,1.725],"36":[null,1.735]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"星展銀行","k":"外商","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.225],"6":[null,1.335]},"ts":{"12":[null,1.705],"24":[null,1.685],"36":[null,1.685]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"瑞興商銀","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.455]},"ts":{"12":[null,1.7],"24":[null,1.705],"36":[null,1.71]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"安泰銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.275],"6":[null,1.415]},"ts":{"12":[null,1.695],"24":[null,1.715],"36":[null,1.725]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"板信商銀","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.275],"6":[null,1.415]},"ts":{"12":[null,1.695],"24":[null,1.695],"36":[null,1.695]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"元大銀行","k":"民營","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.255],"6":[null,1.385]},"ts":{"12":[null,1.675],"24":[null,1.68],"36":[null,1.68]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"高雄銀行","k":"公股","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.215],"6":[null,1.365]},"ts":{"12":[null,1.665],"24":[null,1.665],"36":[null,1.685]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"農業金庫","k":"公股","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.285],"6":[null,1.425]},"ts":{"12":[null,1.655],"24":[null,1.71],"36":[null,1.717]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"匯豐銀行","k":"外商","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,1.265],"6":[null,1.395]},"ts":{"12":[null,1.655],"24":[null,1.655],"36":[null,1.655]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"},{"n":"渣打銀行","k":"外商","src":"https://rich01.com/twd-deposit-all/","d":{},"td":{"3":[null,0.99],"6":[null,1.12]},"ts":{"12":[null,1.32],"24":[null,1.36],"36":[null,1.43]},"note":"只有部分期別（市場先生 10/1 整理的機動利率）"}],"promos":[{"n":"王道銀行","r":"2.4%","t":"6 個月","until":"2026-12-31","cond":"新資金，單筆最高 1000 萬，2 萬起"},{"n":"台新銀行 Richart","r":"2.2%","t":"6 個月","until":"2027-03-31","cond":"限 Richart、新資金，單筆上限 200 萬"},{"n":"上海商銀","r":"2.2%","t":"6 個月","until":"2026-12-31","cond":"55 歲以上本人＋子孫，臨櫃，20 萬起"},{"n":"LINE Bank","r":"1.88%／2.2%","t":"6／13 個月","until":"2026-10-30","cond":"單筆最高 300 萬，100 元起"},{"n":"遠東商銀","r":"2.05%","t":"12 個月","until":"2026-12-31","cond":"新資金，5 萬起"},{"n":"樂天銀行","r":"2.0%","t":"7 個月","until":"2026-10-31","cond":"限自然人、網銀或 App，單筆最高 300 萬"},{"n":"元大銀行","r":"1.9%","t":"6 個月","until":"2026-12-31","cond":"新資金，30 萬起"},{"n":"台北富邦","r":"1.80%／1.85%","t":"6／12 個月","until":"2026-10-31","cond":"新資金、臨櫃，30 萬起"},{"n":"滙豐銀行","r":"2.2%～4.0%","t":"3～6 個月","until":"2026-12-31","cond":"限卓越理財以上（資產 300 萬起）"}],"promos_src":"https://rich01.com/twd-deposit-all/","promos_asof":"2026-10-01"};
+const TERMS=[["1","1 個月"],["3","3 個月"],["6","6 個月"],["9","9 個月"],["12","1 年"],["24","2 年"],["36","3 年"]];
+const KINDS=[["活儲","活期儲蓄"],["活期","活期存款"],["薪轉","薪轉活儲"],["td","定期存款"],["ts","定期儲蓄"]];
+const CATS=["全部","公股","民營","純網銀","郵局","外商"];
+const DEMAND=["活儲","活期","薪轉"];
+const store={get(k){try{return localStorage.getItem("rates."+k)}catch(e){return null}},set(k,v){try{localStorage.setItem("rates."+k,v)}catch(e){}}};
+const st={kind:store.get("kind")||"ts",term:store.get("term")||"12",fix:store.get("fix")||"1",cat:store.get("cat")||"全部",amt:1e6};
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString("zh-TW");
+const pct=x=>x==null?"–":x.toFixed(3).replace(/0$/,"")+"%";
+
+// 取某銀行在目前條件下的利率；定期類若選的那種利率沒掛，就退回另一種
+function rateOf(b,kind,term,fix){
+  if(DEMAND.includes(kind)) return b.d[kind]??null;
+  const p=(b[kind]||{})[term]; if(!p) return null;
+  return p[+fix]??p[1-fix]??null;
+}
+function months(){return DEMAND.includes(st.kind)?12:+st.term}
+function interest(r){return st.amt*r/100*months()/12}
+
+function chips(el,items,key,onPick){
+  el.innerHTML="";
+  for(const [v,label] of items){
+    const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=label;b.dataset.v=v;
+    b.setAttribute("aria-pressed",String(st[key]===v));
+    b.onclick=()=>{st[key]=v;store.set(key,v);onPick&&onPick();render()};
+    el.appendChild(b);
+  }
+}
+function syncChips(){
+  for(const id of ["kind","term","fix","cat"]) for(const b of $(id).children) b.setAttribute("aria-pressed",String(st[id]===b.dataset.v));
+  const demand=DEMAND.includes(st.kind);
+  for(const b of $("term").children) b.disabled=demand||(st.kind==="ts"&&+b.dataset.v<12);
+  for(const b of $("fix").children) b.disabled=demand;
+}
+function fixTerm(){if(st.kind==="ts"&&+st.term<12){st.term="12";store.set("term","12")}}
+
+function render(){
+  syncChips();
+  const banks=R.banks.filter(b=>st.cat==="全部"||b.k===st.cat);
+  const rows=banks.map(b=>({b,r:rateOf(b,st.kind,st.term,st.fix)})).filter(x=>x.r!=null).sort((a,c)=>c.r-a.r);
+  const kindName=KINDS.find(k=>k[0]===st.kind)[1];
+  const termName=DEMAND.includes(st.kind)?"放一年":TERMS.find(t=>t[0]===st.term)[1];
+  $("rankTitle").textContent=`${kindName} · ${termName} 排行榜`;
+  $("rankSub").textContent=rows.length?`共 ${rows.length} 家有掛牌。右邊是存 ${fmt(st.amt)} 元、${termName}的單利概算利息。`:"這個條件下沒有銀行掛牌，換個存期或銀行類型看看。";
+  const max=rows[0]?.r||0,min=rows.at(-1)?.r||0;
+  $("rank").innerHTML=rows.map((x,i)=>`<li class="${i<3?"top":""}"><span class="pos">${i<3?["🥇","🥈","🥉"][i]:i+1}</span>
+    <span class="bn">${x.b.n}<span class="tag ${x.b.k}">${x.b.k}</span></span>
+    <span class="bar" aria-hidden="true"><i style="width:${max?Math.max(4,(x.r-min*.9)/(max-min*.9)*100):0}%"></i></span>
+    <span class="r mono">${pct(x.r)}</span><span class="int mono">${fmt(interest(x.r))} 元</span></li>`).join("");
+  const avg=rows.reduce((s,x)=>s+x.r,0)/(rows.length||1);
+  $("sMax").textContent=rows.length?pct(max):"–";$("sMaxN").textContent=rows[0]?.b.n||"";
+  $("sAvg").textContent=rows.length?pct(avg):"–";$("sCnt").textContent=`${rows.length} 家平均`;
+  $("sGap").textContent=rows.length?fmt(st.amt*(max-min)/100)+" 元":"–";
+  const bot=R.banks.find(b=>b.n==="臺灣銀行");
+  $("sBase").textContent=fmt(st.amt*bot.d["活儲"]/100)+" 元";
+  const w=[];
+  if(st.amt>=3e6) w.push("存款 300 萬以上，多數銀行會改用「大額」利率（常常只有一般利率的一半），上面的一般牌告可能不適用。可以拆單或分散到不同銀行。");
+  const perPay=DEMAND.includes(st.kind)?interest(max)/2:interest(max);
+  if(perPay>2e4) w.push(`單筆利息約 ${fmt(perPay)} 元，超過 2 萬元會被扣 2.11% 二代健保補充保費（約 ${fmt(perPay*.0211)} 元）。拆單或選按月領息可避開。`);
+  $("warn").hidden=!w.length;$("warn").innerHTML=w.join("<br>");
+  grid(banks);
+}
+
+function grid(banks){
+  const t=$("grid");
+  if(DEMAND.includes(st.kind)){
+    const cols=KINDS.filter(k=>DEMAND.includes(k[0]));
+    const list=banks.filter(b=>cols.some(c=>b.d[c[0]]!=null)).sort((a,c)=>(c.d[st.kind]??0)-(a.d[st.kind]??0));
+    const best=cols.map(c=>Math.max(...list.map(b=>b.d[c[0]]??-1)));
+    t.innerHTML=`<thead><tr><th>銀行</th>${cols.map(c=>`<th>${c[1]}</th>`).join("")}</tr></thead><tbody>`+
+      list.map(b=>`<tr><td>${b.n}</td>${cols.map((c,i)=>{const v=b.d[c[0]];return `<td class="mono ${v==null?"na":v===best[i]?"best":""}">${pct(v)}</td>`}).join("")}</tr>`).join("")+"</tbody>";
+    return;
+  }
+  const cols=TERMS.filter(x=>st.kind!=="ts"||+x[0]>=12);
+  const list=banks.filter(b=>cols.some(c=>rateOf(b,st.kind,c[0],st.fix)!=null))
+    .sort((a,c)=>(rateOf(c,st.kind,st.term,st.fix)??0)-(rateOf(a,st.kind,st.term,st.fix)??0));
+  const best=cols.map(c=>Math.max(...list.map(b=>rateOf(b,st.kind,c[0],st.fix)??-1)));
+  t.innerHTML=`<thead><tr><th>銀行</th>${cols.map(c=>`<th>${c[1]}</th>`).join("")}</tr></thead><tbody>`+
+    list.map(b=>`<tr><td>${b.n}</td>${cols.map((c,i)=>{const v=rateOf(b,st.kind,c[0],st.fix);return `<td class="mono ${v==null?"na":v===best[i]?"best":""}">${pct(v)}</td>`}).join("")}</tr>`).join("")+"</tbody>";
+}
+
+function init(){
+  $("asof").textContent=R.asof;
+  $("srcNote").textContent=R.note;
+  $("promoAsof").textContent=`整理日期 ${R.promos_asof}，申辦前請到銀行官網確認。`;
+  $("promos").innerHTML=R.promos.map(p=>`<div class="promo"><div class="eyebrow">${p.n}</div><b>${p.r}</b> <span class="muted">${p.t}</span><div style="font-size:13px">${p.cond}</div><div class="muted" style="font-size:12px">到 ${p.until}</div></div>`).join("");
+  chips($("kind"),KINDS,"kind",fixTerm);
+  chips($("term"),TERMS,"term");
+  chips($("fix"),[["1","機動"],["0","固定"]],"fix");
+  chips($("cat"),CATS.map(c=>[c,c]),"cat");
+  fixTerm();
+  const amt=$("amt");
+  const read=()=>{const v=+amt.value.replace(/[^\d]/g,"");st.amt=v>0?v:0;$("amtTxt").textContent=st.amt>=1e4?`≈ ${(st.amt/1e4).toLocaleString("zh-TW")} 萬`:"";render()};
+  amt.addEventListener("input",read);
+  amt.addEventListener("blur",()=>{amt.value=fmt(st.amt)});
+  read();
+}
+init();
+</script>
+<footer class="sitefoot">示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；依證券投資信託及顧問法，提供有價證券推介建議並收取報酬須取得投顧執照。實際投資請自行判斷並諮詢合格專業人員。 <a href="about.html">關於本站與資料來源</a></footer>
+<script>window.__GL__={"terms":[{"g":"商品","k":"股票","d":"公司的一小部分所有權。公司賺錢，股價和股利可能成長；公司經營不善，也可能大跌甚至下市。"},{"g":"商品","k":"ETF","d":"Exchange Traded Fund，在交易所買賣的基金。一檔 ETF 裡面裝了一籃子股票或債券，買一張就等於分散投資。"},{"g":"商品","k":"市值型 ETF","d":"依公司市值大小決定比重，例如追蹤台灣前 50 大公司的 ETF。台積電這類大公司占比會很高。"},{"g":"商品","k":"高股息 ETF","d":"挑選殖利率較高的股票組成，配息較多。要注意配息可能來自本金或收益平準金，配息高不等於總報酬高。"},{"g":"商品","k":"債券","d":"借錢給政府或公司，定期領利息、到期拿回本金。利率上升時，舊債券的價格會下跌。"},{"g":"商品","k":"定存","d":"把錢放在銀行一段固定期間，換取比活存高的利率。台灣每家銀行每人的存款受存保保障最高 300 萬元。"},{"g":"指標","k":"殖利率","d":"一年股利 ÷ 股價。股價 100 元、配 5 元，殖利率 5%。股價大跌時殖利率會「看起來」變高，要小心。"},{"g":"指標","k":"本益比 (P/E)","d":"股價 ÷ 每股盈餘 (EPS)。代表用幾年的獲利可以買回這個價格。越高代表市場對未來期待越高，也可能越貴。"},{"g":"指標","k":"EPS","d":"每股盈餘，公司稅後淨利 ÷ 股數。代表每一股替你賺了多少錢。"},{"g":"指標","k":"總報酬","d":"價差 + 股利一起算才是真正的報酬。只看配息或只看股價都不完整。"},{"g":"指標","k":"內扣費用","d":"ETF 或基金每年從資產裡直接扣掉的管理費、保管費等，不會另外收你錢，所以常被忽略。"},{"g":"交易","k":"除權息","d":"公司發股利的那天，股價會先扣掉股利金額。之後漲回原價叫「填息」。只是左手換右手，不是白拿。"},{"g":"交易","k":"零股","d":"台股一張是 1,000 股，不到一張的叫零股。盤中和盤後都可以買零股，小額也能投資。"},{"g":"交易","k":"定期定額","d":"每月固定日期、固定金額自動買進。很多券商最低 100 元起。"},{"g":"交易","k":"融資融券","d":"跟券商借錢買股（融資）或借股票來賣（融券）。槓桿會放大盈虧，跌破維持率會被追繳或斷頭。"},{"g":"風險","k":"波動","d":"價格上下跳動的幅度。波動大不一定是壞事，但你要能承受帳面上的大起大落。"},{"g":"風險","k":"通膨","d":"物價每年上漲，錢放著不動購買力會縮水。通膨 2% 的話，100 萬十年後大約只剩 82 萬的購買力。"},{"g":"風險","k":"匯率風險","d":"買美股或外幣資產，台幣升值時換回來會少。外幣定存的高利率可能被匯差吃掉。"},{"g":"風險","k":"資產配置","d":"把錢分在股票、債券、現金等不同資產，讓它們互相抵消一部分的風險。"},{"g":"風險","k":"再平衡","d":"定期把資產比例調回原本的設定。等於自動做到「漲多賣一點、跌多買一點」。"},{"g":"指標","k":"股價淨值比 (P/B)","d":"股價 ÷ 每股淨值。低於 1 代表股價比公司帳面上的淨資產還便宜，但也可能是市場不看好它的獲利能力。"},{"g":"指標","k":"成交值","d":"一天之內這檔股票成交的總金額。成交值大代表買賣的人多，想賣的時候比較容易賣得掉。"},{"g":"股利","k":"填息","d":"除息後股價漲回除息前一天的收盤價。有填息，領到的股利才算真的賺到；一直沒填回來叫「貼息」。"},{"g":"股利","k":"貼息","d":"除息後股價一直沒漲回除息前的價格。領到的股利被股價下跌抵銷，帳面上等於沒賺。"},{"g":"股利","k":"現金增資","d":"公司發行新股向股東籌錢。這不是發股利，股東要自己出錢認購，不認購的話持股比例會被稀釋。"},{"g":"股利","k":"收益平準金","d":"ETF 把新申購資金裡含的「未分配收益」先存起來，用來穩定配息。配息裡平準金占比高，代表不全是成分股真正賺來的股利。"},{"g":"商品","k":"上市／上櫃","d":"上市股票在證交所交易，上櫃股票在櫃買中心交易。上櫃公司通常規模較小，股價波動也可能比較大。"}],"url":"learn.html"};
+// 全站共用：資料日期過期提醒、名詞提示。由 build_site.py 嵌入每一頁，GL 是入門教室的名詞表。
+(()=>{
+  // 資料日期：超過 3 個交易日（只算週一到週五）沒更新就變橘色
+  const b=document.querySelector(".sitenav .asofb[data-asof]");
+  if(b){
+    const d=new Date(b.dataset.asof+"T00:00:00"),now=new Date();let n=0;
+    for(const x=new Date(d);x<now;x.setDate(x.getDate()+1)){const w=x.getDay();if(x>d&&w&&w<6)n++}
+    if(n>3){b.classList.add("stale");b.textContent+="・資料可能過期"}
+  }
+
+  // 左側目錄：☰ 打開，✕、點背景或按 Esc 關閉，關閉後焦點回到 ☰
+  const nb=document.querySelector(".navbtn"),dr=document.getElementById("sitedrawer"),bg=document.querySelector(".drawer-bg");
+  if(nb&&dr){
+    const show=on=>{dr.hidden=bg.hidden=!on;nb.setAttribute("aria-expanded",on);if(on)(dr.querySelector("[aria-current]")||dr.querySelector("a")).focus();else nb.focus()};
+    nb.addEventListener("click",()=>show(true));
+    dr.querySelector(".dclose").addEventListener("click",()=>show(false));
+    bg.addEventListener("click",()=>show(false));
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dr.hidden)show(false)});
+  }
+
+  // 手機上導覽列可橫滑：把目前這一頁捲到看得見的位置
+  const nv=document.querySelector(".sitenav"),cur=nv&&nv.querySelector("[aria-current]");
+  if(cur&&nv.scrollWidth>nv.clientWidth)nv.scrollLeft=cur.offsetLeft-nv.clientWidth/2+cur.offsetWidth/2;
+
+  // 名詞提示：表頭、統計卡標題與 data-gl 元素裡出現的名詞加底線，點一下看白話解釋
+  const GL=window.__GL__||{terms:[],url:""};
+  const SKIP=new Set(["股票","ETF","債券","定存","波動","通膨"]);
+  const T=[];
+  for(const t of GL.terms){
+    if(SKIP.has(t.k))continue;
+    const names=[t.k.replace(/\s*\(.*\)$/,"")];
+    t.k.split("／").forEach(x=>names.push(x));
+    if(/淨值比/.test(t.k))names.push("淨值比");
+    for(const n of new Set(names))if(n.length>=2)T.push([n,t]);
+  }
+  T.sort((a,b)=>b[0].length-a[0].length);
+  const SEL="th,.stats small,.kv small,.fact>span,.eyebrow,[data-gl]";
+  function wrap(el){
+    if(el.dataset.gld)return;el.dataset.gld=1;
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const nodes=[];
+    while(walker.nextNode())nodes.push(walker.currentNode);
+    for(const node of nodes){
+      if(node.parentElement.closest("button,a,.gl-term,input,select,option"))continue;
+      const s=node.nodeValue;let hit=null;
+      for(const [n,t] of T){const i=s.indexOf(n);if(i>=0){hit=[i,n,t];break}}
+      if(!hit)continue;
+      const [i,n,t]=hit,span=document.createElement("span");
+      span.className="gl-term";span.tabIndex=0;span.setAttribute("role","button");span.dataset.k=t.k;span.textContent=n;
+      const after=node.splitText(i);after.nodeValue=after.nodeValue.slice(n.length);node.parentNode.insertBefore(span,after);
+    }
+  }
+  const scan=()=>document.querySelectorAll(SEL).forEach(wrap);
+  let pend=0;new MutationObserver(()=>{if(!pend){pend=1;requestAnimationFrame(()=>{pend=0;scan()})}}).observe(document.body,{childList:true,subtree:true});
+  scan();
+
+  let pop=null;
+  const close=()=>{if(pop){pop.remove();pop=null}};
+  function open(el){
+    close();const t=GL.terms.find(x=>x.k===el.dataset.k);if(!t)return;
+    pop=document.createElement("div");pop.className="gl-pop";pop.setAttribute("role","dialog");
+    const b=document.createElement("b");b.textContent=t.k;const p=document.createElement("div");p.textContent=t.d;pop.append(b,p);
+    if(GL.url){const a=document.createElement("a");a.href=GL.url+"#t-"+encodeURIComponent(t.k);a.target="_blank";a.rel="noopener";a.textContent="在入門教室看更多 →";pop.append(a)}
+    document.body.append(pop);
+    const r=el.getBoundingClientRect(),w=pop.offsetWidth;
+    pop.style.left=Math.max(16,Math.min(scrollX+r.left,scrollX+innerWidth-w-16))+"px";pop.style.top=(scrollY+r.bottom+6)+"px";
+  }
+  document.addEventListener("click",e=>{const el=e.target.closest(".gl-term");if(el){e.stopPropagation();e.preventDefault();open(el)}else if(!e.target.closest(".gl-pop"))close()},true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")close();const el=e.target.closest&&e.target.closest(".gl-term");if(el&&(e.key==="Enter"||e.key===" ")){e.preventDefault();open(el)}});
+})();
+</script>
+
+</body>
+</html>

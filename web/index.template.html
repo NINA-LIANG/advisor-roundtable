@@ -1,0 +1,627 @@
+<title>理專圓桌</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 馬卡龍軟萌風。頂部標題與扭蛋 → 選股面板 → 共識＋人氣排行 → 期間分頁＋理專貼紙卡 → 書庫。刻意只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg-a:#fff7ef; --bg-b:#ffe9ef;
+  --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
+  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.14);
+  --f-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg-a)}
+body{margin:0;min-height:100%;background:linear-gradient(170deg,var(--bg-a) 0%,var(--bg-b) 60%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+.box{background:var(--card);border:2px solid var(--line);border-radius:28px;box-shadow:var(--shadow);padding:20px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+.muted{color:var(--ink-soft)}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+header.hero{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;padding-block:18px 8px}
+.hero h1{font-size:clamp(30px,5.4vw,48px);letter-spacing:.04em}
+.hero .sub{font-size:clamp(15px,2.2vw,18px);color:var(--ink-soft);margin:0}
+.gacha{border:none;border-radius:999px;padding:13px 28px;font-family:var(--f-display);font-size:19px;background:linear-gradient(135deg,var(--pink),var(--apricot));color:var(--ink);box-shadow:0 5px 0 #e59aab,0 12px 24px rgba(217,112,138,.25);transition:transform .15s}
+.gacha:hover{transform:translateY(-2px)}
+.gacha:active{transform:translateY(3px);box-shadow:0 2px 0 #e59aab}
+.disclaimer{background:#fff0f3;border:2px dashed var(--pink-deep);color:#9b4a5d;border-radius:20px;padding:9px 16px;font-size:13px;max-width:760px}
+
+/* stock panel */
+.panel-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:20px}
+@media (max-width:840px){.panel-grid{grid-template-columns:1fr}}
+.panel-grid>*{min-width:0;display:flex;flex-direction:column;gap:12px}
+label{font-size:13px;color:var(--ink-soft);display:block;margin-bottom:4px}
+select,input[type=number],textarea{width:100%;font:inherit;color:var(--ink);background:#fff9f4;border:2px solid var(--line);border-radius:16px;padding:8px 12px}
+textarea{font-size:12px;min-height:70px;resize:vertical;font-family:ui-monospace,Menlo,monospace}
+.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:2px solid var(--line);background:#fff9f4;border-radius:999px;padding:5px 12px;font-size:13px;display:flex;gap:6px;align-items:center}
+.chip[aria-pressed=true]{border-color:var(--ink);background:#fff;font-weight:700}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.btn{border:none;border-radius:999px;padding:8px 16px;font-size:13px;background:var(--matcha);box-shadow:0 3px 0 #a7c591}
+.btn.ghost{background:#fff;border:2px solid var(--line);box-shadow:none}
+.chart-box{overflow-x:auto;border-radius:20px;background:#fffaf5;padding:8px}
+svg text{font-family:ui-monospace,Menlo,monospace;font-size:10px;fill:var(--ink-soft)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--ink-soft);flex-wrap:wrap}
+.legend i{display:inline-block;width:16px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
+
+/* consensus + ranking */
+.duo{display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+@media (max-width:840px){.duo{grid-template-columns:1fr}}
+.duo>*{min-width:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-soft)}
+.verdict{font-family:var(--f-display);font-size:34px;line-height:1.2;margin:4px 0}
+.bar{display:flex;height:16px;border-radius:999px;overflow:hidden;background:#f6ece4;margin-top:10px}
+.bar span{display:block;height:100%}
+.counts{display:flex;gap:14px;font-size:13px;margin-top:8px;flex-wrap:wrap}
+.rank{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.rank li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:#fff9f4;border-radius:20px;padding:9px 14px}
+.rank .medal{font-size:22px}
+.rank .who{min-width:0}
+.rank .who b{display:block}
+.rank .who span{font-size:12px;color:var(--ink-soft)}
+.rank li:first-child{background:linear-gradient(135deg,#fff3c9,#ffe3ea)}
+
+/* tabs + cards */
+.tabs{display:flex;gap:10px;flex-wrap:wrap}
+.tab{border:2px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;font-family:var(--f-display);font-size:16px;box-shadow:0 3px 0 var(--line)}
+.tab[aria-selected=true]{background:var(--sky);border-color:var(--sky-deep);box-shadow:0 3px 0 #8fbadb}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:16px}
+@media (max-width:780px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:26px;padding:18px 18px 16px;box-shadow:var(--shadow);border:2px solid var(--line);display:flex;flex-direction:column;gap:11px;min-width:0;position:relative}
+.card::before{content:"";position:absolute;top:-10px;left:50%;width:74px;height:20px;margin-left:-37px;border-radius:6px;background:var(--tape,var(--apricot));opacity:.75;transform:rotate(-3deg)}
+.card:nth-child(even){transform:rotate(.4deg)} .card:nth-child(odd){transform:rotate(-.4deg)}
+.card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.who{display:flex;gap:12px;align-items:center;min-width:0}
+.avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-size:26px;background:var(--tape,var(--apricot));flex:none;border:3px solid #fff;box-shadow:0 3px 8px rgba(74,59,50,.12)}
+.name{font-family:var(--f-display);font-size:19px}
+.bg{font-size:12px;color:var(--ink-soft)}
+.pill{font-size:13px;font-weight:700;border-radius:999px;padding:5px 12px;white-space:nowrap}
+.pill.buy,.pill.add{background:var(--matcha);color:#3d6a2b}
+.pill.wait{background:var(--apricot);color:#7a5414}
+.pill.avoid{background:var(--pink);color:#8a2f45}
+.style{font-size:12.5px;color:var(--sky-deep);font-weight:500}
+.entry{background:#fff6ea;border-radius:18px;padding:10px 13px;font-size:14px}
+.entry b{color:var(--ink)}
+ul.why{margin:0;padding-left:20px;font-size:13.5px}
+ul.why li{margin:2px 0}
+.metrics{display:flex;flex-wrap:wrap;gap:6px}
+.metrics span{background:#f7f0fb;border-radius:999px;padding:2px 10px;font-size:12px;color:var(--ink-soft)}
+.metrics b{color:var(--ink);font-weight:600}
+.weight{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft)}
+.weight input{flex:1;accent-color:var(--pink-deep)}
+details.kb{font-size:13px;background:#f4f9ef;border-radius:18px;padding:8px 13px}
+details.kb summary{cursor:pointer;color:var(--matcha-deep);font-weight:700}
+.kb-item{margin-top:8px}
+.book{background:#f3eefc;border-radius:16px;padding:8px 12px;margin-top:10px;font-size:13.5px}
+.kb-item p{margin:2px 0}
+.kb-src{font-size:12px;color:var(--ink-soft)}
+.kb-src a,.lib a{color:var(--sky-deep)}
+.critique{font-size:12.5px;color:var(--ink-soft)}
+.critique b{color:var(--ink)}
+.vote-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.vote{border:none;border-radius:999px;padding:9px 18px;background:var(--pink);color:#7a2d40;font-weight:700;box-shadow:0 4px 0 #e59aab}
+.vote.pop{animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+.votes{font-size:13px;color:var(--ink-soft)}
+.votes b{font-size:18px;color:var(--pink-deep);font-family:var(--f-display);font-weight:400}
+
+/* monitoring */
+.mon-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:18px;margin-top:14px}
+@media (max-width:840px){.mon-grid{grid-template-columns:1fr}}
+.mon-grid>*{min-width:0;display:flex;flex-direction:column;gap:10px}
+.escalate{border-radius:22px;padding:14px 16px;font-size:14px}
+.escalate.need{background:#ffe6ec;border:2px solid var(--pink-deep)}
+.escalate.ok{background:#eef6e6;border:2px solid var(--matcha-deep)}
+.escalate b{font-family:var(--f-display);font-weight:400;font-size:19px;display:block;margin-bottom:4px}
+.escalate ul{margin:4px 0 0;padding-left:20px}
+.health{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.health{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hc{background:#fff9f4;border-radius:16px;padding:8px 10px;font-size:12.5px;min-width:0}
+.hc b{display:block;font-size:13.5px}
+.reviews{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.reviews li{background:#fff9f4;border-radius:18px;padding:9px 13px;font-size:13.5px;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.reviews li.flag{background:#fff1e0}
+.reviews .tag{font-size:12px;color:var(--ink-soft)}
+.log-box{overflow-x:auto}
+table.log{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;min-width:520px}
+table.log th{text-align:left;color:var(--ink-soft);font-weight:500;padding:6px 8px;border-bottom:2px solid var(--line)}
+table.log td{padding:6px 8px;border-bottom:1px dashed var(--line)}
+
+/* insider notes */
+.ins-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.ins-tabs .tab{font-size:14px;padding:6px 13px}
+.ins-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+@media (max-width:640px){.ins-list{grid-template-columns:1fr}}
+.ins-item{background:#fff9f4;border-radius:20px;padding:12px 16px;min-width:0}
+.ins-item b{font-family:var(--f-display);font-size:16px}
+.ins-item p{margin:6px 0;font-size:14px;line-height:1.6}
+.ins-item label{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--ink);margin:0}
+.ins-src{font-size:12px;color:var(--ink-soft)}
+.ins-src a{color:var(--sky-deep)}
+.ins-duo{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px}
+@media (max-width:840px){.ins-duo{grid-template-columns:1fr}}
+.ins-duo>*{min-width:0;background:#fffaf5;border-radius:20px;padding:14px 16px}
+.cal{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.cal li{display:flex;gap:10px;align-items:baseline}
+.cal .d{font-family:var(--f-display);min-width:62px}
+.quiz fieldset{border:none;margin:0 0 10px;padding:0}
+.quiz legend{font-size:14px;font-weight:700;margin-bottom:4px}
+.quiz .chips label{font-size:13px;margin:0;display:flex;gap:4px;align-items:center;color:var(--ink)}
+.ins-alert{margin-top:10px;border-radius:16px;padding:9px 14px;font-size:14px;background:#fff0f3;color:#9b4a5d}
+.ins-alert.ok{background:#eef7e6;color:#4f6b3c}
+
+/* library + note */
+.lib{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 22px;font-size:13.5px;margin-top:12px}
+@media (max-width:640px){.lib{grid-template-columns:1fr}}
+.lib div{min-width:0}
+.note p{margin:6px 0;max-width:75ch}
+footer{font-size:12px;color:var(--ink-soft);max-width:80ch;margin:0 auto;text-align:center}
+
+/* modal, toast, hearts */
+.modal{position:fixed;inset:0;background:rgba(74,59,50,.28);display:grid;place-items:center;padding:20px;z-index:20}
+.bubble{background:#fff;border-radius:30px;max-width:420px;width:100%;padding:24px 22px 20px;box-shadow:0 18px 50px rgba(74,59,50,.25);position:relative;text-align:center;animation:pop .4s cubic-bezier(.3,1.6,.5,1)}
+.bubble .avatar{margin:0 auto 6px;width:72px;height:72px;font-size:36px}
+.bubble h3{font-size:22px}
+.bubble .say{background:#fff6ea;border-radius:20px;padding:12px 14px;margin:12px 0;text-align:left;font-size:14px}
+.bubble .close{position:absolute;top:12px;right:14px;border:none;background:#f6ece4;border-radius:50%;width:34px;height:34px;font-size:16px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:999px;padding:10px 20px;font-size:14px;z-index:30;box-shadow:0 8px 20px rgba(74,59,50,.3)}
+.heart{position:fixed;pointer-events:none;font-size:20px;z-index:25;animation:float 1.1s ease-out forwards}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes float{0%{opacity:1;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(var(--dx),-90px) scale(1.2)}}
+@media (prefers-reduced-motion:reduce){.vote.pop,.bubble,.heart{animation:none}.heart{display:none}.card{transform:none!important}}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fact{background:#fff9f4;border-radius:16px;padding:7px 11px;min-width:0}
+.fact>span{display:block;font-size:11.5px;color:var(--ink-soft)}
+.fact b{font-size:16px;font-variant-numeric:tabular-nums}
+.up{color:#c4475f}.down{color:#3d7a2b}
+.hot{background:linear-gradient(135deg,#fff3c9,#ffe3ea);border-radius:22px;padding:12px 16px;margin-top:14px;font-size:14px}
+.hot b{font-family:var(--f-display);font-weight:400;font-size:18px}
+.picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+@media (max-width:900px){.picks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.picks{grid-template-columns:1fr}}
+.pk{background:#fff9f4;border-radius:22px;padding:12px 14px;min-width:0;border-top:6px solid var(--tape)}
+.pk h3{font-size:16px;margin-bottom:6px}
+.pk ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:13px}
+.linkbtn{border:none;background:none;padding:0;color:var(--sky-deep);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.pk .why2{color:var(--ink-soft);font-size:12px}
+.pk details{font-size:12px;color:var(--ink-soft)}
+.pk summary{cursor:pointer;color:var(--sky-deep);font-weight:700;width:max-content}
+.pk details ul{margin:4px 0 0;padding-left:16px}
+.route{background:#fffdfa;border:2px dashed var(--apricot-deep);border-radius:22px;padding:10px 18px;text-align:left;font-size:14px;max-width:560px}
+.route ol{margin:4px 0 6px;padding-left:22px}
+.route a{color:var(--sky-deep);font-weight:700}
+.jump{font-size:13px;color:var(--ink-soft);margin-top:6px}
+.jump a{color:var(--sky-deep);font-weight:700}
+
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header class="hero">
+    <h1>✨ 理專圓桌 ✨</h1>
+    <p class="sub">台股買哪一檔、什麼時候進場？六位理專陪你一起想！🐾</p>
+    <button class="gacha" id="gacha" type="button">🎰 今天聽誰的？（扭蛋抽一位）</button>
+    <div class="route" id="route" hidden>
+      <b>第一次來？照這三步走</b>
+      <ol>
+        <li><a href="https://claude.ai/artifact/RK74vfRrALWhutPXahWRtu" target="_blank" rel="noopener">花十分鐘讀入門教室</a></li>
+        <li><a href="#picks">看六位理專各自選了什麼、為什麼</a></li>
+        <li><a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb" target="_blank" rel="noopener">拿 100 萬模擬倉練習</a></li>
+      </ol>
+      <button class="linkbtn" type="button" id="routeX">知道了，不用再顯示</button>
+    </div>
+  </header>
+
+  <section class="box panel-grid" aria-label="選股與參數">
+    <div>
+      <div><label for="stock">🍙 想問哪一檔？（輸入代號或名稱）</label><input id="stock" list="stockList" autocomplete="off" style="width:100%;font:inherit;color:var(--ink);background:#fff9f4;border:2px solid var(--line);border-radius:16px;padding:8px 12px"><datalist id="stockList"></datalist></div>
+      <p id="chartSay" style="margin:10px 0 4px;font-size:14px;font-weight:700"></p><div class="chart-box" id="chart"></div>
+      <div class="legend"><span><i style="background:var(--ink)"></i>每月收盤（約每月 21 日）</span><span><i style="background:var(--matcha-deep)"></i>近一個月均價</span></div>
+    </div>
+    <div>
+      <div class="facts" id="facts"></div>
+      <div class="fields">
+        <div><label for="rate">央行利率走向</label><select id="rate"><option value="-1">降息循環</option><option value="0">按兵不動</option><option value="1">升息循環</option></select></div>
+        <div><label for="pmi">製造業 PMI</label><input id="pmi" type="number" step="0.1"></div>
+      </div>
+      <div><label id="lightlbl">🚦 國發會景氣對策信號（請依最新公布值設定）</label><div class="chips" role="group" aria-labelledby="lightlbl" id="lights"></div></div>
+      <div class="muted" style="font-size:12px">總經條件只影響林思遠的判斷，其他理專只看個股資料。</div>
+    </div>
+  </section>
+  <section class="box" aria-label="理專選股">
+    <h2>🔎 理專選股：各自的前三名</h2>
+    <div class="chips" role="group" aria-label="選股範圍" id="uni" style="margin-top:10px"><button class="chip" type="button" data-u="stock">🏢 個股</button><button class="chip" type="button" data-u="etf">🧺 ETF</button></div>
+    <p class="muted" style="margin:8px 0 0;max-width:80ch;font-size:13.5px">六位理專各自用自己的方法，<span id="uniTxt"></span>。點名稱可以在上方看所有理專對它的完整意見。</p>
+    <div class="hot" id="hot"></div>
+    <div class="picks" id="picks"></div>
+  </section>
+
+  <section class="duo">
+    <div class="box" aria-label="共識">
+      <div class="eyebrow">🍰 加權共識</div>
+      <div class="verdict" id="verdict">—</div>
+      <div class="muted num" id="score" style="font-size:13px"></div>
+      <div class="bar" id="bar"></div>
+      <div class="counts" id="counts"></div>
+      <div class="muted" id="spread" style="font-size:13px;margin-top:8px"></div>
+    </div>
+    <div class="box" aria-label="人氣排行榜">
+      <div class="eyebrow">👑 人氣理專排行榜</div>
+      <ol class="rank" id="rank"></ol>
+      <div class="muted" style="font-size:12px;margin-top:8px">初始票數為模擬數字，你的投票只記在這台裝置上。</div>
+    </div>
+  </section>
+
+  <section class="box" aria-label="互相監測中心">
+    <h2>🛡️ 互相監測中心</h2>
+    <p class="muted" style="margin:6px 0 0;max-width:75ch;font-size:13.5px">理專之間互相檢查：每位都有固定的審查者，來自不同投資期間以降低串通。系統也會檢查每位的資料是否足夠，全員意見太一致時同樣會警示。只有觸發升級條件時才需要你出手。</p>
+    <div class="mon-grid">
+      <div>
+        <div class="escalate" id="escalate"></div>
+        <div class="eyebrow">💓 健康檢查（看門狗）</div>
+        <div class="health" id="health"></div>
+      </div>
+      <div>
+        <div class="eyebrow">🔍 指定互評（審查者 → 被審者）</div>
+        <ul class="reviews" id="reviews"></ul>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <div class="eyebrow">📝 稽核紀錄（存在這台裝置，最多 20 筆）</div>
+      <div style="display:flex;gap:8px"><button class="btn" id="logBtn" type="button">記錄這次結果</button><button class="btn ghost" id="logClear" type="button">清空</button></div>
+    </div>
+    <div class="log-box"><table class="log"><thead><tr><th>時間</th><th>標的</th><th>共識</th><th>分歧度</th><th>互評警示</th><th>是否升級</th></tr></thead><tbody id="log"></tbody></table></div>
+  </section>
+
+  <section aria-label="理專意見">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <section class="box note">
+    <h2>🐾 你是「on the loop」的那個人</h2>
+    <p>每位理專都是獨立的代理，看的資料和時間尺度不同：技術派看幾週，總經派看一到兩年。卡片下方的「同儕質疑」是其他理專的反駁，讓分歧攤在檯面上，而不是被平均掉。</p>
+    <p>你不必逐筆審核每個判斷（in the loop），而是設定權重、看共識與分歧度，分歧過大時才介入（on the loop）。投票反映你比較信任誰，權重才會真的影響共識。</p>
+  </section>
+
+  <section class="box note" id="insider">
+    <h2>🔍 理專內行筆記</h2>
+    <p class="muted">理專這行的規矩、警訊與台股常識，整理自金管會、銀行公會、金融消費評議中心等公開資料，每條都附出處。整理日期 <span id="insAsof"></span>，法規如有修正以官方公告為準。</p>
+    <div class="ins-tabs" role="tablist" id="insTabs"></div>
+    <div class="ins-list" id="insList"></div>
+    <div class="ins-duo">
+      <div><div class="eyebrow">📅 台股重要日期（接下來）</div><ul class="cal" id="insCal"></ul></div>
+      <div class="quiz"><div class="eyebrow" id="qTitle"></div><p class="ins-src" id="qNote"></p><form id="quiz"></form><div id="qOut"></div></div>
+    </div>
+  </section>
+
+  <section class="box note">
+    <h2>📚 理專書庫</h2>
+    <p class="muted">每位理專的「知識依據」是自行整理的概念卡，延伸閱讀全部來自可合法放進 AI 系統的公有領域原典與美國證管會出版品。OpenStax 等免費教科書的授權禁止用於 AI，因此只列給你自己閱讀，不放進系統。</p>
+    <div class="lib" id="lib"></div>
+  </section>
+  <footer>資料來源：臺灣證券交易所 OpenAPI（個股日成交、本益比殖利率淨值比、上市公司基本資料）、每日收盤行情與除權息計算結果，收錄當日成交值超過 1 億元的普通股與超過 3000 萬元的 ETF，月收盤已依除權息還原。每位理專只看得到自己資料庫裡的欄位（見卡片上的「背景檔案與資料庫」）。計算方式：技術派用月均價與近三個月均價判斷趨勢及乖離；動能派用 6 個月報酬與距一年高點；價值派比較本益比與同產業中位數；總經派用景氣燈號、利率與 PMI 搭配產業輪動；量化派用現價相對一年月收盤的 z 分數；存股派用現金殖利率。分數範圍 −2 到 +2，加權平均後轉成建議。過去表現不代表未來，請自行判斷。</footer>
+</div>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="bubble" id="bubble"></div>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+// ---------- 知識庫（由 repo/knowledge 產生） ----------
+/*KB*/
+// ---------- 台股資料（證交所公開資料，build_tw_data.py 產生） ----------
+const TW=/*TW*/;
+// 每位理專的背景檔案與「看得到的資料欄位」（repo/knowledge/advisors.zh.json）
+const PROFILES=/*PROFILES*/;
+// 每位理專的課外書架（repo/knowledge/bookshelf.zh.json）：財經以外的公有領域書，替理專加上個人想法
+const SHELF=/*SHELF*/;
+const GUT=id=>`https://www.gutenberg.org/ebooks/${id}`;
+// 依眼前這檔的狀況，挑一本書說出理專自己的想法（第幾本書, 想法）
+const SHELF_VOICE={
+ tech:(s,d)=>{const dev=d.p/d.ma-1;return dev>0.08?[1,`股價已高於月均價 ${pct(dev)}，人群正在追。我寧可等熱度退了再說，不跟著一起發瘋。`]:s>=1?[0,"訊號是好的，但我下單前一定先把停損價寫下來；先求不敗，獲利是對手犯錯送來的。"]:[2,"現在的線型說不出清楚的故事。證據不夠時硬要下結論，只會讓我開始替自己找理由。"]},
+ macro:(s,d)=>/紅/.test(d.light||"")?[2,"景氣正熱的時候，我反而先想衰退會從哪裡開始：負債、庫存、還是估值。"]:/藍/.test(d.light||"")?[0,"景氣低迷不是第一次，也不會是最後一次。歷史告訴我復甦總會來，只是通常比大家想的慢。"]:[1,"手上的數據是落後的，下個月還可能被修正。我會留一部分現金當預備隊，不一次押滿。"],
+ value:(s,d)=>isETF(d)?[0,"買 ETF 我最在意的是每年被扣走多少內扣費用，省下的費用就是穩賺的報酬。"]:s>=2?[2,"便宜的好公司常常要等很久，市場才會發現它的價值。我願意等。"]:s<=-1?[1,"這檔太貴了，但股價怎麼走不是我能控制的。我能控制的是不在這個價位買。"]:[0,"價格合理不代表要急著買。我會像富蘭克林記帳一樣，先寫下買進理由，之後每季對帳。"],
+ mom:(s,d)=>{const r=d.p/d.m[6]-1;return r>0.8?[2,`半年漲了 ${pct(r)}，我提醒自己別像亞哈船長一樣死追不放。設好移動停利，趨勢一斷就下船。`]:s>=1?[1,"強勢股能一直強，是因為它適應了現在的市場。我跟著強者走，但每個月都汰弱留強。"]:[0,"動能不見了就換車，不在原地等它回來。時間也是成本。"]},
+ quant:(s,d)=>{const z=(d.p-mean(d.m))/std(d.m);return Math.abs(z)>1.5?[0,`z 分數 ${z.toFixed(2)} 很極端，但只有 12 個月的樣本，我會把它當機率不是保證，小量分批。`]:s>0?[2,"單一檔的訊號雜訊很大。我寧可同時買幾檔統計上偏便宜的，讓個別差異互相抵銷。"]:[1,"我的模型只看價格這一個維度，看不到公司本身的變化。沒有統計優勢的時候，就不下注。"]},
+ div:(s,d)=>{const y=d.dy||0;return y>8?[2,`殖利率 ${y.toFixed(1)}% 高得不尋常。追更大塊的肉之前，先確定嘴裡這塊不會掉：這種配息能維持嗎？`]:y>=4?[0,"股利領到不是拿去花，而是再買回來。小錢滾久了，就是退休後不用看人臉色的底氣。"]:[1,"殖利率不高，我就不勉強。持股簡單一點、少一點，睡得比較好。"]},
+};
+function bookVoice(k,s,d){const f=SHELF_VOICE[k],b=SHELF[k];if(!f||!b)return "";const [i,t]=f(s,d);return `<div class="book">📖 <b>讀《${b[i].zh}》的心得</b>　${t}</div>`}
+const IND={"01":"水泥","02":"食品","03":"塑膠","04":"紡織纖維","05":"電機機械","06":"電器電纜","08":"玻璃陶瓷","09":"造紙","10":"鋼鐵","11":"橡膠","12":"汽車","14":"建材營造","15":"航運","16":"觀光餐旅","17":"金融保險","18":"貿易百貨","19":"綜合","20":"其他","21":"化學","22":"生技醫療","23":"油電燃氣","24":"半導體","25":"電腦及週邊","26":"光電","27":"通信網路","28":"電子零組件","29":"電子通路","30":"資訊服務","31":"其他電子","32":"文化創意","33":"農業科技","35":"綠能環保","36":"數位雲端","37":"運動休閒","38":"居家生活"};
+const indName=i=>IND[i]||"其他";
+const MONTHS=TW.dates.map(d=>`${+d.slice(4,6)}月`);
+const LIGHTS=[["藍","#6f9be0",-2],["黃藍","#9fc3dc",-1],["綠","#8cc58a",0],["黃紅","#f1c26a",1],["紅","#ec8f88",2]];
+// 總經派依景氣燈號偏好的產業：低迷時布局景氣循環股，過熱時轉向防禦型
+const TILT={low:["10","03","15","01","21","24","28"],mid:["24","25","27","28","17","26"],high:["02","17","23","27","22","18"]};
+const phaseOf=L=>L<=-1?"low":L>=1?"high":"mid";
+// 各產業本益比中位數，給價值派做同業比較
+const ETFS=TW.etfs||[],ALL=[...TW.stocks,...ETFS];
+const isETF=d=>d.i==="ETF";
+const catOf=d=>isETF(d)?`ETF・${d.t}`:indName(d.i);
+// 總經派對 ETF 類型的偏好
+const TILT_ETF={low:["市值型","主題型","主動式"],mid:["市值型","主題型","海外","主動式"],high:["高股息","債券","主動式高股息"]};
+const IND_PE=(()=>{const g={};TW.stocks.forEach(s=>{if(s.pe>0)(g[s.i]=g[s.i]||[]).push(s.pe)});const o={};for(const k in g){const a=g[k].sort((x,y)=>x-y);o[k]=a[Math.floor(a.length/2)]}return o})();
+
+// ---------- 指標 ----------
+function std(a){const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)}
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const fmt=x=>x>=1000?x.toFixed(0):x>=100?x.toFixed(1):x.toFixed(2);
+const pct=x=>`${x>=0?"+":""}${(x*100).toFixed(1)}%`;
+
+// ---------- 六位理專 ----------
+// run(d) 回傳分數 s（−2 到 +2）、理由、進場條件；tb 是選股時同分的排序依據（越大越優先）
+const ADVISORS=[
+ {key:"tech",name:"陳怡君",emoji:"📈",tape:"var(--sky)",horizon:"short",school:"中原大學 財務金融學系",bg:"券商自營部 8 年・技術分析",style:"技術分析・波段（2–8 週）",quip:"線圖會說話，我只是幫它翻譯！",
+  run(d){const ma=d.ma,ma3=mean(d.m.slice(-3)),dev=d.p/ma-1;let s=0,why=[];
+   if(ma>ma3){s+=1;why.push(`月均價 ${fmt(ma)} 高於近三個月均價 ${fmt(ma3)}，趨勢向上`)}else{s-=1;why.push(`月均價 ${fmt(ma)} 低於近三個月均價 ${fmt(ma3)}，趨勢向下`)}
+   if(dev>0.08){s-=1;why.push(`股價高於月均價 ${pct(dev)}，乖離過大，追價風險高`)}else if(ma>ma3&&dev>-0.04&&dev<0.03){s+=1;why.push(`股價拉回到月均價附近（${pct(dev)}），多頭中的買點`)}else why.push(`股價與月均價乖離 ${pct(dev)}`);
+   const entry=ma>ma3?`月均價 <b>${fmt(ma)}</b> 附近分批買，跌破三個月均價 ${fmt(ma3)} 停損`:`等月均價重新站上三個月均價（約 <b>${fmt(ma3)}</b>）再進場`;
+   return {s:clamp(s,-2,2),why,entry,tb:-Math.abs(dev),metrics:{"月線乖離":pct(dev),"月均價":fmt(ma)}}},
+  critique:"價值派王建明：均線是落後指標，等趨勢確認時便宜的價格通常已經過了。"},
+ {key:"macro",name:"林思遠",emoji:"🌏",tape:"var(--matcha)",horizon:"long",school:"Stanford University 經濟學系",bg:"前央行研究員・總經策略",style:"總體經濟循環・長期（1–2 年）",quip:"先看天氣，再決定要不要出門。",
+  run(d){const L=LIGHTS.find(x=>x[0]===d.light)[2],ph=phaseOf(L),fav=isETF(d)?TILT_ETF[ph].includes(d.t):TILT[ph].includes(d.i);let s=0,why=[];
+   const phTxt={low:"景氣低迷，布局景氣循環股",mid:"景氣穩定，偏好成長型電子與金融",high:"景氣過熱，轉向防禦型產業"}[ph];
+   why.push(`「${d.light}燈」：${phTxt}`);
+   if(fav){s+=1;why.push(`${catOf(d)}是這個階段偏好的類型`)}else{s-=1;why.push(`${catOf(d)}不在這個階段的偏好類型`)}
+   if(d.rate<0){s+=1;why.push("降息循環，資金成本下降有利估值")}else if(d.rate>0){s-=1;why.push("升息循環，壓抑估值")}
+   if(d.pmi>=50&&L<=0){s+=0.5;why.push(`PMI ${d.pmi} 站上 50，景氣有回升跡象`)}else if(d.pmi<50)why.push(`PMI ${d.pmi} 低於 50，製造業仍在收縮`);
+   const entry=s>=1?"未來 6–12 個月分批布局，不必猜最低點":"等景氣燈號或利率方向改變再布局";
+   return {s:clamp(s,-2,2),why,entry,tb:fav?-(d.pb||9):-99,metrics:{"產業":catOf(d),"燈號":d.light}}},
+  critique:"技術派陳怡君：總經訊號可能提早一年以上，股價在這段時間可能再跌 30%。"},
+ {key:"value",name:"王建明",emoji:"📒",tape:"var(--apricot)",horizon:"long",school:"國立臺灣大學 會計學系・CFA",bg:"投信研究員 12 年・基本面",style:"價值投資・長期（1–3 年）",quip:"好公司也要有好價格，耐心是我的超能力。",
+  run(d){let s,why=[];if(isETF(d))return {s:0,why:["ETF 是一籃子股票，不適用個股本益比估值",`${d.t}：長期持有更該比較內扣費用與追蹤誤差`],entry:"不做估值判斷，進場時機參考其他理專",tb:-99,metrics:{"類型":d.t}};if(!(d.pe>0))return {s:-1,why:["沒有本益比（近四季虧損或無資料），無法估值，先不碰"],entry:"等公司恢復獲利再評估",tb:-99,metrics:{"本益比":"—"}};
+   const med=IND_PE[d.i]||d.pe,rel=d.pe/med,eps=d.p/d.pe;
+   why.push(`本益比 ${d.pe.toFixed(1)} 倍，${indName(d.i)}同業中位數 ${med.toFixed(1)} 倍`);
+   if(rel<0.7){s=2;why.push("比同業便宜三成以上，具安全邊際")}else if(rel<0.9){s=1;why.push("略低於同業，價格合理偏低")}else if(rel<1.2){s=0;why.push("和同業差不多，合理價")}else if(rel<1.6){s=-1;why.push("比同業貴")}else{s=-2;why.push("比同業貴很多，估值偏高")}
+   if(d.pb&&d.pb<1)why.push(`股價淨值比 ${d.pb}，低於帳面價值`);
+   const cheap=eps*med*0.8;
+   return {s,why,entry:cheap>=d.p?`現價 ${fmt(d.p)} 已低於同業本益比八折價 ${fmt(cheap)}，可分批買；先確認獲利不是一次性的`:`同業本益比八折價 <b>${fmt(cheap)}</b> 以下積極買（現價 ${fmt(d.p)}）`,tb:-rel,metrics:{"本益比":d.pe.toFixed(1),"同業比":(rel*100).toFixed(0)+"%","淨值比":d.pb??"—"}}},
+  critique:"動能派周以恆：便宜可以更便宜，價值陷阱常出現在獲利正在衰退的公司。"},
+ {key:"mom",name:"周以恆",emoji:"🚀",tape:"var(--pink)",horizon:"mid",school:"Columbia Business School MBA",bg:"前紐約避險基金分析師・動能策略",style:"動能趨勢・中期（3–6 個月）",quip:"強者恆強，跟著風向走最省力！",
+  run(d){const ret=d.p/d.m[6]-1,hi=Math.max(...d.m,d.p),dist=d.p/hi-1,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s=0,why=[];
+   if(ret>1.5){why.push(`近 6 個月上漲 ${pct(ret)}，漲幅過大，波動風險高，不加分`)}else if(ret>0.2){s+=1;why.push(`近 6 個月上漲 ${pct(ret)}，動能強`)}else if(ret<-0.1){s-=1;why.push(`近 6 個月下跌 ${pct(ret)}，動能弱`)}else why.push(`近 6 個月 ${pct(ret)}，動能普通`);
+   if(dist>-0.05){s+=1;why.push("貼近一年高點，強者恆強")}else if(dist<-0.25){s-=1;why.push(`距一年高點 ${pct(dist)}，趨勢已破`)}else why.push(`距一年高點 ${pct(dist)}`);
+   const entry=s>=1?`趨勢成立，現價 ${fmt(d.p)} 附近進場，跌破 <b>${fmt(hi*0.9)}</b>（高點回落 10%）出場`:`等股價突破一年高點 <b>${fmt(hi)}</b> 再追進`;
+   return {s:clamp(s,-2,2),why,entry,tb:ret/(vol+0.05),metrics:{"6月報酬":pct(ret),"距高點":pct(dist)}}},
+  critique:"存股派劉淑芬：追高需要紀律停損，一般投資人很難做到，常常買在最高點。"},
+ {key:"quant",name:"張雅雯",emoji:"🎲",tape:"var(--lilac)",horizon:"short",school:"國立政治大學 統計學系碩士",bg:"金控量化交易員・統計套利",style:"均值回歸・短期（數日–4 週）",quip:"我不猜，我只算機率。",
+  run(d){const mu=mean(d.m),sd=std(d.m),z=(d.p-mu)/sd;let s,why=[];
+   why.push(`現價相對一年月收盤平均 ${fmt(mu)} 的 z 分數為 ${z.toFixed(2)}`);
+   if(z<-1.5&&(d.pe>0||isETF(d))){s=2;why.push("明顯低於一年均值，且仍有獲利或為分散的 ETF，統計上有回歸空間")}else if(z<-0.8){s=1;why.push("低於均值，偏便宜")}else if(z>1.8){s=-2;why.push("遠高於一年均值，過度延伸")}else if(z>1){s=-1;why.push("偏高，不追")}else{s=0;why.push("在正常範圍內，沒有統計優勢")}
+   return {s,why,entry:`低於 <b>${fmt(mu-sd)}</b>（均值減一個標準差）分批買，回到均值 ${fmt(mu)} 獲利了結`,tb:-z,metrics:{"z":z.toFixed(2),"一年均值":fmt(mu)}}},
+  critique:"動能派周以恆：在強趨勢裡，「過度延伸」可以持續好幾個月，逆勢放空會受傷。"},
+ {key:"div",name:"劉淑芬",emoji:"🍵",tape:"#ffe0c4",horizon:"long",school:"國立高雄科技大學 財務管理系",bg:"銀行理專 20 年・存股教練",style:"存股・定期定額（5 年以上）",quip:"慢慢來比較快，喝杯茶再說。",
+  run(d){const y=d.dy||0,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s,why=[];
+   why.push(`現金殖利率 ${y.toFixed(2)}%，月報酬波動 ${(vol*100).toFixed(1)}%`);
+   if(!(d.pe>0)&&!isETF(d)){s=-1;why.push("近四季沒有獲利，股利恐難維持")}
+   else if(y>=6&&(isETF(d)||d.pe<20)){s=2;why.push(isETF(d)?"殖利率 6% 以上，加碼買進":"殖利率 6% 以上且本益比合理，加碼買進")}else if(y>=4.5){s=1;why.push("殖利率 4.5% 以上，適合定期定額")}else if(y>=3){s=0;why.push("殖利率普通，維持定期定額即可")}else{s=-1;why.push("殖利率低於 3%，不是存股標的")}
+   if(y>12){s=Math.min(s,1);why.push("殖利率異常高，配息可能含收益平準金或資本利得，未必能持續")}
+   if(vol>0.12)why.push("股價波動偏大，不適合當存股核心");
+   return {s,why,entry:y>0?`每月定期定額；跌到殖利率 6%（約 <b>${fmt(d.p*y/6)}</b>）時加碼`:"沒有配息，不列入存股",tb:y-(vol>0.12?5:0),metrics:isETF(d)?{"殖利率":y.toFixed(2)+"%","近一年配息":(d.cd??"—")+" 元"}:{"殖利率":y.toFixed(2)+"%","本益比":d.pe??"—"}}},
+  critique:"總經派林思遠：高殖利率常出現在景氣循環股的高峰，之後股利可能腰斬。"}
+];
+
+const TABS=[["all","全部 🌈"],["short","短線波段 🍟"],["mid","中線趨勢 🧋"],["long","長線布局 🍱"]];
+const SEED_VOTES={tech:128,macro:117,value:142,mom:96,quant:73,div:155};
+
+// ---------- 狀態 ----------
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const macro={light:store.get("light","綠"),rate:store.get("rate",0),pmi:store.get("pmi",50.5)};
+let state={}, lastRes=[], tab=store.get("tab","all");
+const weights={}, myVotes=store.get("myVotes",{});
+ADVISORS.forEach(a=>{weights[a.key]=store.get("w_"+a.key,1)});
+const votesOf=k=>SEED_VOTES[k]+(myVotes[k]||0);
+const $=id=>document.getElementById(id);
+const byKey=k=>ADVISORS.find(a=>a.key===k);
+const byCode=c=>ALL.find(s=>s.c===c);
+const label=s=>`${s.c} ${s.n}`;
+
+document.getElementById("lib").innerHTML=Object.values(SRC).map(x=>`<div>📖 <a href="${x.u}" target="_blank" rel="noopener">${x.t}</a><div class="kb-src">${x.a}・${x.adv.map(k=>byKey(k).name).join("、")}</div></div>`).join("");
+$("stockList").innerHTML=ALL.map(s=>`<option value="${label(s)}">${catOf(s)}</option>`).join("");
+$("tabs").innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" type="button" data-t="${k}" aria-selected="${k===tab}">${l}</button>`).join("");
+$("rate").value=macro.rate;$("pmi").value=macro.pmi;
+
+const dataOf=s=>({...s,...macro});
+function loadStock(c){const s=byCode(c);if(!s)return;state=dataOf(s);$("stock").value=label(s);renderFacts();render()}
+function renderFacts(){const s=state,cls=s.chg>0?"up":s.chg<0?"down":"";
+ const f=isETF(s)?[["類型",s.t],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="pc ${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["近一年配息",s.cd?`${s.cd} 元`:"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["月均價",fmt(s.ma)],["資料日",TW.asof]]:[["產業",indName(s.i)],["收盤",`<span class="${cls}">${fmt(s.p)}</span>`],["漲跌",`<span class="pc ${cls}">${s.chg>0?"+":""}${s.chg.toFixed(2)}%</span>`],["成交值",`${s.tv.toFixed(1)} 億`],["本益比",s.pe??"—"],["殖利率",`${(s.dy||0).toFixed(2)}%`],["淨值比",s.pb??"—"],["月均價",fmt(s.ma)],["資料日",TW.asof]];
+ $("facts").innerHTML=f.map(([k,v])=>`<div class="fact"><span>${k}</span><b>${v}</b></div>`).join("")+`<div class="jump" style="grid-column:1/-1">帶著 ${s.n} 去：<a href="https://claude.ai/artifact/Aj4eFHk9RZrjkuUmr7kRXb#${s.c}" target="_blank" rel="noopener">台股全覽</a>・<a href="https://claude.ai/artifact/UNwf3YLPP6nXTWfRGVrPaw#${s.c}" target="_blank" rel="noopener">除權息</a>・<a href="https://claude.ai/artifact/M9a9miXiw6A48VKovkJVqb#${s.c}" target="_blank" rel="noopener">模擬倉</a></div>`}
+function renderLights(){$("lights").innerHTML=LIGHTS.map(([n,c])=>`<button class="chip" type="button" aria-pressed="${macro.light===n}" data-l="${n}"><span class="dot" style="background:${c}"></span>${n}燈</button>`).join("")}
+function setMacro(k,v){macro[k]=v;store.set(k,v);state={...state,[k]:v};render();renderPicks()}
+$("lights").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;macro.light=b.dataset.l;renderLights();setMacro("light",b.dataset.l)});
+$("stock").addEventListener("change",()=>{const v=$("stock").value.trim(),code=v.split(" ")[0];
+ const s=byCode(code)||ALL.find(x=>x.n===v||x.n.includes(v));if(s)loadStock(s.c);else toast("找不到這檔，請從清單選擇 🙏")});
+$("pmi").addEventListener("input",()=>{const v=parseFloat($("pmi").value);if(!isNaN(v)&&v>0)setMacro("pmi",v)});
+$("rate").addEventListener("change",()=>setMacro("rate",+$("rate").value));
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b)return;tab=b.dataset.t;store.set("tab",tab);
+ $("tabs").querySelectorAll("[data-t]").forEach(x=>x.setAttribute("aria-selected",x.dataset.t===tab));renderCards()});
+
+// ---------- 圖表 ----------
+function drawChart(d){const p=[...d.m,d.p],W=520,H=200,pl=8,pr=44,pt=10,pb=22,n=p.length;
+ const lo=Math.min(...p,d.ma)*0.97,hi=Math.max(...p,d.ma)*1.03,x=i=>pl+(W-pl-pr)*i/(n-1),y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo));
+ let g="";for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4,yy=y(v);g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy}" y2="${yy}" stroke="#f1e2d6"/><text x="${W-pr+4}" y="${yy+3}">${fmt(v)}</text>`}
+ const pts=p.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L");
+ {const ch=d.p/d.m[0]-1;$("chartSay").innerHTML=`${d.n} 近一年從 ${fmt(d.m[0])} 到 ${fmt(d.p)}，<span class="pc ${ch>0?"up":ch<0?"down":""}">${ch>0?"+":""}${(ch*100).toFixed(1)}%</span>；現價${d.p>=d.ma?"在":"低於"}月均價 ${fmt(d.ma)}${d.p>=d.ma?"之上":""}。`}
+ $("chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:320px;display:block" role="img" aria-label="${d.n} 近一年每月收盤價">${g}
+ <line x1="${pl}" x2="${W-pr}" y1="${y(d.ma)}" y2="${y(d.ma)}" stroke="var(--matcha-deep)" stroke-width="2" stroke-dasharray="6 5"/>
+ <path d="M${pts}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>
+ ${p.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="${i===n-1?5:2.5}" fill="${i===n-1?"var(--pink-deep)":"var(--ink)"}" stroke="#fff" stroke-width="${i===n-1?2:0}"><title>${MONTHS[i]} ${fmt(v)}</title></circle>`).join("")}
+ <text x="${pl}" y="${H-5}">${TW.dates[0].slice(0,4)}/${MONTHS[0]}</text><text x="${W-pr}" y="${H-5}" text-anchor="end">${TW.asof} 收盤 ${fmt(d.p)}</text></svg>`}
+
+// ---------- 輸出 ----------
+const LABEL=s=>s>=1.5?["現在進場 ✨","buy"]:s>=0.5?["分批布局 🍀","add"]:s>-0.5?["觀望等待 ⏳","wait"]:["暫不進場 🙅","avoid"];
+const COL={buy:"var(--matcha-deep)",add:"var(--matcha)",wait:"var(--apricot)",avoid:"var(--pink)"},NM={buy:"現在進場",add:"分批布局",wait:"觀望",avoid:"暫不進場"};
+function render(){drawChart(state);lastRes=ADVISORS.map(a=>({a,...runA(a,state)}));renderCards();renderConsensus();renderRank();renderMonitor()}
+
+// ---------- 理專選股 ----------
+// 每位理專對全部股票跑一次自己的規則，取分數最高、再依各自的排序依據挑前三名
+let PICKS={};
+// 槓桿反向與期貨型 ETF 會隨時間耗損，所有理專都不建議長期持有
+// 每位理專只拿到自己資料庫裡的欄位，模擬真實世界的資訊差異
+const view=(a,d)=>{const v={c:d.c,n:d.n};(PROFILES[a.key]?.fields||Object.keys(d)).forEach(k=>v[k]=d[k]);return v};
+function runA(a,d){const r=a.run(view(a,d));if(!isETF(d)||!["槓桿反向","期貨商品"].includes(d.t))return r;
+ return {...r,s:Math.min(r.s,-1),why:[`${d.t} ETF 追蹤每日報酬或期貨，長期持有會有耗損，只適合短線`,...r.why],tb:-99}}
+let uni=store.get("uni","stock");
+function screen(){PICKS={};const U=uni==="etf"?ETFS.filter(e=>!["槓桿反向","期貨商品"].includes(e.t)):TW.stocks;ADVISORS.forEach(a=>{PICKS[a.key]=U.map(st=>({st,...runA(a,dataOf(st))})).sort((x,y)=>y.s-x.s||y.tb-x.tb).slice(0,3)})}
+function renderPicks(){screen();const cnt={};
+ $("uniTxt").innerHTML=uni==="etf"?`從 <b>${ETFS.length}</b> 檔成交值超過 3000 萬元的上市 ETF 中挑出前三名（槓桿反向與期貨型不列入推薦）`:`從 <b>${TW.stocks.length}</b> 檔成交值超過 1 億元的上市股中挑出前三名`;
+ $("uni").querySelectorAll("[data-u]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.u===uni));
+ Object.entries(PICKS).forEach(([k,l])=>l.forEach(r=>{if(r.s>=0.5&&!(uni==="etf"&&k==="value"))(cnt[r.st.c]=cnt[r.st.c]||[]).push(r)}));
+ const hot=Object.entries(cnt).filter(([,v])=>v.length>=2).sort((x,y)=>y[1].length-x[1].length);
+ $("hot").innerHTML=hot.length?`🔥 <b>共識熱門${uni==="etf"?" ETF":"股"}</b>　${hot.map(([c,v])=>`<button class="linkbtn" type="button" data-c="${c}">${label(byCode(c))}</button>（${v.length} 位理專都選）`).join("、")}`:"🌱 這次沒有任何一檔同時被兩位以上的理專選中，各流派看法分散。";
+ $("picks").innerHTML=ADVISORS.map(a=>`<div class="pk" style="--tape:${a.tape}"><h3>${a.emoji} ${a.name}的首選</h3>${uni==="etf"&&a.key==="value"?`<p class="why2">ETF 是一籃子股票，我不用本益比替 ETF 排名。挑 ETF 時我會先比內扣費用和追蹤誤差，這兩項資料還沒放進系統。</p>`:`<ol>${PICKS[a.key].map(r=>`<li><button class="linkbtn" type="button" data-c="${r.st.c}">${label(r.st)}</button>　<span class="pill ${LABEL(r.s)[1]}" style="font-size:11px;padding:2px 8px">${LABEL(r.s)[0]}</span><div class="why2">${r.why[1]||r.why[0]}・${Object.entries(r.metrics).slice(0,2).map(([k,v])=>`${k} ${v}`).join("・")}</div><details><summary>為什麼？</summary><ul>${r.why.map(w=>`<li>${w}</li>`).join("")}<li>用到的數字：${Object.entries(r.metrics).map(([k,v])=>`${k} ${v}`).join("・")}</li><li>進場規則：${r.entry}</li></ul></details></li>`).join("")}</ol>`}</div>`).join("")}
+if(!store.get("routeDone",false))$("route").hidden=false;
+$("routeX").addEventListener("click",()=>{store.set("routeDone",true);$("route").hidden=true});
+{const h=decodeURIComponent(location.hash.slice(1));if(h&&byCode(h))setTimeout(()=>loadStock(h))}
+$("uni").addEventListener("click",e=>{const b=e.target.closest("[data-u]");if(!b)return;uni=b.dataset.u;store.set("uni",uni);renderPicks()});
+document.addEventListener("click",e=>{const b=e.target.closest(".linkbtn[data-c]");if(!b)return;loadStock(b.dataset.c);$("stock").scrollIntoView({behavior:"smooth",block:"center"})});
+
+// ---------- 互相監測 ----------
+// 審查者刻意來自不同投資期間（短/中/長），避免同一派互相背書
+const REVIEWER={tech:"value",macro:"tech",value:"mom",mom:"div",quant:"mom",div:"macro"};
+// 每組審查的專屬檢查：回傳警示文字或 null
+const CHECKS={
+ tech:(R,d)=>R.tech.s>=1&&R.value.s<=-1?`技術面看多，但本益比是同業的 ${R.value.metrics["同業比"]}，追價空間有限`:null,
+ macro:(R,d)=>R.macro.s>=1&&R.tech.s<=-1?"總經看多，但這檔的趨勢仍向下，進場時機可能太早":null,
+ value:(R,d)=>R.value.s>=1&&parseFloat(R.mom.metrics["6月報酬"])<-10?`估值便宜，但近 6 個月跌了 ${R.mom.metrics["6月報酬"]}，小心價值陷阱`:null,
+ mom:(R,d)=>R.mom.s>=1&&parseFloat(R.tech.metrics["月線乖離"])>8?`動能看多，但股價高於月均價 ${R.tech.metrics["月線乖離"]}，追高風險高`:null,
+ quant:(R,d)=>R.quant.s>=1&&R.mom.s<=-1?"均值回歸想接，但趨勢仍向下，可能是接刀":null,
+ div:(R,d)=>R.div.s>=1&&["紅","黃紅"].includes(d.light)?`殖利率吸引人，但景氣在「${d.light}燈」，高峰期股利可能縮水`:null
+};
+function health(d){const H={},ok=(m)=>({lv:"ok",msg:m});
+ const n=d.m.filter(v=>v>0).length+1;
+ H.tech=d.ma>0?ok("有月均價與近三個月收盤"):{lv:"bad",msg:"缺少月均價"};
+ H.quant=n>=13?ok(`有 ${n} 個月的收盤價`):{lv:"warn",msg:`只有 ${n} 個月資料，統計可能不穩`};
+ H.mom=n>=7?ok("有 6 個月以上的收盤價"):{lv:"warn",msg:"上市未滿半年，動能無法計算"};
+ H.value=isETF(d)?ok("ETF 不適用本益比，價值派保持中立"):d.pe>0?ok(`本益比 ${d.pe}，同業 ${catOf(d)} 有中位數可比`):{lv:"bad",msg:"沒有本益比（虧損或無資料），無法估值"};
+ H.div=d.dy!=null?ok("有殖利率資料"):{lv:"warn",msg:"沒有殖利率資料"};
+ H.macro=d.pmi<30||d.pmi>70?{lv:"warn",msg:`PMI ${d.pmi} 超出常見範圍，請確認`}:ok("總經指標在合理範圍");
+ lastRes.forEach(r=>{if(!Number.isFinite(r.s)||Math.abs(r.s)>2)H[r.a.key]={lv:"bad",msg:"輸出分數異常"}});
+ return H}
+function monitor(){const R={};lastRes.forEach(r=>R[r.a.key]=r);
+ const reviews=ADVISORS.map(a=>{const rev=REVIEWER[a.key],own=R[a.key],other=R[rev];
+  let msg=CHECKS[a.key](R,state);if(!msg&&Math.abs(own.s-other.s)>=2)msg=`方向相反：${own.a.name}「${LABEL(own.s)[0]}」，${other.a.name}「${LABEL(other.s)[0]}」（${other.why[0]}）`;
+  return {a,rev:byKey(rev),msg}});
+ const H=health(state),act=lastRes.filter(r=>weights[r.a.key]>0),sp=act.length?std(act.map(r=>r.s)):0;
+ const same=act.length>=3&&new Set(act.map(r=>LABEL(r.s)[1])).size===1;
+ const reasons=[];const flags=reviews.filter(r=>r.msg).length;
+ if(sp>1.2)reasons.push(`分歧度 σ = ${sp.toFixed(2)}，超過 1.2`);
+ if(flags>=2)reasons.push(`互評出現 ${flags} 則警示`);
+ const bad=ADVISORS.filter(a=>H[a.key].lv==="bad");if(bad.length)reasons.push(`${bad.map(a=>a.name).join("、")} 的資料不足`);
+ if(same)reasons.push("全員意見完全一致，可能共用同一個盲點，請抽查一位的理由");
+ return {reviews,H,reasons,flags,sp}}
+function renderMonitor(){const m=monitor(),lv={ok:"🟢 正常",warn:"🟡 注意",bad:"🔴 異常"};
+ $("escalate").className="escalate "+(m.reasons.length?"need":"ok");
+ $("escalate").innerHTML=m.reasons.length?`<b>🙋 需要你介入</b>系統偵測到以下情況，建議你看完理由再決定：<ul>${m.reasons.map(x=>`<li>${x}</li>`).join("")}</ul>`:`<b>🤖 代理自行通過</b>分歧在可接受範圍、互評警示少於 2 則、資料都正常。你只要偶爾抽查即可。`;
+ $("health").innerHTML=ADVISORS.map(a=>`<div class="hc"><b>${a.emoji} ${a.name}</b>${lv[m.H[a.key].lv]}<div class="muted">${m.H[a.key].msg}</div></div>`).join("");
+ $("reviews").innerHTML=m.reviews.map(r=>`<li class="${r.msg?"flag":""}"><span>${r.msg?"⚠️":"✅"}</span><span><span class="tag">${r.rev.emoji} ${r.rev.name} → ${r.a.emoji} ${r.a.name}</span><br>${r.msg||"檢查通過，沒有發現矛盾"}</span></li>`).join("");
+ lastMon=m}
+let lastMon=null,auditLog=store.get("audit",[]);
+function renderLog(){$("log").innerHTML=auditLog.length?auditLog.map(x=>`<tr><td class="num">${x.t}</td><td>${x.stock}</td><td>${x.verdict}</td><td class="num">${x.sp}</td><td class="num">${x.flags}</td><td>${x.esc?"🙋 是":"🤖 否"}</td></tr>`).join(""):`<tr><td colspan="6" class="muted">還沒有紀錄。按「記錄這次結果」存下當時的判斷與收盤價，之後可以回頭比對理專準不準。</td></tr>`}
+$("logBtn").addEventListener("click",()=>{const d=new Date(),p=n=>String(n).padStart(2,"0");
+ auditLog.unshift({t:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`,stock:`${label(state)}（${TW.asof} 收 ${fmt(state.p)}）`,verdict:$("verdict").textContent,sp:lastMon.sp.toFixed(2),flags:lastMon.flags,esc:lastMon.reasons.length>0});
+ auditLog=auditLog.slice(0,20);store.set("audit",auditLog);renderLog();toast("已記錄 📝")});
+$("logClear").addEventListener("click",()=>{auditLog=[];store.set("audit",auditLog);renderLog()});
+renderLog();
+
+function renderCards(){
+ $("cards").innerHTML=lastRes.filter(r=>tab==="all"||r.a.horizon===tab).map(({a,s,why,entry,metrics})=>{const [lab,cls]=LABEL(s);return `<article class="card" style="--tape:${a.tape}">
+  <div class="card-head"><div class="who"><div class="avatar" aria-hidden="true">${a.emoji}</div><div style="min-width:0"><div class="name">${a.name}</div><div class="bg">🎓 ${a.school}</div><div class="bg">💼 ${a.bg}</div></div></div>
+  <span class="pill ${cls}">${lab}</span></div>
+  <div class="style">${a.style} · 分數 <span class="num">${s>0?"+":""}${s.toFixed(1)}</span></div>
+  <div class="entry">🎯 ${entry}</div>
+  <ul class="why">${why.map(w=>`<li>${w}</li>`).join("")}</ul>
+  <div class="metrics">${Object.entries(metrics).map(([k,v])=>`<span>${k} <b class="num">${v}</b></span>`).join("")}</div>
+  <div class="weight"><label for="w_${a.key}" style="margin:0">⚖️ 採信權重</label><input id="w_${a.key}" type="range" min="0" max="3" step="0.5" value="${weights[a.key]}" data-k="${a.key}"><span class="num" id="wv_${a.key}">${weights[a.key]}×</span></div>
+  ${PROFILES[a.key]?`<details class="kb"><summary>👤 背景檔案與資料庫</summary>${(p=>`<div class="kb-item"><b>🎓 經歷</b><ul class="why">${p.career.map(x=>`<li>${x}</li>`).join("")}</ul></div><div class="kb-item"><b>⚠️ 最在意的風險</b><ul class="why">${p.risk.map(x=>`<li>${x}</li>`).join("")}</ul></div><div class="kb-item"><b>📏 評判標準</b><ul class="why">${p.criteria.map(x=>`<li>${x}</li>`).join("")}</ul></div><div class="kb-item"><b>🗄️ 資料庫（只看得到這些）</b><div class="metrics">${p.db.map(x=>`<span>${x}</span>`).join("")}</div></div><div class="kb-item"><b>🙈 盲點</b><p>${p.blind}</p></div><div class="kb-item"><b>🧑‍🤝‍🧑 適合的客戶</b><p>${p.client}</p></div>`)(PROFILES[a.key])}</details>`:""}
+  <details class="kb"><summary>📚 知識依據（${(KB[a.key]||[]).length} 張概念卡）</summary>${(KB[a.key]||[]).map(k=>`<div class="kb-item"><b>${k.t}</b><p>${k.b}</p><div class="kb-src">延伸原典：${k.r.map(id=>`<a href="${SRC[id].u}" target="_blank" rel="noopener">${SRC[id].t}</a>`).join("、")}</div></div>`).join("")}</details>
+  ${bookVoice(a.key,s,state)}
+  ${SHELF[a.key]?`<details class="kb"><summary>📚 課外書架（${SHELF[a.key].length} 本）</summary>${SHELF[a.key].map(b=>`<div class="kb-item"><b>《${b.zh}》</b><span class="kb-src">　${b.author}${b.year?`・${b.year}`:""}・${b.genre}</span><p>✨ 帶給他的特質：${b.trait}</p><p class="kb-src">${b.idea}　<a href="${GUT(b.gid)}" target="_blank" rel="noopener">讀原文（Project Gutenberg）</a></p></div>`).join("")}</details>`:""}
+  <div class="critique"><b>💬 同儕質疑</b>　${a.critique}</div>
+  <div class="vote-row"><button class="vote" type="button" data-v="${a.key}">❤ 投他一票</button><span class="votes">目前 <b class="num" id="vc_${a.key}">${votesOf(a.key)}</b> 票</span></div></article>`}).join("")}
+function renderConsensus(){const res=lastRes;
+ const tw=Object.values(weights).reduce((x,y)=>x+y,0)||1,avg=res.reduce((t,r)=>t+r.s*weights[r.a.key],0)/tw,act=res.filter(r=>weights[r.a.key]>0).map(r=>r.s),sp=act.length?std(act):0;
+ const [lab,cls]=LABEL(avg);$("verdict").textContent=lab;
+ $("score").textContent=`加權分數 ${avg>0?"+":""}${avg.toFixed(2)}（−2 到 +2）`;
+ const groups={buy:0,add:0,wait:0,avoid:0};res.forEach(r=>{if(weights[r.a.key]>0)groups[LABEL(r.s)[1]]+=weights[r.a.key]});
+ $("bar").innerHTML=Object.entries(groups).map(([k,v])=>`<span style="width:${v/tw*100}%;background:${COL[k]}" title="${NM[k]}"></span>`).join("");
+ $("counts").innerHTML=Object.keys(groups).map(k=>`<span><span class="dot" style="background:${COL[k]}"></span> ${NM[k]} <b class="num">${res.filter(r=>weights[r.a.key]>0&&LABEL(r.s)[1]===k).length}</b> 位</span>`).join("");
+ $("spread").textContent=`分歧度 σ = ${sp.toFixed(2)}　${sp>1.2?"🌪️ 意見嚴重分歧，建議你親自看看各方理由再決定。":sp>0.7?"🌤️ 意見有落差，留意不同時間尺度的差異。":"☀️ 多數理專看法接近。"}`}
+function renderRank(){const top=ADVISORS.map(a=>({a,v:votesOf(a.key)})).sort((x,y)=>y.v-x.v).slice(0,3),m=["🥇","🥈","🥉"];
+ $("rank").innerHTML=top.map(({a,v},i)=>`<li><span class="medal">${i===0?"👑":""}${m[i]}</span><span class="who"><b>${a.emoji} ${a.name}</b><span>${a.style}</span></span><span class="num"><b>${v}</b> 票</span></li>`).join("")}
+
+$("cards").addEventListener("input",e=>{const k=e.target.dataset.k;if(!k)return;weights[k]=+e.target.value;store.set("w_"+k,weights[k]);$("wv_"+k).textContent=weights[k]+"×";renderConsensus();renderMonitor()});
+$("cards").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!b)return;const k=b.dataset.v;
+ myVotes[k]=(myVotes[k]||0)+1;store.set("myVotes",myVotes);$("vc_"+k).textContent=votesOf(k);
+ b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");hearts(b);renderRank();toast(`投票成功！🎉 ${byKey(k).name} 謝謝你的信任`)});
+
+// ---------- 特效 ----------
+function hearts(el){const r=el.getBoundingClientRect(),icons=["💖","💗","✨","🩷"];
+ for(let i=0;i<8;i++){const h=document.createElement("span");h.className="heart";h.textContent=icons[i%4];
+  h.style.left=(r.left+r.width/2-10+(Math.random()-.5)*40)+"px";h.style.top=(r.top-4)+"px";h.style.setProperty("--dx",((Math.random()-.5)*120)+"px");h.style.animationDelay=(i*40)+"ms";
+  document.body.appendChild(h);setTimeout(()=>h.remove(),1300)}}
+let toastT;function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,1800)}
+
+// ---------- 扭蛋 ----------
+$("gacha").addEventListener("click",()=>{const a=ADVISORS[Math.floor(Math.random()*ADVISORS.length)],top=PICKS[a.key][0],[lab]=LABEL(top.s);
+ $("bubble").innerHTML=`<button class="close" type="button" id="mClose" aria-label="關閉">✕</button>
+ <div class="avatar" style="background:${a.tape}" aria-hidden="true">${a.emoji}</div>
+ <h3 id="mTitle">今天聽 ${a.name} 的！</h3><div class="muted" style="font-size:13px">${a.style}</div>
+ <div class="say">「${a.quip}」<br><br>我的首選是 <b>${label(top.st)}</b>，看法 <b>${lab}</b>。<br>${top.why.join("；")}<br>🎯 ${top.entry}${bookVoice(a.key,top.s,dataOf(top.st))}</div>
+ <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn" type="button" id="mAgain">🎰 再抽一次</button><button class="btn ghost" type="button" id="mSee" data-c="${top.st.c}">看這檔的完整意見</button></div>
+ <div class="muted" style="font-size:11px;margin-top:10px">抽籤僅供娛樂，規則計算結果不保證準確，非投資建議。</div>`;
+ $("modal").hidden=false;$("mSee").focus()});
+$("modal").addEventListener("click",e=>{if(e.target.id==="mAgain"){$("gacha").click();return}
+ if(e.target.id==="mSee"){$("modal").hidden=true;loadStock(e.target.dataset.c);$("stock").scrollIntoView({behavior:"smooth",block:"center"});return}
+ if(e.target===$("modal")||e.target.id==="mClose"){$("modal").hidden=true;$("gacha").focus()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("modal").hidden){$("modal").hidden=true;$("gacha").focus()}});
+
+renderLights();renderPicks();loadStock("2330");
+// ---------- 理專內行筆記（repo/knowledge/insider.zh.json） ----------
+const INS=/*INSIDER*/;
+(function(){
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const src=a=>a.length?`<div class="ins-src">出處：${a.map(([n,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a>`).join("、")}</div>`:"";
+  let cur=INS.sections[0].id;
+  $("insAsof").textContent=INS.asof;
+  function draw(){
+    $("insTabs").innerHTML=INS.sections.map(s=>`<button class="tab" role="tab" type="button" data-s="${s.id}" aria-selected="${s.id===cur}">${s.icon} ${esc(s.title.split("：")[0])}</button>`).join("");
+    const s=INS.sections.find(x=>x.id===cur);
+    const flag=s.id==="redflags";
+    $("insList").innerHTML=`<div class="ins-item" style="grid-column:1/-1"><b>${s.icon} ${esc(s.title)}</b>${flag?'<p class="muted">勾選你遇過的情況，自我檢查用，資料只留在你的瀏覽器畫面上。</p>':""}</div>`+
+      s.items.map(it=>`<div class="ins-item">${flag?`<label><input type="checkbox" class="rf"><b>${esc(it.t)}</b></label>`:`<b>${esc(it.t)}</b>`}<p>${esc(it.b)}</p>${src(it.src)}</div>`).join("")+
+      (flag?'<div class="ins-item" style="grid-column:1/-1" id="rfOut"></div>':"");
+    if(flag){const upd=()=>{const n=document.querySelectorAll(".rf:checked").length;$("rfOut").innerHTML=n?`<div class="ins-alert">勾了 ${n} 項。建議先向銀行客服或該分行主管確認帳戶與交易紀錄，必要時向金融消費評議中心（0800-789-885）諮詢。</div>`:'<div class="ins-alert ok">目前沒有勾選。定期核對銀行寄來的對帳單，是最簡單的保護。</div>';};document.querySelectorAll(".rf").forEach(c=>c.onchange=upd);upd();}
+  }
+  $("insTabs").onclick=e=>{const b=e.target.closest("[data-s]");if(b){cur=b.dataset.s;draw();}};
+  draw();
+  // calendar: next 5 dates from today
+  const now=new Date(),y=now.getFullYear(),t0=new Date(y,now.getMonth(),now.getDate());
+  const ev=[0,1].flatMap(k=>INS.calendar.map(c=>({...c,dt:new Date(y+k,c.m-1,c.d)}))).filter(c=>c.dt>=t0).slice(0,5);
+  $("insCal").innerHTML=ev.map(c=>{const days=Math.round((c.dt-t0)/864e5);return `<li><span class="d">${c.m}/${c.d}</span><span>${esc(c.t)}<span class="ins-src">・${days?`還有 ${days} 天`:"就是今天"}</span></span></li>`;}).join("");
+  // risk quiz
+  const Q=INS.quiz;
+  $("qTitle").textContent="🧩 "+Q.title;$("qNote").textContent=Q.note;
+  $("quiz").innerHTML=Q.qs.map((q,i)=>`<fieldset><legend>${i+1}. ${esc(q.q)}</legend><div class="chips">${q.a.map(([l,v])=>`<label class="chip"><input type="radio" name="q${i}" value="${v}">${esc(l)}</label>`).join("")}</div></fieldset>`).join("")+'<button class="btn" type="submit">看結果</button>';
+  $("quiz").onsubmit=e=>{e.preventDefault();
+    const v=Q.qs.map((_,i)=>document.querySelector(`input[name=q${i}]:checked`));
+    if(v.some(x=>!x)){$("qOut").innerHTML='<div class="ins-alert">還有題目沒作答。</div>';return;}
+    const sum=v.reduce((a,x)=>a+ +x.value,0),L=Q.levels.find(l=>sum<=l.max);
+    $("qOut").innerHTML=`<div class="ins-alert ok"><b>${L.name}</b>（${sum} 分）・適合 ${L.rr}<br>${esc(L.tip)}</div>`;};
+})();
+</script>
+<!--SITE-FOOT-->

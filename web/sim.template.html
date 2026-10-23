@@ -1,0 +1,316 @@
+<title>百萬模擬倉</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: 理專圓桌的姊妹頁，像一本存摺。上方資產總覽 → 跟單下單台 → 持股與交易明細 → 回測。台股慣例：漲紅、跌綠。刻意只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#8a7566; --line:#f1e2d6;
+  --pink:#f7b7c5; --pink-deep:#d9708a; --apricot:#ffd9a0; --apricot-deep:#c4862a;
+  --matcha:#c5ddb0; --matcha-deep:#5f9147; --sky:#b5d8f2; --sky-deep:#4a87b5; --lilac:#d9cdf2;
+  --up:#c4475f; --down:#3d7a2b;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#ffeef2 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h2{font-size:22px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px;min-width:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky-deep);outline-offset:3px}
+.muted{color:var(--ink-soft)}
+.num,.mono{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:.95em}
+.up{color:var(--up)}.down{color:var(--down)}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-soft)}
+
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px}
+header h1{font-size:clamp(28px,5vw,42px)}
+header p{margin:4px 0 0;color:var(--ink-soft)}
+.back{color:var(--sky-deep);font-weight:700}
+.disclaimer{background:#fff0f3;border:2px dashed var(--pink-deep);color:#9b4a5d;border-radius:18px;padding:9px 14px;font-size:13px}
+
+/* 存摺總覽 */
+.passbook{display:grid;grid-template-columns:1.3fr repeat(3,minmax(0,1fr));gap:0;border-radius:22px;overflow:hidden;border:2px solid var(--line)}
+.passbook>div{padding:14px 16px;background:#fff9f4;border-right:2px dashed var(--line);min-width:0}
+.passbook>div:last-child{border-right:none}
+.passbook .total{background:linear-gradient(135deg,#ffe3ea,#fff3c9)}
+.passbook b{display:block;font-family:var(--f-mono);font-size:clamp(20px,3vw,28px);font-weight:500;line-height:1.3}
+.passbook .total b{font-size:clamp(24px,4vw,36px)}
+.passbook small{font-size:13px}
+@media (max-width:760px){.passbook{grid-template-columns:1fr 1fr}.passbook>div:nth-child(2){border-right:none}.passbook>div{border-bottom:2px dashed var(--line)}.passbook .total{grid-column:1/-1;border-right:none}}
+
+/* 下單台 */
+.desk{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:820px){.desk{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.row .field{flex:1 1 140px}
+input,select{background:#fff9f4;border:2px solid var(--line);border-radius:14px;padding:8px 12px;width:100%;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--pink);border-color:var(--pink-deep)}
+.btn{border:none;border-radius:999px;padding:10px 20px;font-family:var(--f-display);font-size:16px;background:linear-gradient(135deg,var(--pink),var(--apricot));box-shadow:0 4px 0 #e59aab}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #e59aab}
+.btn.ghost{background:#fff;border:2px solid var(--line);box-shadow:none}
+.btn.sell{background:linear-gradient(135deg,var(--matcha),#e6f1d9);box-shadow:0 4px 0 #9fc387}
+.preview{background:#fff9f4;border-radius:18px;padding:12px 14px;font-size:14px}
+.preview table{width:100%;border-collapse:collapse}
+.preview td{padding:3px 4px;border-bottom:1px dashed var(--line)}
+.preview td:last-child{text-align:right}
+.msg{font-size:13px;min-height:1.4em}
+
+/* 表格 */
+.tbl-box{overflow-x:auto;margin-top:10px}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+.tbl th{font-size:12px;color:var(--ink-soft);font-weight:500;text-align:right;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+.tbl td{padding:7px 8px;border-bottom:1px dashed var(--line);text-align:right;white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl .mini{border:none;background:none;color:var(--sky-deep);font-weight:700;text-decoration:underline;padding:0}
+
+/* 回測 */
+.bt-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-top:12px}
+@media (max-width:860px){.bt-grid{grid-template-columns:1fr}}
+.chart svg text{font-size:11px;fill:var(--ink-soft);font-family:var(--f-mono)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-top:6px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.note{font-size:13px;color:var(--ink-soft);max-width:80ch}
+.note li{margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:999px;padding:9px 18px;font-size:14px;z-index:20}
+@media (prefers-reduced-motion:reduce){.btn:active{transform:none}}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header>
+    <div>
+      <h1>🐷 百萬模擬倉</h1>
+      <p>假設你有 <b>100 萬</b>現金，跟著理專圓桌的理專下單，看看能不能賺錢。</p>
+    </div>
+    <div class="muted" style="font-size:13px">報價日 <b class="mono" id="asof"></b>　<span id="saveState">💾 存在這台裝置</span></div>
+  </header>
+  <div class="disclaimer">💡 模擬交易，不是真的下單，也不是投資建議。成交價一律用證交所 <span id="asof2"></span> 收盤價，手續費 0.1425%（整股最低 20 元、零股最低 1 元），賣出證交稅股票 0.3%、ETF 0.1%、債券 ETF 免徵。網站資料更新後，持股市值才會跟著變動。</div>
+
+  <section class="box" aria-label="資產總覽">
+    <div class="passbook">
+      <div class="total"><span class="eyebrow">總資產</span><b id="total"></b><small id="pnl"></small></div>
+      <div><span class="eyebrow">現金</span><b id="cash"></b><small class="muted" id="cashPct"></small></div>
+      <div><span class="eyebrow">持股市值</span><b id="mv"></b><small class="muted" id="posN"></small></div>
+      <div><span class="eyebrow">已付手續費＋稅</span><b id="costs"></b><small class="muted" id="tradesN"></small></div>
+    </div>
+    <div class="row" style="margin-top:12px;justify-content:space-between">
+      <div class="muted" style="font-size:13px" id="bench"></div>
+      <button class="btn ghost" type="button" id="resetBtn">重新開始（回到 100 萬現金）</button>
+    </div>
+    <div class="preview" id="resetAsk" hidden>確定要清空所有持股與交易紀錄，回到 100 萬現金嗎？　<button class="btn" type="button" id="resetYes">確定重來</button>　<button class="btn ghost" type="button" id="resetNo">取消</button></div>
+  </section>
+
+  <section class="desk">
+    <div class="box">
+      <h2>🤝 跟著理專下單</h2>
+      <p class="muted" style="margin:6px 0 12px;font-size:13.5px">選一位理專，把指定金額平均買進他目前的前三名（只買他給「分批布局」以上的標的）。</p>
+      <div class="field"><label id="advLbl">理專</label><div class="chips" role="group" aria-labelledby="advLbl" id="advs"></div></div>
+      <div class="row" style="margin-top:12px">
+        <div class="field"><label for="fUni">範圍</label><select id="fUni"><option value="stock">個股</option><option value="etf">ETF</option></select></div>
+        <div class="field"><label for="fAmt">投入金額（元）</label><input id="fAmt" type="number" min="1000" step="10000" inputmode="numeric"></div>
+      </div>
+      <div class="preview" id="fPrev" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" type="button" id="fGo">照這個清單買進</button><span class="msg" id="fMsg"></span></div>
+    </div>
+    <div class="box">
+      <h2>✍️ 自己下單</h2>
+      <p class="muted" style="margin:6px 0 12px;font-size:13.5px">輸入代號或名稱。1 張 = 1,000 股，不滿 1 張就是零股。</p>
+      <div class="field"><label for="mCode">股票或 ETF</label><input id="mCode" list="codeList" autocomplete="off" placeholder="例如 2330 或 0056"><datalist id="codeList"></datalist></div>
+      <div class="row" style="margin-top:12px">
+        <div class="field"><label for="mSh">股數</label><input id="mSh" type="number" min="1" step="1" inputmode="numeric" value="1000"></div>
+        <div class="field"><label for="mLots">快速設定</label><select id="mLots"><option value="">—</option><option value="1000">1 張</option><option value="5000">5 張</option><option value="100">100 股（零股）</option><option value="max">現金買得起的最大量</option></select></div>
+      </div>
+      <div class="preview" id="mPrev" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" type="button" id="mBuy">買進</button><button class="btn sell" type="button" id="mSell">賣出</button><span class="msg" id="mMsg"></span></div>
+    </div>
+  </section>
+
+  <section class="box" aria-label="持股">
+    <h2>📒 我的持股</h2>
+    <div class="tbl-box"><table class="tbl"><thead><tr><th>標的</th><th>股數</th><th>平均成本</th><th>現價</th><th>市值</th><th>未實現損益</th><th>報酬率</th><th>跟單來源</th><th></th></tr></thead><tbody id="posT"></tbody></table></div>
+  </section>
+
+  <section class="box" aria-label="回測">
+    <h2>⏪ 如果半年前就把 100 萬交給理專？</h2>
+    <p class="note" style="margin:6px 0 0">用過去一年的真實月收盤做回測：從 <span id="btFrom"></span> 起，每個月月底依理專當時能看到的股價挑前三名、平均買進，持有到下個月再換股，計入手續費與證交稅。只有<b>只看股價</b>的三位理專能這樣回測；價值派、存股派、總經派需要「當時」的本益比、殖利率與景氣燈號，目前沒有這些歷史資料，硬算會偷看到未來，所以不列入。</p>
+    <div class="bt-grid">
+      <div><p id="btSay" style="margin:0 0 6px;font-weight:700"></p><div class="chart" id="btChart"></div><div class="legend" id="btLeg"></div></div>
+      <div class="tbl-box" style="margin-top:0"><table class="tbl" style="min-width:0"><thead><tr><th>策略</th><th>期末資產</th><th>報酬率</th><th>最大回落</th></tr></thead><tbody id="btT"></tbody></table></div>
+    </div>
+    <details style="margin-top:12px"><summary class="muted">每個月各買了什麼</summary><div class="tbl-box"><table class="tbl"><thead><tr><th>月份</th><th>陳怡君</th><th>周以恆</th><th>張雅雯</th></tr></thead><tbody id="btPicks"></tbody></table></div></details>
+    <ul class="note" style="margin-top:12px;padding-left:20px">
+      <li>回測只有 6 個月，樣本很小，賺或賠都可能只是運氣。</li>
+      <li>這半年台股是多頭，追強勢股的動能派自然最好看；同一套規則遇到空頭或急跌反轉時，也可能賠得最多。</li>
+      <li>股票池是「今天」成交值最大的 325 檔，等於事先排除了這半年下市或變冷門的股票，結果會偏樂觀（存活者偏差）。</li>
+      <li>月收盤已依除權息還原，等於把配息再投入；實際成交價、滑價與交割時間（T+2）沒有模擬。</li>
+    </ul>
+  </section>
+
+  <section class="box" aria-label="交易明細">
+    <h2>🧾 交易明細</h2>
+    <div class="tbl-box"><table class="tbl"><thead><tr><th>時間</th><th>買賣</th><th>標的</th><th>股數</th><th>成交價</th><th>手續費</th><th>證交稅</th><th>金額</th><th>來源</th></tr></thead><tbody id="logT"></tbody></table></div>
+  </section>
+
+  <footer class="note">資料來源：臺灣證券交易所公開資料。理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。回到 <a class="back" href="https://claude.ai/artifact/Vj54WYe91o3L2eYVQMpLDT" target="_blank" rel="noopener">理專圓桌</a> 看每位理專的完整理由。</footer>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+/*SHARED*/
+// ---------- 模擬倉 ----------
+const START=1000000,FEE=0.001425,DEPOSIT=0.017; // 定存年利率假設 1.7%
+const ETFS2=TW.etfs||[],ALL2=[...TW.stocks,...ETFS2];
+const $=id=>document.getElementById(id);
+const byCode=c=>ALL2.find(s=>s.c===c);
+const label=s=>`${s.c} ${s.n}`;
+const money=x=>Math.round(x).toLocaleString("zh-TW");
+const signed=x=>`${x>=0?"+":"−"}${money(Math.abs(x))}`;
+const pctS=x=>`${x>=0?"+":""}${(x*100).toFixed(2)}%`;
+const cls=x=>x>0?"pc up":x<0?"pc down":"";
+const macro={light:"綠",rate:0,pmi:50.5};
+const view=(a,d)=>{const v={c:d.c,n:d.n};(PROFILES[a.key]?.fields||Object.keys(d)).forEach(k=>v[k]=d[k]);return v};
+function runA(a,d){const r=a.run(view(a,{...d,...macro}));if(!isETF(d)||!["槓桿反向","期貨商品"].includes(d.t))return r;return {...r,s:Math.min(r.s,-1),tb:-99}}
+function picksOf(a,U){return U.map(st=>({st,...runA(a,st)})).sort((x,y)=>y.s-x.s||y.tb-x.tb).slice(0,3).filter(r=>r.s>=0.5)}
+const univ=u=>u==="etf"?ETFS2.filter(e=>!["槓桿反向","期貨商品"].includes(e.t)):TW.stocks;
+
+// 交易成本
+const feeOf=(amt,sh)=>Math.max(sh>=1000?20:1,Math.round(amt*FEE));
+const taxRate=s=>!isETF(s)?0.003:s.t==="債券"?0:0.001;
+
+// ---------- 狀態：登入時存在雲端（只有你看得到），否則存在這台裝置 ----------
+const fresh=()=>({cash:START,pos:{},log:[],costs:0,since:TW.asof});
+let S=fresh(),saveRemote=null;
+const local={get(){try{return JSON.parse(localStorage.getItem("sim")||"null")}catch(e){return null}},set(v){try{localStorage.setItem("sim",JSON.stringify(v))}catch(e){}}};
+{const v=local.get();if(v&&v.pos)S=v}
+function save(){local.set(S);if(saveRemote)saveRemote(S)}
+(async()=>{try{
+ const db=await window.claude?.use?.("db"),user=await window.claude?.use?.("user");if(!db||!user)return;
+ const id=await user.id();if(!id)return;
+ const ref=db.collection("data/users/"+id).doc("portfolio");
+ const snap=await ref.get();
+ if(snap.exists){const v=snap.data();if(v&&v.state){S=JSON.parse(v.state);local.set(S);renderAll()}}
+ else await ref.set({state:JSON.stringify(S)});
+ saveRemote=st=>ref.set({state:JSON.stringify(st)}).catch(()=>{$("saveState").textContent="⚠️ 雲端儲存失敗，先存在這台裝置"});
+ $("saveState").textContent="☁️ 已存到你的帳號（只有你看得到）";
+}catch(e){}})();
+
+function trade(code,side,sh,src){const s=byCode(code);if(!s)return "找不到這檔";sh=Math.floor(sh);if(!(sh>0))return "股數要大於 0";
+ const amt=s.p*sh,fee=feeOf(amt,sh);
+ if(side==="buy"){if(amt+fee>S.cash)return `現金不足：需要 ${money(amt+fee)} 元，只有 ${money(S.cash)} 元`;
+  const p=S.pos[code]||{sh:0,cost:0,src:src};p.cost=(p.cost*p.sh+amt+fee)/(p.sh+sh);p.sh+=sh;p.src=p.src||src;S.pos[code]=p;S.cash-=amt+fee;S.costs+=fee;
+  S.log.unshift({t:stamp(),side,code,sh,px:s.p,fee,tax:0,amt:-(amt+fee),src})}
+ else{const p=S.pos[code];if(!p||p.sh<sh)return `持股不足：只有 ${p?money(p.sh):0} 股`;
+  const tax=Math.round(amt*taxRate(s));p.sh-=sh;if(!p.sh)delete S.pos[code];S.cash+=amt-fee-tax;S.costs+=fee+tax;
+  S.log.unshift({t:stamp(),side,code,sh,px:s.p,fee,tax,amt:amt-fee-tax,src})}
+ S.log=S.log.slice(0,200);return null}
+function stamp(){const d=new Date(),p=n=>String(n).padStart(2,"0");return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`}
+
+// ---------- 畫面 ----------
+let adv=ADVISORS[5].key;
+$("asof").textContent=$("asof2").textContent=TW.asof;
+$("codeList").innerHTML=ALL2.map(s=>`<option value="${label(s)}">${isETF(s)?"ETF・"+s.t:indName(s.i)}</option>`).join("");
+$("advs").innerHTML=ADVISORS.map(a=>`<button class="chip" type="button" data-a="${a.key}">${a.emoji} ${a.name}</button>`).join("");
+$("fAmt").value=START;
+
+function renderSummary(){let mv=0;for(const c in S.pos)mv+=byCode(c).p*S.pos[c].sh;const tot=S.cash+mv,pl=tot-START;
+ $("total").innerHTML=`<span class="${cls(pl)}">${money(tot)}</span>`;$("pnl").innerHTML=`<span class="${cls(pl)}">${signed(pl)} 元（${pctS(pl/START)}）</span>`;
+ $("cash").textContent=money(S.cash);$("cashPct").textContent=`佔 ${(S.cash/tot*100).toFixed(1)}%`;
+ $("mv").textContent=money(mv);$("posN").textContent=`${Object.keys(S.pos).length} 檔`;
+ $("costs").textContent=money(S.costs);$("tradesN").textContent=`${S.log.length} 筆交易`;
+ const b=byCode("0050"),since=S.since||TW.asof;
+ $("bench").innerHTML=since===TW.asof?`開始日 ${since}。網站資料更新後，這裡會比較你的報酬和「同一天全買 0050」「放銀行定存（年利率 1.7%）」。`:`同期比較：0050 買進持有 ${pctS(b.p/(S.b0050||b.p)-1)}、定存 ${pctS(DEPOSIT*(Date.parse(TW.asof)-Date.parse(since))/31536e6)}`}
+function renderPos(){const rows=Object.entries(S.pos);
+ $("posT").innerHTML=rows.length?rows.map(([c,p])=>{const s=byCode(c),mv=s.p*p.sh,pl=mv-p.cost*p.sh;return `<tr><td>${label(s)}<div class="muted" style="font-size:12px">${isETF(s)?"ETF・"+s.t:indName(s.i)}</div></td><td class="mono">${money(p.sh)}</td><td class="mono">${p.cost.toFixed(2)}</td><td class="mono">${fmt(s.p)}</td><td class="mono">${money(mv)}</td><td class="mono ${cls(pl)}">${signed(pl)}</td><td class="mono ${cls(pl)}">${pctS(pl/(p.cost*p.sh))}</td><td>${p.src||"自己下單"}</td><td><button class="mini" type="button" data-sellall="${c}">全部賣出</button></td></tr>`}).join(""):`<tr><td colspan="9" class="muted" style="text-align:left">還沒有持股。從上面選一位理專跟單，或自己輸入代號下單。</td></tr>`}
+function renderLog(){$("logT").innerHTML=S.log.length?S.log.map(x=>{const s=byCode(x.code);return `<tr><td class="mono">${x.t}</td><td class="${x.side==="buy"?"up":"down"}">${x.side==="buy"?"買進":"賣出"}</td><td>${s?label(s):x.code}</td><td class="mono">${money(x.sh)}</td><td class="mono">${fmt(x.px)}</td><td class="mono">${money(x.fee)}</td><td class="mono">${money(x.tax)}</td><td class="mono ${cls(x.amt)}">${signed(x.amt)}</td><td>${x.src||"自己下單"}</td></tr>`}).join(""):`<tr><td colspan="9" class="muted" style="text-align:left">還沒有交易。</td></tr>`}
+
+function followPlan(){const a=ADVISORS.find(x=>x.key===adv),U=univ($("fUni").value),ps=picksOf(a,U),amt=Math.min(+$("fAmt").value||0,S.cash);
+ if(!ps.length)return {a,ps,lines:[],amt};const each=amt/ps.length;
+ const lines=ps.map(r=>{let sh=Math.floor(each/(r.st.p*(1+FEE)));if(sh>=1000)sh=Math.floor(sh/1000)*1000+(sh%1000);return {r,sh,cost:r.st.p*sh+feeOf(r.st.p*sh,sh)}}).filter(l=>l.sh>0);
+ return {a,ps,lines,amt}}
+function renderFollow(){$("advs").querySelectorAll("[data-a]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.a===adv));
+ const {a,ps,lines,amt}=followPlan();
+ if(a.key==="value"&&$("fUni").value==="etf"){$("fPrev").innerHTML="王建明不用本益比替 ETF 排名，請換一位理專或改選個股。";$("fGo").disabled=true;return}
+ if(!lines.length){$("fPrev").innerHTML=ps.length?"金額太小，買不到任何一股。":`${a.name}目前沒有給「分批布局」以上的標的，他建議先觀望。`;$("fGo").disabled=true;return}
+ $("fGo").disabled=false;const tot=lines.reduce((t,l)=>t+l.cost,0);
+ $("fPrev").innerHTML=`<table>${lines.map(l=>`<tr><td>${label(l.r.st)}<div class="muted" style="font-size:12px">${l.r.why[1]||l.r.why[0]}</div></td><td class="mono">${money(l.sh)} 股 × ${fmt(l.r.st.p)}<br>${money(l.cost)} 元</td></tr>`).join("")}<tr><td><b>合計（含手續費）</b></td><td class="mono"><b>${money(tot)} 元</b></td></tr></table>${amt<+$("fAmt").value?`<div class="muted" style="font-size:12px;margin-top:4px">現金只剩 ${money(S.cash)} 元，已自動調低。</div>`:""}`}
+function renderManual(){const s=resolve($("mCode").value),sh=Math.floor(+$("mSh").value||0);
+ if(!s){$("mPrev").innerHTML=`<span class="muted">輸入代號後會顯示價格與費用。</span>`;return}
+ const amt=s.p*sh,fee=feeOf(amt,sh),tax=Math.round(amt*taxRate(s)),have=S.pos[s.c]?.sh||0;
+ $("mPrev").innerHTML=`<table><tr><td>${label(s)}（收盤 ${fmt(s.p)}，${s.chg>=0?"+":""}${s.chg.toFixed(2)}%）</td><td class="mono">持有 ${money(have)} 股</td></tr><tr><td>買進：股款 ${money(amt)} ＋ 手續費 ${money(fee)}</td><td class="mono">${money(amt+fee)} 元</td></tr><tr><td>賣出：股款 − 手續費 − 證交稅 ${money(tax)}</td><td class="mono">${money(amt-fee-tax)} 元</td></tr></table>`}
+const resolve=v=>{v=(v||"").trim();if(!v)return null;return byCode(v.split(" ")[0])||ALL2.find(x=>x.n===v)||ALL2.find(x=>x.n.includes(v))};
+function renderAll(){renderSummary();renderPos();renderLog();renderFollow();renderManual()}
+
+let toastT;function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2000)}
+$("advs").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;adv=b.dataset.a;renderFollow()});
+$("fUni").addEventListener("change",renderFollow);$("fAmt").addEventListener("input",renderFollow);
+$("fGo").addEventListener("click",()=>{const {a,lines}=followPlan();let n=0,err=null;
+ if(!S.log.length){S.since=TW.asof;S.b0050=byCode("0050").p}
+ lines.forEach(l=>{const e=trade(l.r.st.c,"buy",l.sh,`跟 ${a.name}`);if(e)err=e;else n++});
+ save();renderAll();$("fMsg").textContent=err?`部分沒成交：${err}`:"";toast(`已買進 ${n} 檔 ✨`)});
+$("mCode").addEventListener("input",renderManual);$("mSh").addEventListener("input",renderManual);
+$("mLots").addEventListener("change",()=>{const v=$("mLots").value,s=resolve($("mCode").value);
+ if(v==="max"&&s){let sh=Math.floor(S.cash/(s.p*(1+FEE)));while(sh>0&&s.p*sh+feeOf(s.p*sh,sh)>S.cash)sh--;$("mSh").value=sh}else if(v&&v!=="max")$("mSh").value=v;$("mLots").value="";renderManual()});
+function manual(side){const s=resolve($("mCode").value);if(!s){$("mMsg").textContent="請先選一檔股票或 ETF";return}
+ if(!S.log.length){S.since=TW.asof;S.b0050=byCode("0050").p}
+ const e=trade(s.c,side,+$("mSh").value,null);$("mMsg").textContent=e||"";if(!e){save();renderAll();toast(side==="buy"?"買進成交 🎉":"賣出成交 🍃")}}
+$("mBuy").addEventListener("click",()=>manual("buy"));$("mSell").addEventListener("click",()=>manual("sell"));
+$("posT").addEventListener("click",e=>{const b=e.target.closest("[data-sellall]");if(!b)return;const c=b.dataset.sellall,e2=trade(c,"sell",S.pos[c].sh,"全部賣出");if(!e2){save();renderAll();toast("已全部賣出 🍃")}});
+$("resetBtn").addEventListener("click",()=>{$("resetAsk").hidden=false});
+$("resetNo").addEventListener("click",()=>{$("resetAsk").hidden=true});
+$("resetYes").addEventListener("click",()=>{S=fresh();save();$("resetAsk").hidden=true;renderAll();toast("已回到 100 萬現金")});
+
+// ---------- 回測：只用當時看得到的月收盤 ----------
+// 序列 s = 12 個月收盤 + 最新收盤（13 點，已還原除權息）；從第 6 點開始，每月換股
+function backtest(key){const a=ADVISORS.find(x=>x.key===key),U=TW.stocks.map(st=>({st,s:[...st.m,st.p]}));
+ let cash=START,hold={},curve=[],picks=[],costs=0;
+ for(let t=6;t<=12;t++){
+  let mv=0;for(const c in hold)mv+=hold[c].sh*hold[c].ser[t];curve.push(cash+mv);if(t===12)break;
+  // 當時的資料：前 12 個月（不足補最早值）、現價、近一個月均價近似
+  const pk=U.map(({st,s})=>{const past=s.slice(Math.max(0,t-12),t);while(past.length<12)past.unshift(s[0]);
+    const d={...st,p:s[t],m:past,ma:(s[t]+s[t-1])/2};return {st,ser:s,...runA(a,d)}}).sort((x,y)=>y.s-x.s||y.tb-x.tb).slice(0,3).filter(r=>r.s>=0.5);
+  picks.push(pk.map(r=>r.st.n));const want=new Set(pk.map(r=>r.st.c));
+  for(const c in hold)if(!want.has(c)){const h=hold[c],amt=h.sh*h.ser[t],fee=feeOf(amt,h.sh),tax=amt*0.003;cash+=amt-fee-tax;costs+=fee+tax;delete hold[c]}
+  const buys=pk.filter(r=>!hold[r.st.c]);
+  const each=cash/Math.max(1,buys.length);
+  buys.forEach(r=>{const px=r.ser[t];const sh=Math.floor(each/(px*(1+FEE)));if(sh>0){const amt=px*sh,fee=feeOf(amt,sh);cash-=amt+fee;costs+=fee;hold[r.st.c]={sh,ser:r.ser}}});
+ }
+ return {name:a.name,emoji:a.emoji,curve,picks,costs}}
+function benchmark(){const s=[...byCode("0050").m,byCode("0050").p],sh=Math.floor(START/(s[6]*(1+FEE))),fee=feeOf(s[6]*sh,sh),cash=START-s[6]*sh-fee;
+ return {name:"0050 買進持有",emoji:"🧺",curve:s.slice(6).map(v=>cash+sh*v)}}
+const deposit={name:"銀行定存 1.7%",emoji:"🏦",curve:[0,1,2,3,4,5,6].map(i=>START*(1+DEPOSIT*i/12))};
+function maxDD(c){let pk=c[0],dd=0;c.forEach(v=>{pk=Math.max(pk,v);dd=Math.min(dd,v/pk-1)});return dd}
+function renderBT(){const runs=[backtest("tech"),backtest("mom"),backtest("quant")],all=[...runs,benchmark(),deposit];
+ const colors=["var(--sky-deep)","var(--pink-deep)","#8a6bc8","var(--apricot-deep)","var(--ink-soft)"];
+ const M=TW.dates.slice(6).map(d=>`${d.slice(0,4)}/${+d.slice(4,6)}`);$("btFrom").textContent=`${TW.dates[6].slice(0,4)} 年 ${+TW.dates[6].slice(4,6)} 月`;
+ const W=560,H=240,pl=8,pr=70,pt=12,pb=24,vals=all.flatMap(r=>r.curve),lo=Math.min(...vals)*0.98,hi=Math.max(...vals)*1.02;
+ const x=i=>pl+(W-pl-pr)*i/6,y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo));
+ let g="";for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4;g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${W-pr+4}" y="${y(v)+3}">${(v/1e4).toFixed(0)} 萬</text>`}
+ g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(START)}" y2="${y(START)}" stroke="var(--ink-soft)" stroke-dasharray="4 4"/>`;
+ M.forEach((m,i)=>{if(i%2===0||i===6)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?"start":i===6?"end":"middle"}">${m}</text>`});
+ all.forEach((r,j)=>{g+=`<path d="M${r.curve.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L")}" fill="none" stroke="${colors[j]}" stroke-width="${j<3?2.6:2}" ${j>=3?'stroke-dasharray="6 4"':""} stroke-linejoin="round"/><circle cx="${x(6)}" cy="${y(r.curve[6])}" r="4" fill="${colors[j]}"/>`});
+ $("btChart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="回測資產走勢">${g}</svg>`;
+ {const best=[...runs].sort((a,b)=>b.curve[6]-a.curve[6])[0],bench=all[3],r0=best.curve[6]/START-1,rb=bench.curve[6]/START-1;
+  $("btSay").textContent=`這半年表現最好的是${best.name}（${pctS(r0)}），${r0>rb?"贏過":"沒贏過"}${bench.name}（${pctS(rb)}）。只有 6 個月，可能只是運氣。`}
+ $("btLeg").innerHTML=all.map((r,j)=>`<span><i style="background:${colors[j]}"></i>${r.emoji} ${r.name}</span>`).join("");
+ $("btT").innerHTML=all.map(r=>{const e=r.curve[6],ret=e/START-1;return `<tr><td>${r.emoji} ${r.name}</td><td class="mono">${money(e)}</td><td class="mono ${cls(ret)}">${pctS(ret)}</td><td class="mono">${(maxDD(r.curve)*100).toFixed(1)}%</td></tr>`}).join("");
+ $("btPicks").innerHTML=M.slice(0,6).map((m,i)=>`<tr><td class="mono">${m}</td>${runs.map(r=>`<td style="text-align:left;white-space:normal">${r.picks[i].join("、")||"空手"}</td>`).join("")}</tr>`).join("")}
+
+renderAll();renderBT();
+{const h=decodeURIComponent(location.hash.slice(1)),s=h&&byCode(h);if(s){$("mCode").value=label(s);renderManual()}}
+</script>
+<!--SITE-FOOT-->

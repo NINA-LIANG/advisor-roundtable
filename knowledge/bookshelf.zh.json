@@ -1,0 +1,33 @@
+{
+ "_note": "六位理專的課外書架：都是 Project Gutenberg 上美國公有領域的書，刻意挑財經以外的文類（兵法、歷史、哲學、小說、寓言、科普），讓每位理專多一層個性。網頁上的「讀書心得」是依書中觀念寫的中文意譯，不是逐字引文。gid 是 Gutenberg 書號，已於 2026-10-22 逐一查證。",
+ "tech": [
+  {"gid": 132, "title": "The Art of War", "zh": "孫子兵法", "author": "孫武", "genre": "兵法", "trait": "先求不敗再求勝", "idea": "先讓自己立於不敗，再等對手露出破綻。對交易員來說，就是先決定停損，再談獲利。"},
+  {"gid": 24518, "title": "Memoirs of Extraordinary Popular Delusions and the Madness of Crowds", "zh": "異常流行幻象與群眾瘋狂", "author": "Charles Mackay", "year": 1841, "genre": "歷史", "trait": "對群眾狂熱保持警覺", "idea": "鬱金香狂熱、南海泡沫都說明：人會成群地發瘋，卻只能一個一個慢慢清醒。"},
+  {"gid": 1661, "title": "The Adventures of Sherlock Holmes", "zh": "福爾摩斯冒險史", "author": "Arthur Conan Doyle", "year": 1892, "genre": "推理小說", "trait": "沒有證據不下結論", "idea": "福爾摩斯說，在掌握資料前就建立理論是大錯，人會開始扭曲事實去配合理論。"}
+ ],
+ "macro": [
+  {"gid": 7142, "title": "The History of the Peloponnesian War", "zh": "伯羅奔尼撒戰爭史", "author": "修昔底德", "genre": "歷史", "trait": "相信人性會讓歷史重演", "idea": "修昔底德寫史，是因為相信人性不變，類似的事件會一再發生。景氣循環也是。"},
+  {"gid": 1946, "title": "On War", "zh": "戰爭論", "author": "克勞塞維茲", "year": 1832, "genre": "兵法", "trait": "接受資訊永遠不完整", "idea": "戰場上的情報多半互相矛盾、甚至是錯的，「摩擦」讓簡單的事都變難。總經數據也總是落後又會修正。"},
+  {"gid": 25717, "title": "The History of the Decline and Fall of the Roman Empire", "zh": "羅馬帝國衰亡史", "author": "Edward Gibbon", "year": 1776, "genre": "歷史", "trait": "盛世時先想衰退", "idea": "吉朋在〈西羅馬衰亡總論〉裡說，羅馬的衰亡是過度強盛的自然結果，繁榮本身就讓衰敗的因子成熟。"}
+ ],
+ "value": [
+  {"gid": 20203, "title": "Autobiography of Benjamin Franklin", "zh": "富蘭克林自傳", "author": "Benjamin Franklin", "genre": "自傳", "trait": "節儉、記帳、每天檢討", "idea": "富蘭克林列了十三項美德，其中「節儉」是不做對人對己無益的花費，他還每天用小本子檢查自己有沒有做到。"},
+  {"gid": 2680, "title": "Meditations", "zh": "沉思錄", "author": "馬可・奧理略", "genre": "哲學", "trait": "只管自己能控制的事", "idea": "外在的事不由我們決定，能決定的只有自己的判斷與反應。"},
+  {"gid": 1184, "title": "The Count of Monte Cristo", "zh": "基度山恩仇記", "author": "大仲馬", "year": 1844, "genre": "小說", "trait": "耐心等待價值浮現", "idea": "全書最後一句是「等待與希望」。主角在牢裡等了十四年，才等到翻身的機會。"}
+ ],
+ "mom": [
+  {"gid": 103, "title": "Around the World in Eighty Days", "zh": "環遊世界八十天", "author": "Jules Verne", "year": 1873, "genre": "冒險小說", "trait": "守時、不戀棧", "idea": "福格先生照表操課，一班車誤點就立刻換交通工具，從不在原地懊惱。"},
+  {"gid": 1228, "title": "On the Origin of Species", "zh": "物種起源", "author": "Charles Darwin", "year": 1859, "genre": "科普", "trait": "強者在環境裡勝出", "idea": "能適應環境的變異會被保留下來、越來越多；不適應的會被淘汰。"},
+  {"gid": 2701, "title": "Moby Dick; Or, The Whale", "zh": "白鯨記", "author": "Herman Melville", "year": 1851, "genre": "小說", "trait": "提防執念", "idea": "亞哈船長執意追白鯨，最後連船帶人一起沉沒。"}
+ ],
+ "quant": [
+  {"gid": 58881, "title": "A Philosophical Essay on Probabilities", "zh": "機率的哲學隨筆", "author": "拉普拉斯", "year": 1814, "genre": "數學", "trait": "把直覺換成機率", "idea": "拉普拉斯說機率論說到底只是把常識化為計算；觀察次數越多，結果越接近真正的比例。"},
+  {"gid": 201, "title": "Flatland: A Romance of Many Dimensions", "zh": "平面國", "author": "Edwin A. Abbott", "year": 1884, "genre": "科幻小說", "trait": "記得自己少看了一個維度", "idea": "平面國的居民看不到第三個維度，就以為世界只有長和寬。"},
+  {"gid": 11562, "title": "Inquiries into Human Faculty and Its Development", "zh": "人類才能及其發展之探究", "author": "Francis Galton", "year": 1883, "genre": "科學", "trait": "看群體，不看單一個案", "idea": "高爾頓把許多張臉疊成一張「合成照片」，個別差異消失後，才看得出共通的樣子。"}
+ ],
+ "div": [
+  {"gid": 14418, "title": "Thrift", "zh": "節儉", "author": "Samuel Smiles", "year": 1875, "genre": "勵志", "trait": "小錢慢慢存成大錢", "idea": "斯邁爾斯認為儲蓄不是吝嗇，而是讓自己不依賴別人、能自立的開始。"},
+  {"gid": 205, "title": "Walden", "zh": "湖濱散記", "author": "Henry David Thoreau", "year": 1854, "genre": "散文", "trait": "簡單、夠用就好", "idea": "梭羅在湖邊住了兩年，結論是：簡化、再簡化。"},
+  {"gid": 21, "title": "Three Hundred Aesop's Fables", "zh": "伊索寓言", "author": "伊索", "genre": "寓言", "trait": "貪心會失去手上的", "idea": "〈狗與倒影〉：狗看見水裡的倒影叼著更大的肉，張口去搶，結果嘴裡那塊也掉進河裡。〈螞蟻與蚱蜢〉：夏天存糧的螞蟻，冬天才有得吃。"}
+ ]
+}
