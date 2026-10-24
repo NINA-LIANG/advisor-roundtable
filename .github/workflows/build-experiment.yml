@@ -52,7 +52,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898499+github-actions[bot]@users.noreply.github.com"
-          git add knowledge/experiment web/study.html web/study-key.json
+          git add knowledge/experiment web/study.html
           if git diff --cached --quiet; then echo "沒有變動"; exit 0; fi
           git commit -m "experiment: 建立實驗題庫（$(python -c 'import json;d=json.load(open("knowledge/experiment/items.v1.json"));print("草稿" if d["draft"] else "正式版")')）"
           git pull --rebase origin "${{ github.ref_name }}"

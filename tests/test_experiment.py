@@ -167,3 +167,38 @@ def test_latest_reads_datapipe_array(tmp_path):
     (tmp_path / "TEST04_pre.json").write_text(json.dumps([{"trial_type": "advisor-study", "pid": "TEST04", "trials": []}]), encoding="utf-8")
     got = {s["pid"] for s in score_study.latest(tmp_path)}
     assert got == {"A", "B"}
+
+
+def test_answer_key_is_not_published_while_collecting(monkeypatch, tmp_path):
+    cfg = json.loads((EXP / "config.json").read_text(encoding="utf-8"))
+    assert cfg["study"]["reveal_key"] is False  # 收資料期間一定要關著
+    html = build_site.pages()[0]["study.html"]
+    assert "reveal_key" in html  # 完成頁依設定決定要不要去讀答案檔
+
+
+def test_scoring_uses_shown_advice_for_weight_group(exp):
+    import sys
+    sys.path.insert(0, str(ROOT / "analysis"))
+    import score_study
+    _, key = bei.build(exp)
+    surveys = json.loads((EXP / "surveys.zh.json").read_text(encoding="utf-8"))
+    formal = {q: r for q, r in key["items"].items() if not q.startswith("練習")}
+    flip = {"buy": "no", "no": "buy"}
+    # 第 4 組：受試者把權重調到建議永遠是正確答案，最後一律照看到的建議
+    trials = [{"item_id": q, "order": i + 1, "d1": flip[r["truth"]], "c1": 60, "d2": r["truth"], "c2": 90, "t_pre": 1.0,
+               "shown_rec": r["truth"]} for i, (q, r) in enumerate(formal.items())]
+    s = {"pid": "W1", "cond": 3, "trials": trials, "prior_pids": 1, "pre": {}, "post": {}}
+    rows, p = score_study.score(s, key, surveys)
+    assert p["rair_shown"] == 1 and p["agree_shown"] == 1
+    assert p["n_rair"] == sum(r["ai_correct"] for r in formal.values())
+    assert p["fast_trials"] == len(formal) and p["prior_pids"] == 1
+    assert p["finlit_post"] == ""  # 1.1.0 起後測不再重做金融素養
+    assert all(r["abs_excess"] >= 0.02 for r in rows)
+
+
+def test_cronbach_alpha():
+    import sys
+    sys.path.insert(0, str(ROOT / "analysis"))
+    import score_study
+    assert score_study.alpha([[1, 1], [2, 2], [3, 3], [4, 4]]) == 1.0
+    assert score_study.alpha([[1, 2]]) == ""
