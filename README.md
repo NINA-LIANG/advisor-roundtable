@@ -109,6 +109,9 @@ python scripts/validate_data.py --status data/status.json && python scripts/buil
 3. **同意書**：聯絡信箱、謝禮在 `config.json`；之後要送倫理審查的話，加上 `rec_approval`（審查編號）與 `rec_contact` 就會出現在同意書；同意書文字在 `study.template.html` 的 `consent()`。
 4. **預覽**：`study.html?preview=1&cond=1`（1～4 組），預覽不會送資料。
 5. **發連結**：`python scripts/make_assignments.py 120 > experiment-private/pids.csv`，依報名順序發。`experiment-private/` 不會提交。
-6. **分析**：從雲端硬碟下載 `DataPipe` 資料夾，`python analysis/score_study.py 下載的資料夾` → `experiment-private/trials.csv`、`participants.csv`。
+6. **分析**：從雲端硬碟下載 `DataPipe` 資料夾，`python analysis/score_study.py 下載的資料夾` → `experiment-private/trials.csv`、`participants.csv`、`scales.csv`（α 係數）。主要檢定用 trials.csv 跑混合效果模型，事前登錄與排除標準見 `analysis/ANALYSIS_PLAN.md`。
+7. **公布答案**：全部收完後把 `config.json` 的 `reveal_key` 改成 `true`，重建網站才會放上 `study-key.json`，完成頁也才會列出每題股票與對錯。
 
-注意：repo 是公開的，`key.v1.json` 裡有答案。實驗頁本身不嵌入正式題答案，結束時才讀 `study-key.json` 揭曉；但有心人仍可從 repo 找到答案，按答對題數發獎金時請把這點寫進論文的限制。
+注意：repo 是公開的，`key.v1.json` 裡有答案，而且答案可以用公開的 `panel.json` 重算出來。1.1.0 起收資料期間網站不放 `study-key.json`，受試者沒辦法從實驗頁的網址直接拿到答案；但有心人仍可從 repo 找到，按答對題數發獎金時請把這點寫進論文的限制。
+
+1.1.0（2026-10-24）改版重點：第 1、2 組附上同一份理由，兩組只差來源標示；信任傾向改用 Merritt et al. (2013) 六題；金融素養不再後測；新增是否用過本站、重複參與與草率作答的紀錄；第 4 組另以實際看到的建議計算依賴指標。1.0.0 的前導測試資料與 1.1.0 不可合併分析，`participants.csv` 的 `app_ver` 欄可區分。

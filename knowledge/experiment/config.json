@@ -8,7 +8,7 @@
   "quota": {"correct_buy": 6, "correct_no": 5, "wrong_buy": 2, "wrong_no": 3}
  },
  "study": {
-  "app_version": "1.0.0",
+  "app_version": "1.1.0",
   "datapipe_experiment_id": "fY4jbKM2bLQT",
   "datapipe_condition_assignment": true,
   "researcher": "梁瑜庭",
@@ -16,6 +16,8 @@
   "advisor_professor": "",
   "minutes": "30–40",
   "has_reward": false,
-  "reward": "本研究沒有提供謝禮。"
+  "reward": "本研究沒有提供謝禮。",
+  "reveal_key": false,
+  "_reveal_key_note": "false＝收資料期間網站不放答案檔（study-key.json），完成頁不公布個別股票與對錯；全部收完再改 true 重建網站。"
  }
 }

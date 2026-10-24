@@ -309,11 +309,15 @@ def main():
     (WEB / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8")
     print("ok  web/sitemap.xml, web/robots.txt")
     publish_data()
-    # 實驗結束時的揭曉頁會讀這份（真實股票、日期與答案）；放在網站上而不是嵌進實驗頁，作答中看原始碼也看不到
-    key = EXP / "key.v1.json"
-    if key.exists():
-        shutil.copy2(key, WEB / "study-key.json")
+    # 揭曉用的答案檔（真實股票、日期與答案）只在 config 的 reveal_key 打開後才放上網站；
+    # 收資料期間放著，受試者從網址就能下載答案，正式題等於沒有遮蔽
+    key, pub_key = EXP / "key.v1.json", WEB / "study-key.json"
+    if key.exists() and json.loads(read(EXP / "config.json"))["study"].get("reveal_key"):
+        shutil.copy2(key, pub_key)
         print("ok  web/study-key.json")
+    elif pub_key.exists():
+        pub_key.unlink()
+        print("rm  web/study-key.json（收資料期間不公布答案）")
 
 if __name__ == "__main__":
     main()
