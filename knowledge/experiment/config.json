@@ -5,19 +5,28 @@
   "min_tv_e8": 1,
   "ambiguous_band": 0.02,
   "buy_threshold": 0.5,
-  "quota": {"correct_buy": 6, "correct_no": 5, "wrong_buy": 2, "wrong_no": 3}
+  "quota": {
+   "correct_buy": 6,
+   "correct_no": 5,
+   "wrong_buy": 2,
+   "wrong_no": 3
+  }
  },
  "study": {
-  "app_version": "1.1.0",
+  "app_version": "1.2.0",
+  "paused": true,
+  "_paused_note": "true＝暫停收資料：實驗頁只顯示暫停說明，不送任何資料（預覽 ?preview=1 仍可用）。論文第七版不含此實驗，倫理審查也還沒辦；要重新開放，請先和指導教授確認研究範圍、完成倫理審查（填 rec_approval、rec_contact），並確認 storage 與 DataPipe 後台的實際儲存位置一致，再改成 false。",
   "datapipe_experiment_id": "fY4jbKM2bLQT",
   "datapipe_condition_assignment": true,
   "researcher": "梁瑜庭",
   "contact": "ninaliang0521@gmail.com",
   "advisor_professor": "",
+  "storage": "研究者在 DataPipe 後台設定的雲端儲存空間【正式施測前改成實際位置，例如 OSF 專案或 Google 雲端硬碟】",
   "minutes": "30–40",
   "has_reward": false,
   "reward": "本研究沒有提供謝禮。",
   "reveal_key": false,
-  "_reveal_key_note": "false＝收資料期間網站不放答案檔（study-key.json），完成頁不公布個別股票與對錯；全部收完再改 true 重建網站。"
+  "_reveal_key_note": "false＝收資料期間網站不放答案檔（study-key.json），完成頁不公布個別股票與對錯；全部收完再改 true 重建網站。",
+  "withdraw_note": "已經傳送的部分會保留但不會用於分析；你也可以來信要求刪除（請附上編號）"
  }
 }

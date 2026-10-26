@@ -38,13 +38,14 @@ PAGE_URL = {rel: url for url, rel in ARTIFACT_URLS.items()}
 # 全站導覽：依使用者要做的事分三組
 NAV = [("學", [("learn.html", "入門教室"), ("news.html", "人氣小報")]),
        ("查", [("market.html", "台股全覽"), ("dividend.html", "除權息"), ("rates.html", "存款利率")]),
-       ("做", [("sim.html", "百萬模擬倉"), ("lab.html", "理專考場"), ("study.html", "參加研究")])]  # 理專圓桌（首頁）就是左邊的站名
+       ("做", [("sim.html", "百萬模擬倉"), ("lab.html", "理專考場")])]  # 理專圓桌（首頁）就是左邊的站名
+# 實驗頁不放導覽列與目錄：論文第七版不含使用者實驗，倫理審查也還沒辦，只能透過研究者發的連結進入（目前暫停收資料）
 # 左側目錄：分組標題、副標，每項的圖示（數字由 pages() 依資料算）
 DRAWER = [("學", "打好基本功", [("learn.html", "🌱", "入門教室"), ("news.html", "📰", "人氣小報")]),
           ("查", "看懂市場資料", [("market.html", "📇", "台股全覽"), ("dividend.html", "💰", "除權息行事曆"),
                              ("rates.html", "🏦", "存款利率")]),
           ("做", "練習自己判斷", [("index.html", "✨", "理專圓桌"), ("sim.html", "🐷", "百萬模擬倉"),
-                             ("lab.html", "🧪", "理專考場"), ("study.html", "🎓", "參加研究")]),
+                             ("lab.html", "🧪", "理專考場")]),
           ("站", "認識這個網站", [("about.html", "📖", "關於本站"), ("status.html", "🩺", "資料狀態")])]
 DISCLAIMER = ("示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。"
               "理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；"
@@ -68,7 +69,7 @@ META = {
 }
 # 不放進 sitemap、不給搜尋引擎收錄的頁面；實驗頁只透過研究者發的連結進入
 UNLISTED = ("404.html", "study.html")
-# 實驗頁把作答資料送到 DataPipe（免費的線上實驗資料收集服務，資料存到研究者的 Google 雲端硬碟）
+# 實驗頁把作答資料送到 DataPipe（免費的線上實驗資料收集服務，資料轉存到研究者在 DataPipe 後台設定的儲存空間，正式施測前請確認實際位置）
 DATAPIPE = "https://pipe.jspsych.org"
 EXP = ROOT / "knowledge" / "experiment"
 # 選用：GoatCounter 流量分析（不設 cookie）。在 repo 的 Actions 變數設定 GOATCOUNTER_CODE 才會啟用

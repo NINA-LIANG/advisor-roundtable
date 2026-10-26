@@ -41,3 +41,13 @@ def test_run_report_lists_failed_steps():
 def test_run_report_explains_pages_not_enabled():
     body = run_report.report({"validate": {"outcome": "success"}, "pages": {"outcome": "failure"}}, None, "")
     assert "Settings → Pages" in body
+
+
+def test_study_is_unlisted_and_paused_until_ethics_review():
+    out, _ = build_site.pages()
+    for name, html in out.items():
+        if name != "study.html":
+            assert 'href="study.html"' not in html, f"{name} 還有實驗頁入口"
+    cfg = json.loads((build_site.EXP / "config.json").read_text(encoding="utf-8"))["study"]
+    if cfg.get("paused"):
+        assert "研究暫停中" in out["study.html"]

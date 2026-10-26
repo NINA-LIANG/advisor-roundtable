@@ -267,7 +267,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const MACRO={light:"綠",rate:0,pmi:50.5};
 const ASOF=TW.asof,PREV="2026-10-20",MAXSTEP=8;
-const LABEL=s=>s>=1.5?"現在進場":s>=0.5?"分批布局":s>-0.5?"觀望":"暫不進場";
+const LABEL=s=>s>=1.5?"規則強烈偏多":s>=0.5?"規則偏多":s>-0.5?"規則中性":"規則偏空";
 const byCode=c=>TW.stocks.find(s=>s.c===c);
 const nameOf=s=>`${s.c} ${s.n}`;
 const fx=x=>x==null?"—":typeof x==="number"?(Math.abs(x)>=100?x.toFixed(1):x.toFixed(2)):x;

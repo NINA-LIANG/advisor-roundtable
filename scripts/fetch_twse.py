@@ -4,7 +4,8 @@
 輸出：data/tw.json
   {"asof": "YYYY-MM-DD", "dates": [13 個月份日期], "stocks": [
     {"c": 代號, "n": 名稱, "i": 產業別代碼, "p": 收盤, "chg": 漲跌%, "tv": 成交值(億),
-     "ma": 月均價, "pe": 本益比, "dy": 殖利率%, "pb": 淨值比, "m": [過去 12 個月的月收盤，舊到新]}]}
+     "ma": 月均價, "pe": 本益比, "dy": 殖利率%, "pb": 淨值比, "m": [過去 12 個月的月收盤，舊到新]}],
+   "ind_pe": {產業別代碼: {"med": 中位數, "n": 檔數}}, "mkt_pe": 全市場本益比中位數}
 
 資料來源（皆為免費、免金鑰）：
   openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL      個股當日成交
@@ -14,6 +15,8 @@
   www.twse.com.tw/exchangeReport/MI_INDEX                  指定日期的全市場收盤（取月收盤）
   www.twse.com.tw/rwd/zh/exRight/TWT49U                    除權息計算結果（ETF 配息與還原股價）
 個股：成交值超過 1 億元、代號為四碼數字的普通股。
+同業本益比中位數（ind_pe、mkt_pe）用全部上市普通股計算，不受成交值門檻影響；成交值門檻只決定推薦名單，
+不決定比較基準，否則同一產業的樣本會隨每天的成交量變動（例：汽車類曾只剩兩檔，取到 341 倍那一檔）。
 ETF：代號 00 開頭、成交值超過 3000 萬元，另存在 "etfs"，多了 "t"（類型）與 "cd"（近一年配息）。
 月收盤 "m" 已依除權息還原，讓報酬與均值不會因配息而失真。
 """
@@ -95,6 +98,25 @@ def adjust(series, dates, evs):
                 f *= k
         out.append(round(v * f, 2))
     return out
+
+
+def median(a):
+    b = sorted(a)
+    m = len(b) // 2
+    return b[m] if len(b) % 2 else (b[m - 1] + b[m]) / 2
+
+
+def peer_pe(bw, ind):
+    """全部上市普通股（四碼數字、本益比大於 0）的產業本益比中位數與全市場中位數。"""
+    groups, every = {}, []
+    for code, r in bw.items():
+        pe = num(r.get("PEratio"))
+        if code.startswith("00") or not (len(code) == 4 and code.isdigit() and pe and pe > 0):
+            continue
+        groups.setdefault(ind.get(code, "20"), []).append(pe)
+        every.append(pe)
+    ind_pe = {k: {"med": round(median(v), 2), "n": len(v)} for k, v in sorted(groups.items())}
+    return ind_pe, (round(median(every), 2) if every else None)
 
 
 def month_close(day):
@@ -181,7 +203,9 @@ def main():
     if f"{asof:%Y-%m-%d}" < prev:
         sys.exit(f"fail  資料日 {asof} 比舊檔 {prev} 還舊，保留舊檔")
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps({"asof": f"{asof:%Y-%m-%d}", "dates": dates, "stocks": stocks, "etfs": etfs},
+    ind_pe, mkt_pe = peer_pe(bw, ind)
+    OUT.write_text(json.dumps({"asof": f"{asof:%Y-%m-%d}", "dates": dates, "stocks": stocks, "etfs": etfs,
+                               "ind_pe": ind_pe, "mkt_pe": mkt_pe},
                               ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"ok  個股 {len(stocks)} 檔、ETF {len(etfs)} 檔，資料日 {asof}")
 
