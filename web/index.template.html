@@ -355,7 +355,11 @@ const isETF=d=>d.i==="ETF";
 const catOf=d=>isETF(d)?`ETF・${d.t}`:indName(d.i);
 // 總經派對 ETF 類型的偏好
 const TILT_ETF={low:["市值型","主題型","主動式"],mid:["市值型","主題型","海外","主動式"],high:["高股息","債券","主動式高股息"]};
-const IND_PE=(()=>{const g={};TW.stocks.forEach(s=>{if(s.pe>0)(g[s.i]=g[s.i]||[]).push(s.pe)});const o={};for(const k in g){const a=g[k].sort((x,y)=>x-y);o[k]=a[Math.floor(a.length/2)]}return o})();
+// 偶數筆取中間兩筆平均；同業有本益比的不到 PE_MIN_PEERS 檔時樣本太少，改用全市場中位數（例：汽車類只有兩檔時，曾取到 341 倍那一檔）
+const median=a=>{const b=[...a].sort((x,y)=>x-y),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2};
+const PE_MIN_PEERS=5;
+const IND_PE=(()=>{const g={};TW.stocks.forEach(s=>{if(s.pe>0)(g[s.i]=g[s.i]||[]).push(s.pe)});const o={};for(const k in g)o[k]={med:median(g[k]),n:g[k].length};return o})();
+const MKT_PE=(()=>{const a=TW.stocks.filter(s=>s.pe>0).map(s=>s.pe);return a.length?median(a):null})();
 
 // ---------- 指標 ----------
 function std(a){const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)}
@@ -386,12 +390,12 @@ const ADVISORS=[
   critique:"技術派陳怡君：總經訊號可能提早一年以上，股價在這段時間可能再跌 30%。"},
  {key:"value",name:"王建明",emoji:"📒",tape:"var(--apricot)",horizon:"long",school:"國立臺灣大學 會計學系・CFA",bg:"投信研究員 12 年・基本面",style:"價值投資・長期（1–3 年）",quip:"好公司也要有好價格，耐心是我的超能力。",
   run(d){let s,why=[];if(isETF(d))return {s:0,why:["ETF 是一籃子股票，不適用個股本益比估值",`${d.t}：長期持有更該比較內扣費用與追蹤誤差`],entry:"不做估值判斷，進場時機參考其他理專",tb:-99,metrics:{"類型":d.t}};if(!(d.pe>0))return {s:-1,why:["沒有本益比（近四季虧損或無資料），無法估值，先不碰"],entry:"等公司恢復獲利再評估",tb:-99,metrics:{"本益比":"—"}};
-   const med=IND_PE[d.i]||d.pe,rel=d.pe/med,eps=d.p/d.pe;
-   why.push(`本益比 ${d.pe.toFixed(1)} 倍，${indName(d.i)}同業中位數 ${med.toFixed(1)} 倍`);
-   if(rel<0.7){s=2;why.push("比同業便宜三成以上，具安全邊際")}else if(rel<0.9){s=1;why.push("略低於同業，價格合理偏低")}else if(rel<1.2){s=0;why.push("和同業差不多，合理價")}else if(rel<1.6){s=-1;why.push("比同業貴")}else{s=-2;why.push("比同業貴很多，估值偏高")}
+   const ip=IND_PE[d.i],peer=ip&&ip.n>=PE_MIN_PEERS,med=peer?ip.med:(MKT_PE||d.pe),rel=d.pe/med,eps=d.p/d.pe,lab=peer?"同業":"全市場";
+   why.push(peer?`本益比 ${d.pe.toFixed(1)} 倍，${indName(d.i)}同業中位數 ${med.toFixed(1)} 倍（${ip.n} 檔）`:`本益比 ${d.pe.toFixed(1)} 倍；${indName(d.i)}同業有本益比的只有 ${ip?ip.n:0} 檔，樣本太少，改和全市場中位數 ${med.toFixed(1)} 倍比較`);
+   if(rel<0.7){s=2;why.push(`比${lab}便宜三成以上，具安全邊際`)}else if(rel<0.9){s=1;why.push(`略低於${lab}，價格合理偏低`)}else if(rel<1.2){s=0;why.push(`和${lab}差不多，合理價`)}else if(rel<1.6){s=-1;why.push(`比${lab}貴`)}else{s=-2;why.push(`比${lab}貴很多，估值偏高`)}
    if(d.pb&&d.pb<1)why.push(`股價淨值比 ${d.pb}，低於帳面價值`);
    const cheap=eps*med*0.8;
-   return {s,why,entry:cheap>=d.p?`現價 ${fmt(d.p)} 已低於同業本益比八折價 ${fmt(cheap)}，可分批買；先確認獲利不是一次性的`:`同業本益比八折價 <b>${fmt(cheap)}</b> 以下積極買（現價 ${fmt(d.p)}）`,tb:-rel,metrics:{"本益比":d.pe.toFixed(1),"同業比":(rel*100).toFixed(0)+"%","淨值比":d.pb??"—"}}},
+   return {s,why,entry:cheap>=d.p?`現價 ${fmt(d.p)} 已低於${lab}本益比八折價 ${fmt(cheap)}，可分批買；先確認獲利不是一次性的`:`${lab}本益比八折價 <b>${fmt(cheap)}</b> 以下積極買（現價 ${fmt(d.p)}）`,tb:-rel,metrics:{"本益比":d.pe.toFixed(1),"同業比":(rel*100).toFixed(0)+"%","淨值比":d.pb??"—"}}},
   critique:"動能派周以恆：便宜可以更便宜，價值陷阱常出現在獲利正在衰退的公司。"},
  {key:"mom",name:"周以恆",emoji:"🚀",tape:"var(--pink)",horizon:"mid",school:"Columbia Business School MBA",bg:"前紐約避險基金分析師・動能策略",style:"動能趨勢・中期（3–6 個月）",quip:"強者恆強，跟著風向走最省力！",
   run(d){const ret=d.p/d.m[6]-1,hi=Math.max(...d.m,d.p),dist=d.p/hi-1,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s=0,why=[];
