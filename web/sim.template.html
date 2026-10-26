@@ -124,7 +124,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
   <section class="desk">
     <div class="box">
       <h2>🤝 跟著理專下單</h2>
-      <p class="muted" style="margin:6px 0 12px;font-size:13.5px">選一位理專，把指定金額平均買進他目前的前三名（只買他給「分批布局」以上的標的）。</p>
+      <p class="muted" style="margin:6px 0 12px;font-size:13.5px">選一位理專，把指定金額平均買進他目前的前三名（只買他的規則分數達「偏多」以上的標的）。</p>
       <div class="field"><label id="advLbl">理專</label><div class="chips" role="group" aria-labelledby="advLbl" id="advs"></div></div>
       <div class="row" style="margin-top:12px">
         <div class="field"><label for="fUni">範圍</label><select id="fUni"><option value="stock">個股</option><option value="etf">ETF</option></select></div>
@@ -288,7 +288,7 @@ function followPlan(){const a=ADVISORS.find(x=>x.key===adv),U=univ($("fUni").val
 function renderFollow(){$("advs").querySelectorAll("[data-a]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.a===adv));
  const {a,ps,lines,amt}=followPlan();
  if(a.key==="value"&&$("fUni").value==="etf"){$("fPrev").innerHTML="王建明不用本益比替 ETF 排名，請換一位理專或改選個股。";$("fGo").disabled=true;return}
- if(!lines.length){$("fPrev").innerHTML=ps.length?"金額太小，買不到任何一股。":`${a.name}目前沒有給「分批布局」以上的標的，他建議先觀望。`;$("fGo").disabled=true;return}
+ if(!lines.length){$("fPrev").innerHTML=ps.length?"金額太小，買不到任何一股。":`${a.name}目前沒有規則分數達「偏多」以上的標的。`;$("fGo").disabled=true;return}
  $("fGo").disabled=false;const tot=lines.reduce((t,l)=>t+l.cost,0);
  $("fPrev").innerHTML=`<table>${lines.map(l=>`<tr><td>${label(l.r.st)}<div class="muted" style="font-size:12px">${l.r.why[1]||l.r.why[0]}</div></td><td class="mono">${money(l.sh)} 股 × ${fmt(l.r.st.p)}<br>${money(l.cost)} 元</td></tr>`).join("")}<tr><td><b>合計（含手續費）</b></td><td class="mono"><b>${money(tot)} 元</b></td></tr></table>${amt<+$("fAmt").value?`<div class="muted" style="font-size:12px;margin-top:4px">現金只剩 ${money(S.cash)} 元，已自動調低。</div>`:""}`}
 function renderManual(){const s=resolve($("mCode").value),sh=Math.floor(+$("mSh").value||0);

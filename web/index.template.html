@@ -212,7 +212,7 @@ footer{font-size:12px;color:var(--ink-soft);max-width:80ch;margin:0 auto;text-al
   <!--SITE-NAV-->
   <header class="hero">
     <h1>✨ 理專圓桌 ✨</h1>
-    <p class="sub">台股買哪一檔、什麼時候進場？六位理專陪你一起想！🐾</p>
+    <p class="sub">同一檔台股，六種方法怎麼看？六位規則理專陪你一起想！🐾</p>
     <p class="what">六位方法不同的 AI 理專，每個交易日依證交所收盤資料挑台股與 ETF，理由和數字全部攤開讓你檢查。</p>
     <button class="gacha" id="gacha" type="button">🎰 今天聽誰的？（扭蛋抽一位）</button>
     <div class="route" id="route" hidden>
@@ -238,8 +238,8 @@ footer{font-size:12px;color:var(--ink-soft);max-width:80ch;margin:0 auto;text-al
         <div><label for="rate">央行利率走向</label><select id="rate"><option value="-1">降息循環</option><option value="0">按兵不動</option><option value="1">升息循環</option></select></div>
         <div><label for="pmi">製造業 PMI</label><input id="pmi" type="number" step="0.1"></div>
       </div>
-      <div><label id="lightlbl">🚦 國發會景氣對策信號（請依最新公布值設定）</label><div class="chips" role="group" aria-labelledby="lightlbl" id="lights"></div></div>
-      <div class="muted" style="font-size:12px">總經條件只影響林思遠的判斷，其他理專只看個股資料。</div>
+      <div><label id="lightlbl">🚦 國發會景氣對策信號（由你設定，不會自動更新）</label><div class="chips" role="group" aria-labelledby="lightlbl" id="lights"></div></div>
+      <div class="muted" style="font-size:12px">總經條件由你自己輸入，系統不會自動抓取；預設值不是最新公布值，請依國發會、中華經濟研究院與央行的公告設定。只影響林思遠的判斷，其他理專只看個股資料。</div>
     </div>
   </section>
   <section class="box" aria-label="理專選股">
@@ -262,7 +262,7 @@ footer{font-size:12px;color:var(--ink-soft);max-width:80ch;margin:0 auto;text-al
     <div class="box" aria-label="人氣排行榜">
       <div class="eyebrow">👑 人氣理專排行榜</div>
       <ol class="rank" id="rank"></ol>
-      <div class="muted" style="font-size:12px;margin-top:8px">初始票數為模擬數字，你的投票只記在這台裝置上。</div>
+      <div class="muted" style="font-size:12px;margin-top:8px">票數只計算你在這台裝置上投的票，不是其他使用者的投票，也不會上傳。</div>
     </div>
   </section>
 
@@ -358,8 +358,10 @@ const TILT_ETF={low:["市值型","主題型","主動式"],mid:["市值型","主�
 // 偶數筆取中間兩筆平均；同業有本益比的不到 PE_MIN_PEERS 檔時樣本太少，改用全市場中位數（例：汽車類只有兩檔時，曾取到 341 倍那一檔）
 const median=a=>{const b=[...a].sort((x,y)=>x-y),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2};
 const PE_MIN_PEERS=5;
-const IND_PE=(()=>{const g={};TW.stocks.forEach(s=>{if(s.pe>0)(g[s.i]=g[s.i]||[]).push(s.pe)});const o={};for(const k in g)o[k]={med:median(g[k]),n:g[k].length};return o})();
-const MKT_PE=(()=>{const a=TW.stocks.filter(s=>s.pe>0).map(s=>s.pe);return a.length?median(a):null})();
+// 同業比較基準優先用每日更新算好的「全部上市普通股」中位數（data/tw.json 的 ind_pe、mkt_pe），不受成交值門檻影響；
+// 舊資料或實驗題庫沒有這兩欄時，才退回用收錄的股票自己算
+const IND_PE=TW.ind_pe||(()=>{const g={};TW.stocks.forEach(s=>{if(s.pe>0)(g[s.i]=g[s.i]||[]).push(s.pe)});const o={};for(const k in g)o[k]={med:median(g[k]),n:g[k].length};return o})();
+const MKT_PE=TW.mkt_pe||(()=>{const a=TW.stocks.filter(s=>s.pe>0).map(s=>s.pe);return a.length?median(a):null})();
 
 // ---------- 指標 ----------
 function std(a){const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)}
@@ -371,61 +373,64 @@ const pct=x=>`${x>=0?"+":""}${(x*100).toFixed(1)}%`;
 // ---------- 六位理專 ----------
 // run(d) 回傳分數 s（−2 到 +2）、理由、進場條件；tb 是選股時同分的排序依據（越大越優先）
 const ADVISORS=[
- {key:"tech",name:"陳怡君",emoji:"📈",tape:"var(--sky)",horizon:"short",school:"中原大學 財務金融學系",bg:"券商自營部 8 年・技術分析",style:"技術分析・波段（2–8 週）",quip:"線圖會說話，我只是幫它翻譯！",
+ {key:"tech",name:"陳怡君",emoji:"📈",tape:"var(--sky)",horizon:"short",school:"國內大學 財務金融學系",bg:"券商自營部 8 年・技術分析",style:"技術分析・波段（1–3 個月）",quip:"線圖會說話，我只是幫它翻譯！",
   run(d){const ma=d.ma,ma3=mean(d.m.slice(-3)),dev=d.p/ma-1;let s=0,why=[];
    if(ma>ma3){s+=1;why.push(`月均價 ${fmt(ma)} 高於近三個月均價 ${fmt(ma3)}，趨勢向上`)}else{s-=1;why.push(`月均價 ${fmt(ma)} 低於近三個月均價 ${fmt(ma3)}，趨勢向下`)}
    if(dev>0.08){s-=1;why.push(`股價高於月均價 ${pct(dev)}，乖離過大，追價風險高`)}else if(ma>ma3&&dev>-0.04&&dev<0.03){s+=1;why.push(`股價拉回到月均價附近（${pct(dev)}），多頭中的買點`)}else why.push(`股價與月均價乖離 ${pct(dev)}`);
-   const entry=ma>ma3?`月均價 <b>${fmt(ma)}</b> 附近分批買，跌破三個月均價 ${fmt(ma3)} 停損`:`等月均價重新站上三個月均價（約 <b>${fmt(ma3)}</b>）再進場`;
+   const entry=ma>ma3?`規則條件：月均價 <b>${fmt(ma)}</b> 高於三個月均價；跌破三個月均價 ${fmt(ma3)} 時規則轉為偏空`:`規則條件：月均價重新站上三個月均價（約 <b>${fmt(ma3)}</b>）才轉為偏多`;
    return {s:clamp(s,-2,2),why,entry,tb:-Math.abs(dev),metrics:{"月線乖離":pct(dev),"月均價":fmt(ma)}}},
   critique:"價值派王建明：均線是落後指標，等趨勢確認時便宜的價格通常已經過了。"},
- {key:"macro",name:"林思遠",emoji:"🌏",tape:"var(--matcha)",horizon:"long",school:"Stanford University 經濟學系",bg:"前央行研究員・總經策略",style:"總體經濟循環・長期（1–2 年）",quip:"先看天氣，再決定要不要出門。",
+ {key:"macro",name:"林思遠",emoji:"🌏",tape:"var(--matcha)",horizon:"long",school:"海外大學 經濟學系",bg:"前央行研究員・總經策略",style:"總體經濟循環・長期（1–2 年）",quip:"先看天氣，再決定要不要出門。",
   run(d){const L=LIGHTS.find(x=>x[0]===d.light)[2],ph=phaseOf(L),fav=isETF(d)?TILT_ETF[ph].includes(d.t):TILT[ph].includes(d.i);let s=0,why=[];
    const phTxt={low:"景氣低迷，布局景氣循環股",mid:"景氣穩定，偏好成長型電子與金融",high:"景氣過熱，轉向防禦型產業"}[ph];
    why.push(`「${d.light}燈」：${phTxt}`);
    if(fav){s+=1;why.push(`${catOf(d)}是這個階段偏好的類型`)}else{s-=1;why.push(`${catOf(d)}不在這個階段的偏好類型`)}
    if(d.rate<0){s+=1;why.push("降息循環，資金成本下降有利估值")}else if(d.rate>0){s-=1;why.push("升息循環，壓抑估值")}
    if(d.pmi>=50&&L<=0){s+=0.5;why.push(`PMI ${d.pmi} 站上 50，景氣有回升跡象`)}else if(d.pmi<50)why.push(`PMI ${d.pmi} 低於 50，製造業仍在收縮`);
-   const entry=s>=1?"未來 6–12 個月分批布局，不必猜最低點":"等景氣燈號或利率方向改變再布局";
+   const entry=s>=1?"規則條件：景氣與利率條件有利，規則偏多":"規則條件：景氣燈號或利率方向改變，規則才會轉為偏多";
    return {s:clamp(s,-2,2),why,entry,tb:fav?-(d.pb||9):-99,metrics:{"產業":catOf(d),"燈號":d.light}}},
   critique:"技術派陳怡君：總經訊號可能提早一年以上，股價在這段時間可能再跌 30%。"},
- {key:"value",name:"王建明",emoji:"📒",tape:"var(--apricot)",horizon:"long",school:"國立臺灣大學 會計學系・CFA",bg:"投信研究員 12 年・基本面",style:"價值投資・長期（1–3 年）",quip:"好公司也要有好價格，耐心是我的超能力。",
-  run(d){let s,why=[];if(isETF(d))return {s:0,why:["ETF 是一籃子股票，不適用個股本益比估值",`${d.t}：長期持有更該比較內扣費用與追蹤誤差`],entry:"不做估值判斷，進場時機參考其他理專",tb:-99,metrics:{"類型":d.t}};if(!(d.pe>0))return {s:-1,why:["沒有本益比（近四季虧損或無資料），無法估值，先不碰"],entry:"等公司恢復獲利再評估",tb:-99,metrics:{"本益比":"—"}};
+ {key:"value",name:"王建明",emoji:"📒",tape:"var(--apricot)",horizon:"long",school:"國內大學 會計學系",bg:"投信研究員 12 年・基本面",style:"價值投資・長期（1–3 年）",quip:"好公司也要有好價格，耐心是我的超能力。",
+  run(d){let s,why=[];if(isETF(d))return {s:0,why:["ETF 是一籃子股票，不適用個股本益比估值",`${d.t}：長期持有更該比較內扣費用與追蹤誤差`],entry:"規則條件：ETF 不做估值判斷，參考其他理專",tb:-99,metrics:{"類型":d.t}};if(!(d.pe>0))return {s:-1,why:["沒有本益比（近四季虧損或無資料），無法估值，先不碰"],entry:"規則條件：公司恢復獲利後才能估值",tb:-99,metrics:{"本益比":"—"}};
    const ip=IND_PE[d.i],peer=ip&&ip.n>=PE_MIN_PEERS,med=peer?ip.med:(MKT_PE||d.pe),rel=d.pe/med,eps=d.p/d.pe,lab=peer?"同業":"全市場";
    why.push(peer?`本益比 ${d.pe.toFixed(1)} 倍，${indName(d.i)}同業中位數 ${med.toFixed(1)} 倍（${ip.n} 檔）`:`本益比 ${d.pe.toFixed(1)} 倍；${indName(d.i)}同業有本益比的只有 ${ip?ip.n:0} 檔，樣本太少，改和全市場中位數 ${med.toFixed(1)} 倍比較`);
    if(rel<0.7){s=2;why.push(`比${lab}便宜三成以上，具安全邊際`)}else if(rel<0.9){s=1;why.push(`略低於${lab}，價格合理偏低`)}else if(rel<1.2){s=0;why.push(`和${lab}差不多，合理價`)}else if(rel<1.6){s=-1;why.push(`比${lab}貴`)}else{s=-2;why.push(`比${lab}貴很多，估值偏高`)}
    if(d.pb&&d.pb<1)why.push(`股價淨值比 ${d.pb}，低於帳面價值`);
    const cheap=eps*med*0.8;
-   return {s,why,entry:cheap>=d.p?`現價 ${fmt(d.p)} 已低於${lab}本益比八折價 ${fmt(cheap)}，可分批買；先確認獲利不是一次性的`:`${lab}本益比八折價 <b>${fmt(cheap)}</b> 以下積極買（現價 ${fmt(d.p)}）`,tb:-rel,metrics:{"本益比":d.pe.toFixed(1),"同業比":(rel*100).toFixed(0)+"%","淨值比":d.pb??"—"}}},
+   return {s,why,entry:cheap>=d.p?`規則條件：現價 ${fmt(d.p)} 已低於${lab}本益比八折的規則參考價 ${fmt(cheap)}；獲利若是一次性的，規則就不成立`:`規則條件：${lab}本益比八折的規則參考價為 <b>${fmt(cheap)}</b>（現價 ${fmt(d.p)}），低於此價規則才給高分`,tb:-rel,metrics:{"本益比":d.pe.toFixed(1),"同業比":(rel*100).toFixed(0)+"%","淨值比":d.pb??"—"}}},
   critique:"動能派周以恆：便宜可以更便宜，價值陷阱常出現在獲利正在衰退的公司。"},
- {key:"mom",name:"周以恆",emoji:"🚀",tape:"var(--pink)",horizon:"mid",school:"Columbia Business School MBA",bg:"前紐約避險基金分析師・動能策略",style:"動能趨勢・中期（3–6 個月）",quip:"強者恆強，跟著風向走最省力！",
+ {key:"mom",name:"周以恆",emoji:"🚀",tape:"var(--pink)",horizon:"mid",school:"海外商學院 MBA",bg:"前紐約避險基金分析師・動能策略",style:"動能趨勢・中期（3–6 個月）",quip:"強者恆強，跟著風向走最省力！",
   run(d){const ret=d.p/d.m[6]-1,hi=Math.max(...d.m,d.p),dist=d.p/hi-1,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s=0,why=[];
    if(ret>1.5){why.push(`近 6 個月上漲 ${pct(ret)}，漲幅過大，波動風險高，不加分`)}else if(ret>0.2){s+=1;why.push(`近 6 個月上漲 ${pct(ret)}，動能強`)}else if(ret<-0.1){s-=1;why.push(`近 6 個月下跌 ${pct(ret)}，動能弱`)}else why.push(`近 6 個月 ${pct(ret)}，動能普通`);
    if(dist>-0.05){s+=1;why.push("貼近一年高點，強者恆強")}else if(dist<-0.25){s-=1;why.push(`距一年高點 ${pct(dist)}，趨勢已破`)}else why.push(`距一年高點 ${pct(dist)}`);
-   const entry=s>=1?`趨勢成立，現價 ${fmt(d.p)} 附近進場，跌破 <b>${fmt(hi*0.9)}</b>（高點回落 10%）出場`:`等股價突破一年高點 <b>${fmt(hi)}</b> 再追進`;
+   const entry=s>=1?`規則條件：趨勢成立；跌破 <b>${fmt(hi*0.9)}</b>（高點回落 10%）時規則轉為偏空`:`規則條件：股價突破一年高點 <b>${fmt(hi)}</b> 才轉為偏多`;
    return {s:clamp(s,-2,2),why,entry,tb:ret/(vol+0.05),metrics:{"6月報酬":pct(ret),"距高點":pct(dist)}}},
   critique:"存股派劉淑芬：追高需要紀律停損，一般投資人很難做到，常常買在最高點。"},
- {key:"quant",name:"張雅雯",emoji:"🎲",tape:"var(--lilac)",horizon:"short",school:"國立政治大學 統計學系碩士",bg:"金控量化交易員・統計套利",style:"均值回歸・短期（數日–4 週）",quip:"我不猜，我只算機率。",
+ {key:"quant",name:"張雅雯",emoji:"🎲",tape:"var(--lilac)",horizon:"short",school:"國內大學 統計研究所",bg:"金控量化交易員・統計套利",style:"均值回歸・中短期（1–3 個月）",quip:"我不猜，我只算機率。",
   run(d){const mu=mean(d.m),sd=std(d.m),z=(d.p-mu)/sd;let s,why=[];
    why.push(`現價相對一年月收盤平均 ${fmt(mu)} 的 z 分數為 ${z.toFixed(2)}`);
    if(z<-1.5&&(d.pe>0||isETF(d))){s=2;why.push("明顯低於一年均值，且仍有獲利或為分散的 ETF，統計上有回歸空間")}else if(z<-0.8){s=1;why.push("低於均值，偏便宜")}else if(z>1.8){s=-2;why.push("遠高於一年均值，過度延伸")}else if(z>1){s=-1;why.push("偏高，不追")}else{s=0;why.push("在正常範圍內，沒有統計優勢")}
-   return {s,why,entry:`低於 <b>${fmt(mu-sd)}</b>（均值減一個標準差）分批買，回到均值 ${fmt(mu)} 獲利了結`,tb:-z,metrics:{"z":z.toFixed(2),"一年均值":fmt(mu)}}},
+   return {s,why,entry:`規則條件：低於 <b>${fmt(mu-sd)}</b>（均值減一個標準差）時規則偏多，回到均值 ${fmt(mu)} 時回到中性`,tb:-z,metrics:{"z":z.toFixed(2),"一年均值":fmt(mu)}}},
   critique:"動能派周以恆：在強趨勢裡，「過度延伸」可以持續好幾個月，逆勢放空會受傷。"},
- {key:"div",name:"劉淑芬",emoji:"🍵",tape:"#ffe0c4",horizon:"long",school:"國立高雄科技大學 財務管理系",bg:"銀行理專 20 年・存股教練",style:"存股・定期定額（5 年以上）",quip:"慢慢來比較快，喝杯茶再說。",
+ {key:"div",name:"劉淑芬",emoji:"🍵",tape:"#ffe0c4",horizon:"long",school:"國內科技大學 財務管理系",bg:"銀行理專 20 年・存股教練",style:"存股・定期定額（5 年以上）",quip:"慢慢來比較快，喝杯茶再說。",
   run(d){const y=d.dy||0,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s,why=[];
    why.push(`現金殖利率 ${y.toFixed(2)}%，月報酬波動 ${(vol*100).toFixed(1)}%`);
    if(!(d.pe>0)&&!isETF(d)){s=-1;why.push("近四季沒有獲利，股利恐難維持")}
    else if(y>=6&&(isETF(d)||d.pe<20)){s=2;why.push(isETF(d)?"殖利率 6% 以上，加碼買進":"殖利率 6% 以上且本益比合理，加碼買進")}else if(y>=4.5){s=1;why.push("殖利率 4.5% 以上，適合定期定額")}else if(y>=3){s=0;why.push("殖利率普通，維持定期定額即可")}else{s=-1;why.push("殖利率低於 3%，不是存股標的")}
    if(y>12){s=Math.min(s,1);why.push("殖利率異常高，配息可能含收益平準金或資本利得，未必能持續")}
    if(vol>0.12)why.push("股價波動偏大，不適合當存股核心");
-   return {s,why,entry:y>0?`每月定期定額；跌到殖利率 6%（約 <b>${fmt(d.p*y/6)}</b>）時加碼`:"沒有配息，不列入存股",tb:y-(vol>0.12?5:0),metrics:isETF(d)?{"殖利率":y.toFixed(2)+"%","近一年配息":(d.cd??"—")+" 元"}:{"殖利率":y.toFixed(2)+"%","本益比":d.pe??"—"}}},
+   return {s,why,entry:y>0?`規則條件：殖利率達 6%（約 <b>${fmt(d.p*y/6)}</b>）時規則給最高分`:"規則條件：沒有配息，不列入存股",tb:y-(vol>0.12?5:0),metrics:isETF(d)?{"殖利率":y.toFixed(2)+"%","近一年配息":(d.cd??"—")+" 元"}:{"殖利率":y.toFixed(2)+"%","本益比":d.pe??"—"}}},
   critique:"總經派林思遠：高殖利率常出現在景氣循環股的高峰，之後股利可能腰斬。"}
 ];
 
 const TABS=[["all","全部 🌈"],["short","短線波段 🍟"],["mid","中線趨勢 🧋"],["long","長線布局 🍱"]];
-const SEED_VOTES={tech:128,macro:117,value:142,mom:96,quant:73,div:155};
+// 票數只算這台裝置上投的票；不放模擬的初始票數，避免假的人氣影響使用者對理專的信任
+const SEED_VOTES={tech:0,macro:0,value:0,mom:0,quant:0,div:0};
 
 // ---------- 狀態 ----------
 const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+// 使用者是否自己設定過總經條件（沒設定時用的是預設值）
+const macroSet=()=>["light","rate","pmi"].some(k=>store.get(k,null)!==null);
 const macro={light:store.get("light","綠"),rate:store.get("rate",0),pmi:store.get("pmi",50.5)};
 let state={}, lastRes=[], tab=store.get("tab","all");
 const weights={}, myVotes=store.get("myVotes",{});
@@ -469,8 +474,9 @@ function drawChart(d){const p=[...d.m,d.p],W=Math.round(Math.max(280,Math.min(52
  <text x="${pl}" y="${H-5}">${TW.dates[0].slice(0,4)}/${MONTHS[0]}</text><text x="${W-pr}" y="${H-5}" text-anchor="end">${TW.asof} 收盤 ${fmt(d.p)}</text></svg>`}
 
 // ---------- 輸出 ----------
-const LABEL=s=>s>=1.5?["現在進場 ✨","buy"]:s>=0.5?["分批布局 🍀","add"]:s>-0.5?["觀望等待 ⏳","wait"]:["暫不進場 🙅","avoid"];
-const COL={buy:"var(--matcha-deep)",add:"var(--matcha)",wait:"var(--apricot)",avoid:"var(--pink)"},NM={buy:"現在進場",add:"分批布局",wait:"觀望",avoid:"暫不進場"};
+// 標籤描述規則分數的方向，不是買賣指令（避免對真實個股給出推介建議）
+const LABEL=s=>s>=1.5?["規則強烈偏多 ✨","buy"]:s>=0.5?["規則偏多 🍀","add"]:s>-0.5?["規則中性 ⏳","wait"]:["規則偏空 🙅","avoid"];
+const COL={buy:"var(--matcha-deep)",add:"var(--matcha)",wait:"var(--apricot)",avoid:"var(--pink)"},NM={buy:"強烈偏多",add:"偏多",wait:"中性",avoid:"偏空"};
 {let cw=0;addEventListener("resize",()=>{const w=$("chart").clientWidth;if(w!==cw){cw=w;drawChart(state)}})}
 function render(){drawChart(state);lastRes=ADVISORS.map(a=>({a,...runA(a,state)}));renderCards();renderConsensus();renderRank();renderMonitor()}
 
@@ -490,7 +496,7 @@ function renderPicks(){screen();const cnt={};
  Object.entries(PICKS).forEach(([k,l])=>l.forEach(r=>{if(r.s>=0.5&&!(uni==="etf"&&k==="value"))(cnt[r.st.c]=cnt[r.st.c]||[]).push(r)}));
  const hot=Object.entries(cnt).filter(([,v])=>v.length>=2).sort((x,y)=>y[1].length-x[1].length);
  $("hot").innerHTML=hot.length?`🔥 <b>共識熱門${uni==="etf"?" ETF":"股"}</b>　${hot.map(([c,v])=>`<button class="linkbtn" type="button" data-c="${c}">${label(byCode(c))}</button>（${v.length} 位理專都選）`).join("、")}`:"🌱 這次沒有任何一檔同時被兩位以上的理專選中，各流派看法分散。";
- $("picks").innerHTML=ADVISORS.map(a=>`<div class="pk" style="--tape:${a.tape}"><h3>${a.emoji} ${a.name}的首選</h3>${uni==="etf"&&a.key==="value"?`<p class="why2">ETF 是一籃子股票，我不用本益比替 ETF 排名。挑 ETF 時我會先比內扣費用和追蹤誤差，這兩項資料還沒放進系統。</p>`:`<ol>${PICKS[a.key].map(r=>`<li><button class="linkbtn" type="button" data-c="${r.st.c}">${label(r.st)}</button>　<span class="pill ${LABEL(r.s)[1]}" style="font-size:11px;padding:2px 8px">${LABEL(r.s)[0]}</span><div class="why2">${r.why[1]||r.why[0]}・${Object.entries(r.metrics).slice(0,2).map(([k,v])=>`${k} ${v}`).join("・")}</div><details><summary>為什麼？</summary><ul>${r.why.map(w=>`<li>${w}</li>`).join("")}<li>用到的數字：${Object.entries(r.metrics).map(([k,v])=>`${k} ${v}`).join("・")}</li><li>進場規則：${r.entry}</li></ul></details></li>`).join("")}</ol>`}</div>`).join("")}
+ $("picks").innerHTML=ADVISORS.map(a=>`<div class="pk" style="--tape:${a.tape}"><h3>${a.emoji} ${a.name}的首選</h3>${uni==="etf"&&a.key==="value"?`<p class="why2">ETF 是一籃子股票，我不用本益比替 ETF 排名。挑 ETF 時我會先比內扣費用和追蹤誤差，這兩項資料還沒放進系統。</p>`:`<ol>${PICKS[a.key].map(r=>`<li><button class="linkbtn" type="button" data-c="${r.st.c}">${label(r.st)}</button>　<span class="pill ${LABEL(r.s)[1]}" style="font-size:11px;padding:2px 8px">${LABEL(r.s)[0]}</span><div class="why2">${r.why[1]||r.why[0]}・${Object.entries(r.metrics).slice(0,2).map(([k,v])=>`${k} ${v}`).join("・")}</div><details><summary>為什麼？</summary><ul>${r.why.map(w=>`<li>${w}</li>`).join("")}<li>用到的數字：${Object.entries(r.metrics).map(([k,v])=>`${k} ${v}`).join("・")}</li><li>${r.entry}</li></ul></details></li>`).join("")}</ol>`}</div>`).join("")}
 if(!store.get("routeDone",false))$("route").hidden=false;
 $("routeX").addEventListener("click",()=>{store.set("routeDone",true);$("route").hidden=true});
 {const h=decodeURIComponent(location.hash.slice(1));if(h&&byCode(h))setTimeout(()=>loadStock(h))}
@@ -516,7 +522,7 @@ function health(d){const H={},ok=(m)=>({lv:"ok",msg:m});
  H.mom=n>=7?ok("有 6 個月以上的收盤價"):{lv:"warn",msg:"上市未滿半年，動能無法計算"};
  H.value=isETF(d)?ok("ETF 不適用本益比，價值派保持中立"):d.pe>0?ok(`本益比 ${d.pe}，同業 ${catOf(d)} 有中位數可比`):{lv:"bad",msg:"沒有本益比（虧損或無資料），無法估值"};
  H.div=d.dy!=null?ok("有殖利率資料"):{lv:"warn",msg:"沒有殖利率資料"};
- H.macro=d.pmi<30||d.pmi>70?{lv:"warn",msg:`PMI ${d.pmi} 超出常見範圍，請確認`}:ok("總經指標在合理範圍");
+ H.macro=d.pmi<30||d.pmi>70?{lv:"warn",msg:`PMI ${d.pmi} 超出常見範圍，請確認`}:!macroSet()?{lv:"warn",msg:"總經條件仍是預設值，不是最新公布值，請在上方設定"}:ok("總經指標為你設定的值");
  lastRes.forEach(r=>{if(!Number.isFinite(r.s)||Math.abs(r.s)>2)H[r.a.key]={lv:"bad",msg:"輸出分數異常"}});
  return H}
 function monitor(){const R={};lastRes.forEach(r=>R[r.a.key]=r);
@@ -530,6 +536,7 @@ function monitor(){const R={};lastRes.forEach(r=>R[r.a.key]=r);
  if(flags>=2)reasons.push(`互評出現 ${flags} 則警示`);
  const bad=ADVISORS.filter(a=>H[a.key].lv==="bad");if(bad.length)reasons.push(`${bad.map(a=>a.name).join("、")} 的資料不足`);
  if(same)reasons.push("全員意見完全一致，可能共用同一個盲點，請抽查一位的理由");
+ const kyc=store.get("kyc",null);if(kyc==="保守型"&&!isETF(state))reasons.push("你的風險屬性小測驗結果是保守型，個股波動通常比分散的 ETF 大，這檔可能不適合你");
  return {reviews,H,reasons,flags,sp}}
 function renderMonitor(){const m=monitor(),lv={ok:"🟢 正常",warn:"🟡 注意",bad:"🔴 異常"};
  $("escalate").className="escalate "+(m.reasons.length?"need":"ok");
@@ -623,12 +630,18 @@ const INS=/*INSIDER*/;
   // risk quiz
   const Q=INS.quiz;
   $("qTitle").textContent="🧩 "+Q.title;$("qNote").textContent=Q.note;
-  $("quiz").innerHTML=Q.qs.map((q,i)=>`<fieldset><legend>${i+1}. ${esc(q.q)}</legend><div class="chips">${q.a.map(([l,v])=>`<label class="chip"><input type="radio" name="q${i}" value="${v}">${esc(l)}</label>`).join("")}</div></fieldset>`).join("")+'<button class="btn" type="submit">看結果</button>';
+  $("quiz").innerHTML=Q.qs.map((q,i)=>`<fieldset><legend>${i+1}. ${esc(q.q)}</legend><div class="chips">${q.a.map(([l,v])=>q.multi?`<label class="chip"><input type="checkbox" name="q${i}" value="${esc(l)}">${esc(l)}</label>`:`<label class="chip"><input type="radio" name="q${i}" value="${v}">${esc(l)}</label>`).join("")}</div></fieldset>`).join("")+'<button class="btn" type="submit">看結果</button>';
   $("quiz").onsubmit=e=>{e.preventDefault();
-    const v=Q.qs.map((_,i)=>document.querySelector(`input[name=q${i}]:checked`));
+    const v=Q.qs.map((q,i)=>q.multi?{value:0}:document.querySelector(`input[name=q${i}]:checked`));
     if(v.some(x=>!x)){$("qOut").innerHTML='<div class="ins-alert">還有題目沒作答。</div>';return;}
-    const sum=v.reduce((a,x)=>a+ +x.value,0),L=Q.levels.find(l=>sum<=l.max);
-    $("qOut").innerHTML=`<div class="ins-alert ok"><b>${L.name}</b>（${sum} 分）・適合 ${L.rr}<br>${esc(L.tip)}</div>`;};
+    // 只加總風險承受的題目；投資經驗（複選）不計分。硬限制（錢很快要用、占資產比例太高）不能被其他題抵消
+    const sum=v.reduce((a,x,i)=>a+(Q.qs[i].score===false?0:+x.value),0);
+    let L=Q.levels.find(l=>sum<=l.max);const caps=[];
+    (Q.caps||[]).forEach(c=>{if(v[c.q]&&c.values.includes(+v[c.q].value)){caps.push(c.why);const m=Q.levels.findIndex(l=>l.name===c.max);if(Q.levels.indexOf(L)>m)L=Q.levels[m]}});
+    const exp=[...document.querySelectorAll('#quiz input[type=checkbox]:checked')].map(x=>x.value);
+    store.set("kyc",L.name);
+    $("qOut").innerHTML=`<div class="ins-alert ok"><b>${L.name}</b>（風險分數 ${sum} 分）・${esc(L.rr)}<br>${esc(L.tip)}${caps.length?`<br>⚠️ ${caps.map(esc).join("；")}`:""}<br>📚 投資經驗：${exp.length?exp.map(esc).join("、"):"沒有勾選"}。${esc(Q.exp_note||"")}</div>`;
+    if(state.c)render()};
 })();
 </script>
 <!--SITE-FOOT-->

@@ -72,6 +72,9 @@ def score(s, key, surveys):
     shown_rows = [r for r in rows if r["shown_rec"]]
     rair_s = [r for r in shown_rows if not r["correct1"] and r["shown_correct"]]
     rsr_s = [r for r in shown_rows if r["correct1"] and not r["shown_correct"]]
+    # 第 4 組可以把權重調到讓建議變成和自己的初判一樣，這時「最後決定等於建議」不代表依賴；
+    # 在初判和等權建議不同的題目中，調完權重後建議變成自己初判的比例
+    differ = [r for r in rows if r["d1"] != r["ai_rec"] and r["shown_rec"]]
     brier = sum((r["c2"] / 100 - r["correct2"]) ** 2 for r in rows) / n if n else ""
     pre, post = s.get("pre", {}), s.get("post", {})
     fl = [q for q in surveys["pre"] if q.get("block") == "finlit"]
@@ -79,6 +82,9 @@ def score(s, key, surveys):
     def scale(ans, qs):
         return [8 - ans[q["id"]] if q.get("reverse") else ans[q["id"]] for q in qs if isinstance(ans.get(q["id"]), int)]
     tv = scale(post, [q for q in trust if q["id"] != "tr12"])  # 第 12 題問的是熟悉度，不是信任，另列
+    # Jian 量表前 5 題負向、後 6 題正向，可能分屬「不信任」與「信任」兩個因素，分開報告，分析時先檢查因素結構
+    tneg = scale(post, [q for q in trust if q.get("reverse")])
+    tpos = scale(post, [q for q in trust if not q.get("reverse") and q["id"] != "tr12"])
     pv = scale(pre, [q for q in surveys["pre"] if q.get("block") == "propensity"])
     raw = [post[q["id"]] for q in trust if isinstance(post.get(q["id"]), int)]
     mc = {q["id"]: q for q in surveys["post"] if q.get("block") == "manipulation"}
@@ -91,6 +97,7 @@ def score(s, key, surveys):
          "rair_shown": ratio(sum(r["d2"] == r["shown_rec"] for r in rair_s), len(rair_s)),
          "rsr_shown": ratio(sum(r["d2"] == r["d1"] for r in rsr_s), len(rsr_s)),
          "agree_shown": ratio(sum(r["agree_shown"] for r in shown_rows), len(shown_rows)),
+         "tuned_to_self": ratio(sum(r["shown_rec"] == r["d1"] for r in differ), len(differ)) if s["cond"] == 3 else "",
          "over_reliance": ratio(sum(r["agree_ai"] for r in ai_wrong), len(ai_wrong)),
          "under_reliance": ratio(sum(1 - r["agree_ai"] for r in ai_right), len(ai_right)),
          "switch_rate": ratio(sum(r["switched"] for r in rows), n),
@@ -98,6 +105,8 @@ def score(s, key, surveys):
          "overconfidence": round(sum(r["c2"] for r in rows) / n / 100 - sum(r["correct2"] for r in rows) / n, 4) if n else "",
          "trust_mean": round(sum(tv) / len(tv), 3) if tv else "",
          "trust_familiar": post.get("tr12", ""),
+         "trust_neg_items": round(sum(tneg) / len(tneg), 3) if tneg else "",
+         "trust_pos_items": round(sum(tpos) / len(tpos), 3) if tpos else "",
          "propensity_mean": round(sum(pv) / len(pv), 3) if pv else "",
          "finlit_pre": sum(pre.get(q["id"]) == q["answer"] for q in fl),
          "finlit_post": sum(post.get(q["id"] + "_post") == q["answer"] for q in fl) if any(q["id"] + "_post" in post for q in fl) else "",
@@ -106,7 +115,7 @@ def score(s, key, surveys):
          "recognized": post.get("recog", ""), "site_before": pre.get("site_before", ""), "site_trace": int(bool(s.get("site_trace"))),
          "entry": s.get("entry", ""), "prior_pids": s.get("prior_pids", ""),
          "fast_trials": sum(1 for r in rows if r["t_pre"] is not None and r["t_pre"] < FAST),
-         "straightline_trust": int(len(raw) > 1 and len(set(raw)) == 1) if raw else "", "invest_exp": pre.get("invest_exp", ""), "fin_background": pre.get("fin_background", ""),
+         "straightline_trust": int(len(raw) > 1 and len(set(raw)) == 1) if raw else "", "invest_exp": pre.get("invest_exp", ""), "fin_background": pre.get("fin_role", pre.get("fin_background", "")),
          "seconds_total": round(sum((r["t_pre"] or 0) + (r["t_post"] or 0) for r in rows)),
          "app_ver": s.get("app_ver", ""), "items_sha": s.get("items_sha", "")}
     return rows, p
