@@ -16,13 +16,15 @@ def mi_index(close, sign):
     return {"stat": "OK", "tables": [{"title": "每日收盤行情", "fields": FIELDS, "data": [row]}]}
 
 
-def fake_get(site):
+def fake_get(site, openapi_down=False):
     """site：{YYYYMMDD: MI_INDEX 回應}；沒列出的日期當作休市"""
     calls = []
 
     def get(url):
         calls.append(url)
         if "STOCK_DAY_ALL" in url:
+            if openapi_down:
+                raise ValueError("Expecting value: line 1 column 1 (char 0)")
             return OPENAPI_ROWS
         if "MI_INDEX" in url:
             return site.get(url.rsplit("date=", 1)[1], {"stat": "很抱歉，沒有符合條件的資料!"})
@@ -72,3 +74,22 @@ def test_site_bwibbu_matches_openapi_keys(monkeypatch):
     monkeypatch.setattr(fetch_twse, "get", lambda url: resp)
     bw = fetch_twse.site_bwibbu(dt.date(2026, 10, 27))
     assert bw == {"2330": {"PEratio": "27.90", "DividendYield": "0.91", "PBratio": "9.70"}}
+
+
+def test_openapi_down_falls_back_to_site(monkeypatch):
+    get, _ = fake_get({"20261027": mi_index("2,410.00", "-")}, openapi_down=True)
+    monkeypatch.setattr(fetch_twse, "get", get)
+    monkeypatch.setattr(fetch_twse.time, "sleep", lambda s: None)
+    rows, asof, from_site = fetch_twse.latest_day_all(today=dt.date(2026, 10, 27))
+    assert from_site and asof == dt.date(2026, 10, 27) and rows[0]["ClosingPrice"] == "2410.00"
+
+
+def test_openapi_down_and_site_empty_raises(monkeypatch):
+    get, _ = fake_get({}, openapi_down=True)
+    monkeypatch.setattr(fetch_twse, "get", get)
+    monkeypatch.setattr(fetch_twse.time, "sleep", lambda s: None)
+    try:
+        fetch_twse.latest_day_all(today=dt.date(2026, 10, 27))
+    except RuntimeError:
+        return
+    raise AssertionError("應該要失敗，讓步驟顯示紅燈")
