@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-27 18:55",
+ "checked": "2026-10-27 19:05",
  "ok": true,
  "datasets": [
   {
@@ -10,9 +10,9 @@
    "asof": "2026-10-22",
    "count": 421,
    "age": 5,
-   "state": "ok",
-   "note": "",
-   "step": "success"
+   "state": "warn",
+   "note": "今天抓取失敗，沿用上一份資料",
+   "step": "failure"
   },
   {
    "key": "universe",
@@ -46,9 +46,9 @@
    "asof": "2026-10-22",
    "count": 37,
    "age": 5,
-   "state": "ok",
-   "note": "",
-   "step": "success"
+   "state": "warn",
+   "note": "今天抓取失敗，沿用上一份資料",
+   "step": "failure"
   },
   {
    "key": "etf_holdings",
@@ -91,14 +91,17 @@
   "全部通過"
  ],
  "errors": [],
- "warnings": [],
+ "warnings": [
+  "tw.json：今天抓取失敗，沿用上一份資料",
+  "rates.json：今天抓取失敗，沿用上一份資料"
+ ],
  "steps": {
-  "twse": "success",
-  "rates": "success",
+  "twse": "failure",
+  "rates": "failure",
   "universe": "success",
   "dividends": "success",
   "holdings": "success",
   "financials": "success"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40491502307"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40493304116"
 }
