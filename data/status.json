@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-27 19:15",
+ "checked": "2026-10-28 00:01",
  "ok": true,
  "datasets": [
   {
@@ -9,7 +9,7 @@
    "page": "理專圓桌、模擬倉、考場",
    "asof": "2026-10-27",
    "count": 435,
-   "age": 0,
+   "age": 1,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -21,7 +21,7 @@
    "page": "台股全覽",
    "asof": "2026-10-27",
    "count": 2354,
-   "age": 0,
+   "age": 1,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -33,7 +33,7 @@
    "page": "除權息行事曆",
    "asof": "2026-10-27",
    "count": 1979,
-   "age": 0,
+   "age": 1,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -45,7 +45,7 @@
    "page": "存款利率",
    "asof": "2026-10-22",
    "count": 37,
-   "age": 5,
+   "age": 6,
    "state": "warn",
    "note": "今天抓取失敗，沿用上一份資料",
    "step": "failure"
@@ -57,7 +57,7 @@
    "page": "台股全覽",
    "asof": "2026-10-22",
    "count": 313,
-   "age": 5,
+   "age": 6,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -69,7 +69,7 @@
    "page": "台股全覽",
    "asof": "2026-10-27",
    "count": 1981,
-   "age": 0,
+   "age": 1,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -81,7 +81,7 @@
    "page": "人氣小報",
    "asof": "2026-10-22",
    "count": 20,
-   "age": 5,
+   "age": 6,
    "state": "ok",
    "note": "",
    "step": ""
@@ -102,5 +102,5 @@
   "holdings": "success",
   "financials": "success"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40494261008"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40536087764"
 }
