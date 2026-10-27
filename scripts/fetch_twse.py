@@ -14,6 +14,8 @@
   openapi.twse.com.tw/v1/opendata/t187ap03_L               上市公司基本資料（產業別）
   www.twse.com.tw/exchangeReport/MI_INDEX                  指定日期的全市場收盤（取月收盤）
   www.twse.com.tw/rwd/zh/exRight/TWT49U                    除權息計算結果（ETF 配息與還原股價）
+  www.twse.com.tw/exchangeReport/BWIBBU_d                  指定日期的本益比、殖利率、淨值比
+OpenAPI 偶爾會停在某一天好幾天不更新（2026-10 曾停在 10/22），這時改用證交所網站的 MI_INDEX、BWIBBU_d 補上最新交易日。
 個股：成交值超過 1 億元、代號為四碼數字的普通股。
 同業本益比中位數（ind_pe、mkt_pe）用全部上市普通股計算，不受成交值門檻影響；成交值門檻只決定推薦名單，
 不決定比較基準，否則同一產業的樣本會隨每天的成交量變動（例：汽車類曾只剩兩檔，取到 341 倍那一檔）。
@@ -37,6 +39,7 @@ MIN_TV = 1e8
 MIN_TV_ETF = 3e7
 MIN_STOCKS = 200  # 平常約 320 檔
 MIN_ETFS = 20  # 平常約 80 檔
+TPE = dt.timezone(dt.timedelta(hours=8))
 
 
 def get(url):
@@ -119,15 +122,74 @@ def peer_pe(bw, ind):
     return ind_pe, (round(median(every), 2) if every else None)
 
 
-def month_close(day):
-    """回傳 {代號: 收盤}；當天休市時回傳空字典。"""
+def close_table(day):
+    """證交所網站某天的全市場收盤表，回傳 (欄位, 資料列)；當天休市回傳 ([], [])。"""
     d = get(f"https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&type=ALLBUT0999&date={day:%Y%m%d}")
     for t in d.get("tables", []):
         f = t.get("fields", [])
         if "證券代號" in f and "收盤價" in f:
-            ci, pi = f.index("證券代號"), f.index("收盤價")
-            return {r[ci]: num(r[pi]) for r in t["data"] if num(r[pi])}
-    return {}
+            return f, t.get("data", [])
+    return [], []
+
+
+def month_close(day):
+    """回傳 {代號: 收盤}；當天休市時回傳空字典。"""
+    f, rows = close_table(day)
+    if not f:
+        return {}
+    ci, pi = f.index("證券代號"), f.index("收盤價")
+    return {r[ci]: num(r[pi]) for r in rows if num(r[pi])}
+
+
+def site_day_all(day):
+    """把網站收盤表轉成和 OpenAPI STOCK_DAY_ALL 一樣的欄位；休市回傳空串列。"""
+    f, rows = close_table(day)
+    if not f:
+        return []
+    ci, ni, vi, pi, si, di = (f.index(k) for k in ("證券代號", "證券名稱", "成交金額", "收盤價", "漲跌(+/-)", "漲跌價差"))
+    roc = f"{day.year - 1911}{day:%m%d}"
+    out = []
+    for r in rows:
+        sign = "-" if "-" in re.sub(r"<[^>]*>", "", str(r[si])) else ""
+        out.append({"Code": r[ci].strip(), "Name": r[ni].strip(), "TradeValue": str(r[vi]).replace(",", ""),
+                    "ClosingPrice": str(r[pi]).replace(",", ""), "Change": sign + str(r[di]).replace(",", ""),
+                    "Date": roc})
+    return out
+
+
+def site_bwibbu(day):
+    """證交所網站某天的本益比、殖利率、淨值比，欄位名稱和 OpenAPI BWIBBU_ALL 相同。"""
+    d = get(f"https://www.twse.com.tw/exchangeReport/BWIBBU_d?response=json&date={day:%Y%m%d}&selectType=ALL")
+    f = d.get("fields", [])
+    if not d.get("data") or "證券代號" not in f:
+        return {}
+    col = {k: next(i for i, x in enumerate(f) if k in x) for k in ("證券代號", "殖利率", "本益比", "淨值比")}
+    return {r[col["證券代號"]].strip(): {"PEratio": r[col["本益比"]], "DividendYield": r[col["殖利率"]],
+                                       "PBratio": r[col["淨值比"]]} for r in d["data"]}
+
+
+def roc_to_date(roc):
+    """證交所 OpenAPI 的日期是民國年，例如 1151021"""
+    return dt.date(int(roc[:-4]) + 1911, int(roc[-4:-2]), int(roc[-2:]))
+
+
+def latest_day_all(today=None):
+    """回傳 (上市全部收盤列, 資料日, 是否改用網站)。OpenAPI 比今天舊時，往回找網站上較新的交易日。"""
+    rows = get(f"{OPENAPI}/exchangeReport/STOCK_DAY_ALL")
+    asof = roc_to_date(rows[0]["Date"])
+    today = today or dt.datetime.now(TPE).date()
+    for back in range((today - asof).days):
+        day = today - dt.timedelta(days=back)
+        try:
+            site = site_day_all(day)
+        except Exception as e:  # noqa: BLE001  網站連不上就用 OpenAPI 的
+            print(f"warn  證交所網站 {day} 收盤抓取失敗：{e}", file=sys.stderr)
+            break
+        time.sleep(3)  # 證交所網站有頻率限制
+        if site:
+            print(f"note  OpenAPI 停在 {asof}，改用證交所網站 {day} 的收盤", file=sys.stderr)
+            return site, day, True
+    return rows, asof, False
 
 
 def trading_day_near(day):
@@ -142,14 +204,16 @@ def trading_day_near(day):
 
 
 def main():
-    day_all = {r["Code"]: r for r in get(f"{OPENAPI}/exchangeReport/STOCK_DAY_ALL")}
+    rows, asof, from_site = latest_day_all()
+    day_all = {r["Code"]: r for r in rows}
     avg = {r["Code"]: r for r in get(f"{OPENAPI}/exchangeReport/STOCK_DAY_AVG_ALL")}
     bw = {r["Code"]: r for r in get(f"{OPENAPI}/exchangeReport/BWIBBU_ALL")}
+    if from_site:
+        try:
+            bw = site_bwibbu(asof) or bw
+        except Exception as e:  # noqa: BLE001
+            print(f"warn  證交所網站本益比抓取失敗，沿用 OpenAPI：{e}", file=sys.stderr)
     ind = {r["公司代號"]: r["產業別"] for r in get(f"{OPENAPI}/opendata/t187ap03_L")}
-
-    # 證交所 OpenAPI 的日期是民國年，例如 1151021
-    roc = next(iter(day_all.values()))["Date"]
-    asof = dt.date(int(roc[:-4]) + 1911, int(roc[-4:-2]), int(roc[-2:]))
     # 過去 12 個月，每月同一天附近的交易日
     dates, months = [], []
     for k in range(12, 0, -1):

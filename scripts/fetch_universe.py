@@ -16,6 +16,7 @@ import sys
 import time
 from pathlib import Path
 
+import fetch_twse
 from net import fetch
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -106,17 +107,20 @@ def build(L, LD, OD, IO):
 
 
 def main():
+    raw = len(sys.argv) == 3 and sys.argv[1] == "--raw"
     try:
-        if len(sys.argv) == 3 and sys.argv[1] == "--raw":
+        if raw:
             d = Path(sys.argv[2])
             L, LD, OD, IO = (json.loads((d / n).read_text(encoding="utf-8")) for n in
                              ("L.json", "LD.json", "OD.json", "isin_O.json"))
         else:
             L = json.loads(get("https://openapi.twse.com.tw/v1/opendata/t187ap03_L"))
-            LD = json.loads(get("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL"))
+            LD, asof, _ = fetch_twse.latest_day_all()  # OpenAPI 停更時改用證交所網站
             OD = json.loads(get("https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes"))
             IO = isin_rows(get("https://isin.twse.com.tw/isin/C_public.jsp?strMode=4"))
         u = build(L, LD, OD, IO)
+        if not raw:
+            u["asof"] = f"{asof:%Y-%m-%d}"  # 上市收盤的資料日，不是執行日
         if len(u["stock"]) < 1500 or len(u["etf"]) < 150:
             raise ValueError(f"筆數太少：股票 {len(u['stock'])}、ETF {len(u['etf'])}")
     except Exception as e:  # noqa: BLE001
