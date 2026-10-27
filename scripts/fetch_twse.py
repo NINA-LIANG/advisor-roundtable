@@ -173,11 +173,24 @@ def roc_to_date(roc):
     return dt.date(int(roc[:-4]) + 1911, int(roc[-4:-2]), int(roc[-2:]))
 
 
+def optional(fn, default, what):
+    """抓不到也沒關係的資料：失敗時印警告、回傳預設值"""
+    try:
+        return fn()
+    except Exception as e:  # noqa: BLE001
+        print(f"warn  {what}抓取失敗，略過：{e}", file=sys.stderr)
+        return default
+
+
 def latest_day_all(today=None):
-    """回傳 (上市全部收盤列, 資料日, 是否改用網站)。OpenAPI 比今天舊時，往回找網站上較新的交易日。"""
-    rows = get(f"{OPENAPI}/exchangeReport/STOCK_DAY_ALL")
-    asof = roc_to_date(rows[0]["Date"])
+    """回傳 (上市全部收盤列, 資料日, 是否改用網站)。OpenAPI 比今天舊或抓不到時，往回找網站上較新的交易日。"""
     today = today or dt.datetime.now(TPE).date()
+    try:
+        rows = get(f"{OPENAPI}/exchangeReport/STOCK_DAY_ALL")
+        asof = roc_to_date(rows[0]["Date"])
+    except Exception as e:  # noqa: BLE001  OpenAPI 偶爾回空白內容（2026-10-27 曾發生），改從網站找最近一週
+        print(f"warn  OpenAPI STOCK_DAY_ALL 抓取失敗：{e}", file=sys.stderr)
+        rows, asof = None, today - dt.timedelta(days=8)
     for back in range((today - asof).days):
         day = today - dt.timedelta(days=back)
         try:
@@ -187,8 +200,11 @@ def latest_day_all(today=None):
             break
         time.sleep(3)  # 證交所網站有頻率限制
         if site:
-            print(f"note  OpenAPI 停在 {asof}，改用證交所網站 {day} 的收盤", file=sys.stderr)
+            why = f"OpenAPI 停在 {asof}" if rows else "OpenAPI 抓不到"
+            print(f"note  {why}，改用證交所網站 {day} 的收盤", file=sys.stderr)
             return site, day, True
+    if rows is None:
+        raise RuntimeError("OpenAPI 和證交所網站都抓不到最近一週的收盤")
     return rows, asof, False
 
 
@@ -206,13 +222,9 @@ def trading_day_near(day):
 def main():
     rows, asof, from_site = latest_day_all()
     day_all = {r["Code"]: r for r in rows}
-    avg = {r["Code"]: r for r in get(f"{OPENAPI}/exchangeReport/STOCK_DAY_AVG_ALL")}
-    bw = {r["Code"]: r for r in get(f"{OPENAPI}/exchangeReport/BWIBBU_ALL")}
-    if from_site:
-        try:
-            bw = site_bwibbu(asof) or bw
-        except Exception as e:  # noqa: BLE001
-            print(f"warn  證交所網站本益比抓取失敗，沿用 OpenAPI：{e}", file=sys.stderr)
+    avg = {r["Code"]: r for r in optional(lambda: get(f"{OPENAPI}/exchangeReport/STOCK_DAY_AVG_ALL"), [], "月均價")}
+    bw = optional(lambda: site_bwibbu(asof), {}, "網站本益比") if from_site else {}
+    bw = bw or {r["Code"]: r for r in get(f"{OPENAPI}/exchangeReport/BWIBBU_ALL")}
     ind = {r["公司代號"]: r["產業別"] for r in get(f"{OPENAPI}/opendata/t187ap03_L")}
     # 過去 12 個月，每月同一天附近的交易日
     dates, months = [], []
