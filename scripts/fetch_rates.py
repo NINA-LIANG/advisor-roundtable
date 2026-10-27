@@ -143,15 +143,13 @@ def main():
         names = bank_names()
         resp = post("Data/GetJsonFromArray", {"_range": {"values": [{"key": "銀行名稱", "value": names}]},
                                               "BeginDate": None, "EndDate": None, "RateSort": None})
-    except Exception as e:  # 網站改版或暫時連不上
-        print(f"warn  央行牌告利率資訊網抓取失敗，沿用舊資料：{e}", file=sys.stderr)
-        return
+    except Exception as e:  # 網站改版或暫時連不上；結束碼 1 讓這一步顯示失敗並開 Issue，舊檔不動
+        sys.exit(f"fail  央行牌告利率資訊網抓取失敗，沿用舊資料：{e}")
     RAW.parent.mkdir(parents=True, exist_ok=True)
     RAW.write_text(json.dumps(resp, ensure_ascii=False), encoding="utf-8")
     fresh = parse(resp)
     if len(fresh) < 10:
-        print(f"warn  只解析出 {len(fresh)} 家，表格格式可能變了，沿用舊資料（原始回應在 {RAW}）", file=sys.stderr)
-        return
+        sys.exit(f"fail  只解析出 {len(fresh)} 家，表格格式可能變了，沿用舊資料（原始回應在 {RAW}）")
     banks = {b["n"]: b for b in old["banks"]}
     for name, r in fresh.items():
         b = banks.setdefault(name, {"n": name, "k": "公股" if name in PUBLIC else "民營", "d": {}, "td": {}, "ts": {}})
