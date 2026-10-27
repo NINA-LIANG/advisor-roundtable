@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-25 01:06",
+ "checked": "2026-10-27 18:55",
  "ok": true,
  "datasets": [
   {
@@ -9,34 +9,34 @@
    "page": "理專圓桌、模擬倉、考場",
    "asof": "2026-10-22",
    "count": 421,
-   "age": 3,
+   "age": 5,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "universe",
    "file": "data/universe.json",
    "name": "上市櫃全部股票與 ETF",
    "page": "台股全覽",
-   "asof": "2026-10-23",
+   "asof": "2026-10-27",
    "count": 2354,
-   "age": 2,
+   "age": 0,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "dividends",
    "file": "data/dividends.json",
    "name": "除權息與殖利率",
    "page": "除權息行事曆",
-   "asof": "2026-10-23",
-   "count": 1981,
-   "age": 2,
+   "asof": "2026-10-27",
+   "count": 1979,
+   "age": 0,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "rates",
@@ -45,10 +45,10 @@
    "page": "存款利率",
    "asof": "2026-10-22",
    "count": 37,
-   "age": 3,
+   "age": 5,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "etf_holdings",
@@ -57,22 +57,22 @@
    "page": "台股全覽",
    "asof": "2026-10-22",
    "count": 313,
-   "age": 3,
+   "age": 5,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "financials",
    "file": "data/financials.json",
    "name": "上市櫃財報與月營收",
    "page": "台股全覽",
-   "asof": "2026-10-23",
+   "asof": "2026-10-27",
    "count": 1981,
-   "age": 2,
+   "age": 0,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "popular",
@@ -81,7 +81,7 @@
    "page": "人氣小報",
    "asof": "2026-10-22",
    "count": 20,
-   "age": 3,
+   "age": 5,
    "state": "ok",
    "note": "",
    "step": ""
@@ -93,12 +93,12 @@
  "errors": [],
  "warnings": [],
  "steps": {
-  "twse": "skipped",
-  "rates": "skipped",
-  "universe": "skipped",
-  "dividends": "skipped",
-  "holdings": "skipped",
-  "financials": "skipped"
+  "twse": "success",
+  "rates": "success",
+  "universe": "success",
+  "dividends": "success",
+  "holdings": "success",
+  "financials": "success"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40114630207"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40491502307"
 }
