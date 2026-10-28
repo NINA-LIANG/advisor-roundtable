@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-28 00:01",
+ "checked": "2026-10-29 01:00",
  "ok": true,
  "datasets": [
   {
@@ -9,10 +9,10 @@
    "page": "理專圓桌、模擬倉、考場",
    "asof": "2026-10-27",
    "count": 435,
-   "age": 1,
-   "state": "ok",
-   "note": "",
-   "step": "success"
+   "age": 2,
+   "state": "warn",
+   "note": "今天抓取失敗，沿用上一份資料",
+   "step": "failure"
   },
   {
    "key": "universe",
@@ -21,7 +21,7 @@
    "page": "台股全覽",
    "asof": "2026-10-27",
    "count": 2354,
-   "age": 1,
+   "age": 2,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -31,8 +31,8 @@
    "file": "data/dividends.json",
    "name": "除權息與殖利率",
    "page": "除權息行事曆",
-   "asof": "2026-10-27",
-   "count": 1979,
+   "asof": "2026-10-28",
+   "count": 1982,
    "age": 1,
    "state": "ok",
    "note": "",
@@ -45,7 +45,7 @@
    "page": "存款利率",
    "asof": "2026-10-22",
    "count": 37,
-   "age": 6,
+   "age": 7,
    "state": "warn",
    "note": "今天抓取失敗，沿用上一份資料",
    "step": "failure"
@@ -55,9 +55,9 @@
    "file": "data/etf_holdings.json",
    "name": "ETF 持股明細",
    "page": "台股全覽",
-   "asof": "2026-10-22",
+   "asof": "2026-10-28",
    "count": 313,
-   "age": 6,
+   "age": 1,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -67,8 +67,8 @@
    "file": "data/financials.json",
    "name": "上市櫃財報與月營收",
    "page": "台股全覽",
-   "asof": "2026-10-27",
-   "count": 1981,
+   "asof": "2026-10-28",
+   "count": 1982,
    "age": 1,
    "state": "ok",
    "note": "",
@@ -81,7 +81,7 @@
    "page": "人氣小報",
    "asof": "2026-10-22",
    "count": 20,
-   "age": 6,
+   "age": 7,
    "state": "ok",
    "note": "",
    "step": ""
@@ -92,15 +92,16 @@
  ],
  "errors": [],
  "warnings": [
+  "tw.json：今天抓取失敗，沿用上一份資料",
   "rates.json：今天抓取失敗，沿用上一份資料"
  ],
  "steps": {
-  "twse": "success",
+  "twse": "failure",
   "rates": "failure",
   "universe": "success",
   "dividends": "success",
   "holdings": "success",
   "financials": "success"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40536087764"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40729047757"
 }
