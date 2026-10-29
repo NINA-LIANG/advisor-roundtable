@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-29 01:00",
+ "checked": "2026-10-30 01:06",
  "ok": true,
  "datasets": [
   {
@@ -7,12 +7,12 @@
    "file": "data/tw.json",
    "name": "上市股票與 ETF 收盤",
    "page": "理專圓桌、模擬倉、考場",
-   "asof": "2026-10-27",
-   "count": 435,
-   "age": 2,
-   "state": "warn",
-   "note": "今天抓取失敗，沿用上一份資料",
-   "step": "failure"
+   "asof": "2026-10-29",
+   "count": 380,
+   "age": 1,
+   "state": "ok",
+   "note": "",
+   "step": "success"
   },
   {
    "key": "universe",
@@ -21,7 +21,7 @@
    "page": "台股全覽",
    "asof": "2026-10-27",
    "count": 2354,
-   "age": 2,
+   "age": 3,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -31,8 +31,8 @@
    "file": "data/dividends.json",
    "name": "除權息與殖利率",
    "page": "除權息行事曆",
-   "asof": "2026-10-28",
-   "count": 1982,
+   "asof": "2026-10-29",
+   "count": 1949,
    "age": 1,
    "state": "ok",
    "note": "",
@@ -45,9 +45,9 @@
    "page": "存款利率",
    "asof": "2026-10-22",
    "count": 37,
-   "age": 7,
+   "age": 8,
    "state": "warn",
-   "note": "今天抓取失敗，沿用上一份資料",
+   "note": "已經 8 天沒更新（超過 7 天；連假期間屬正常）；今天抓取失敗，沿用上一份資料",
    "step": "failure"
   },
   {
@@ -57,7 +57,7 @@
    "page": "台股全覽",
    "asof": "2026-10-28",
    "count": 313,
-   "age": 1,
+   "age": 2,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -67,7 +67,7 @@
    "file": "data/financials.json",
    "name": "上市櫃財報與月營收",
    "page": "台股全覽",
-   "asof": "2026-10-28",
+   "asof": "2026-10-29",
    "count": 1982,
    "age": 1,
    "state": "ok",
@@ -81,7 +81,7 @@
    "page": "人氣小報",
    "asof": "2026-10-22",
    "count": 20,
-   "age": 7,
+   "age": 8,
    "state": "ok",
    "note": "",
    "step": ""
@@ -92,16 +92,16 @@
  ],
  "errors": [],
  "warnings": [
-  "tw.json：今天抓取失敗，沿用上一份資料",
+  "rates.json：已經 8 天沒更新（超過 7 天；連假期間屬正常）",
   "rates.json：今天抓取失敗，沿用上一份資料"
  ],
  "steps": {
-  "twse": "failure",
+  "twse": "success",
   "rates": "failure",
   "universe": "success",
   "dividends": "success",
   "holdings": "success",
   "financials": "success"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40729047757"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/40917315382"
 }
