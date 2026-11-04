@@ -56,3 +56,11 @@ def test_client_error_is_not_retried(monkeypatch):
 def test_rate_limit_is_retried(monkeypatch):
     calls, _ = fake(monkeypatch, [http(429), b"ok"])
     assert net.fetch("https://x") == b"ok" and len(calls) == 2
+
+
+def test_retries_when_download_is_cut_off(monkeypatch):
+    # 2026-10-27 起每日更新的上市櫃清單都因為 ISIN 頁下載到一半被切斷而沒更新
+    import http.client
+    calls, waits = fake(monkeypatch, [http.client.IncompleteRead(b"x" * 10, 100), b"full"])
+    assert net.fetch("https://x") == b"full"
+    assert len(calls) == 2 and waits == [2]
