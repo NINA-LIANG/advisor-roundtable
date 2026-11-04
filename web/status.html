@@ -171,6 +171,7 @@ button,select,[role="button"],input[type="checkbox"],input[type="radio"]{min-hei
       <tbody id="rows"></tbody>
     </table></div>
     <p class="muted" style="margin-top:10px">知識庫（理專背景、名詞、內行筆記）格式檢查：<span id="kb"></span></p>
+    <p class="muted">和證交所公告比對（<a href="charter.html">理專憲章</a>第一條「有據」，收盤價須完全相同、本益比殖利率淨值比差 0.01 內，不符就不發佈）：<span id="cc"></span></p>
   </section>
 
   <section class="box">
@@ -209,6 +210,7 @@ document.getElementById("rows").innerHTML=S.datasets.map(d=>`<tr>
   <td class="n">${Number(d.count||0).toLocaleString("zh-TW")}</td>
   <td><span class="tag ${d.state}">${LABEL[d.state]}</span></td><td>${esc(d.note||(d.age!=null?`${d.age} 天前`:""))}</td></tr>`).join("");
 document.getElementById("kb").textContent=S.knowledge.join("；");
+document.getElementById("cc").textContent=S.crosscheck||"還沒有比對紀錄";
 document.getElementById("api").innerHTML=S.datasets.map(d=>{const f=d.file.replace(/^data\//,"");
   return `<li><a href="data/${esc(f)}">${esc(f)}</a>：${esc(d.name)}</li>`}).join("")+
   `<li><a href="data/status.json">status.json</a>：這一頁的狀態資料</li>`;

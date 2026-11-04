@@ -61,6 +61,12 @@ jobs:
         if: env.ONLY == 'all' || env.ONLY == 'twse'
         run: python scripts/fetch_twse.py
         continue-on-error: true
+      # 理專憲章第一條「有據」：和證交所網站同一天的公告逐檔比對，不符時下一步的品質檢查會擋下發佈
+      - name: 和證交所公告比對
+        id: crosscheck
+        if: env.ONLY == 'all' || env.ONLY == 'twse'
+        run: python scripts/crosscheck_twse.py
+        continue-on-error: true
       - name: 抓央行牌告利率
         id: rates
         if: env.ONLY == 'all' || env.ONLY == 'rates'
