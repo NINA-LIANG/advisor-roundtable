@@ -34,6 +34,7 @@ header.hero{text-align:center;display:flex;flex-direction:column;align-items:cen
 .hero .what{max-width:36em;font-size:15px;margin:0;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:6px 16px}
 .gacha{border:none;border-radius:999px;padding:13px 28px;font-family:var(--f-display);font-size:19px;background:linear-gradient(135deg,var(--pink),var(--apricot));color:var(--ink);box-shadow:0 5px 0 #e59aab,0 12px 24px rgba(217,112,138,.25);transition:transform .15s}
 .gacha:hover{transform:translateY(-2px)}
+.kyc-stop{border:2px solid var(--pink);background:#fff3f5;border-radius:18px;padding:12px 14px;font-size:14.5px;line-height:1.7}
 .gacha:active{transform:translateY(3px);box-shadow:0 2px 0 #e59aab}
 .disclaimer{background:#fff0f3;border:2px dashed var(--pink-deep);color:#9b4a5d;border-radius:20px;padding:9px 16px;font-size:13px;max-width:760px}
 
@@ -478,7 +479,17 @@ function drawChart(d){const p=[...d.m,d.p],W=Math.round(Math.max(280,Math.min(52
 const LABEL=s=>s>=1.5?["規則強烈偏多 ✨","buy"]:s>=0.5?["規則偏多 🍀","add"]:s>-0.5?["規則中性 ⏳","wait"]:["規則偏空 🙅","avoid"];
 const COL={buy:"var(--matcha-deep)",add:"var(--matcha)",wait:"var(--apricot)",avoid:"var(--pink)"},NM={buy:"強烈偏多",add:"偏多",wait:"中性",avoid:"偏空"};
 {let cw=0;addEventListener("resize",()=>{const w=$("chart").clientWidth;if(w!==cw){cw=w;drawChart(state)}})}
-function render(){drawChart(state);lastRes=ADVISORS.map(a=>({a,...runA(a,state)}));renderCards();renderConsensus();renderRank();renderMonitor()}
+// 理專憲章第四條「守風險」：風險屬性小測驗結果為保守型的使用者查看個股（非 ETF）時，六位理專不產生意見，只顯示固定說明
+const KYC_BLOCK="保守型";
+const kycBlocked=d=>store.get("kyc",null)===KYC_BLOCK&&!!d&&!!d.c&&!isETF(d);
+const KYC_STOP="你的風險屬性小測驗結果是保守型。依理專憲章第四條「守風險」，個股（非 ETF）超出保守型的風險上限，六位理專不對個股提出意見。你仍可查看這檔的股價走勢，或改看 ETF；如果你的狀況改變，可以在下方重新做風險屬性小測驗。";
+const kycNote=()=>`<div class="kyc-stop" role="note">🛑 <b>不提供理專意見</b>　${KYC_STOP}　<a href="https://nina-liang.github.io/advisor-roundtable/charter.html" target="_blank" rel="noopener">看理專憲章</a></div>`;
+function renderBlocked(){lastRes=[];lastMon=null;
+ $("cards").innerHTML=kycNote();$("verdict").textContent="不提供";
+ ["score","bar","counts","spread","health","reviews"].forEach(id=>$(id).innerHTML="");
+ $("escalate").className="escalate need";$("escalate").innerHTML=kycNote()}
+function render(){drawChart(state);if(kycBlocked(state)){renderBlocked();renderRank();return}
+ lastRes=ADVISORS.map(a=>({a,...runA(a,state)}));renderCards();renderConsensus();renderRank();renderMonitor()}
 
 // ---------- 理專選股 ----------
 // 每位理專對全部股票跑一次自己的規則，取分數最高、再依各自的排序依據挑前三名
@@ -490,7 +501,12 @@ function runA(a,d){const r=a.run(view(a,d));if(!isETF(d)||!["槓桿反向","期�
  return {...r,s:Math.min(r.s,-1),why:[`${d.t} ETF 追蹤每日報酬或期貨，長期持有會有耗損，只適合短線`,...r.why],tb:-99}}
 let uni=store.get("uni","stock");
 function screen(){PICKS={};const U=uni==="etf"?ETFS.filter(e=>!["槓桿反向","期貨商品"].includes(e.t)):TW.stocks;ADVISORS.forEach(a=>{PICKS[a.key]=U.map(st=>({st,...runA(a,dataOf(st))})).sort((x,y)=>y.s-x.s||y.tb-x.tb).slice(0,3)})}
-function renderPicks(){screen();const cnt={};
+function renderPicks(){
+ if(uni==="stock"&&store.get("kyc",null)===KYC_BLOCK){PICKS={};
+  $("uniTxt").innerHTML=`從 <b>${TW.stocks.length}</b> 檔成交值超過 1 億元的上市股中挑出前三名`;
+  $("uni").querySelectorAll("[data-u]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.u===uni));
+  $("hot").innerHTML="";$("picks").innerHTML=kycNote();return}
+ screen();const cnt={};
  $("uniTxt").innerHTML=uni==="etf"?`從 <b>${ETFS.length}</b> 檔成交值超過 3000 萬元的上市 ETF 中挑出前三名（槓桿反向與期貨型不列入推薦）`:`從 <b>${TW.stocks.length}</b> 檔成交值超過 1 億元的上市股中挑出前三名`;
  $("uni").querySelectorAll("[data-u]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.u===uni));
  Object.entries(PICKS).forEach(([k,l])=>l.forEach(r=>{if(r.s>=0.5&&!(uni==="etf"&&k==="value"))(cnt[r.st.c]=cnt[r.st.c]||[]).push(r)}));
@@ -536,7 +552,6 @@ function monitor(){const R={};lastRes.forEach(r=>R[r.a.key]=r);
  if(flags>=2)reasons.push(`互評出現 ${flags} 則警示`);
  const bad=ADVISORS.filter(a=>H[a.key].lv==="bad");if(bad.length)reasons.push(`${bad.map(a=>a.name).join("、")} 的資料不足`);
  if(same)reasons.push("全員意見完全一致，可能共用同一個盲點，請抽查一位的理由");
- const kyc=store.get("kyc",null);if(kyc==="保守型"&&!isETF(state))reasons.push("你的風險屬性小測驗結果是保守型，個股波動通常比分散的 ETF 大，這檔可能不適合你");
  return {reviews,H,reasons,flags,sp}}
 function renderMonitor(){const m=monitor(),lv={ok:"🟢 正常",warn:"🟡 注意",bad:"🔴 異常"};
  $("escalate").className="escalate "+(m.reasons.length?"need":"ok");
@@ -546,13 +561,13 @@ function renderMonitor(){const m=monitor(),lv={ok:"🟢 正常",warn:"🟡 注�
  lastMon=m}
 let lastMon=null,auditLog=store.get("audit",[]);
 function renderLog(){$("log").innerHTML=auditLog.length?auditLog.map(x=>`<tr><td class="num">${x.t}</td><td>${x.stock}</td><td>${x.verdict}</td><td class="num">${x.sp}</td><td class="num">${x.flags}</td><td>${x.esc?"🙋 是":"🤖 否"}</td></tr>`).join(""):`<tr><td colspan="6" class="muted">還沒有紀錄。按「記錄這次結果」存下當時的判斷與收盤價，之後可以回頭比對理專準不準。</td></tr>`}
-$("logBtn").addEventListener("click",()=>{const d=new Date(),p=n=>String(n).padStart(2,"0");
+$("logBtn").addEventListener("click",()=>{if(!lastMon){toast("這檔沒有理專意見，不需要記錄");return}const d=new Date(),p=n=>String(n).padStart(2,"0");
  auditLog.unshift({t:`${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`,stock:`${label(state)}（${TW.asof} 收 ${fmt(state.p)}）`,verdict:$("verdict").textContent,sp:lastMon.sp.toFixed(2),flags:lastMon.flags,esc:lastMon.reasons.length>0});
  auditLog=auditLog.slice(0,20);store.set("audit",auditLog);renderLog();toast("已記錄 📝")});
 $("logClear").addEventListener("click",()=>{auditLog=[];store.set("audit",auditLog);renderLog()});
 renderLog();
 
-function renderCards(){
+function renderCards(){if(kycBlocked(state)){$("cards").innerHTML=kycNote();return}
  $("cards").innerHTML=lastRes.filter(r=>tab==="all"||r.a.horizon===tab).map(({a,s,why,entry,metrics})=>{const [lab,cls]=LABEL(s);return `<article class="card" style="--tape:${a.tape}">
   <div class="card-head"><div class="who"><div class="avatar" aria-hidden="true">${a.emoji}</div><div style="min-width:0"><div class="name">${a.name}</div><div class="bg">🎓 ${a.school}</div><div class="bg">💼 ${a.bg}</div></div></div>
   <span class="pill ${cls}">${lab}</span></div>
@@ -591,7 +606,8 @@ function hearts(el){const r=el.getBoundingClientRect(),icons=["💖","💗","✨
 let toastT;function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,1800)}
 
 // ---------- 扭蛋 ----------
-$("gacha").addEventListener("click",()=>{const a=ADVISORS[Math.floor(Math.random()*ADVISORS.length)],top=PICKS[a.key][0],[lab]=LABEL(top.s);
+$("gacha").addEventListener("click",()=>{if(!PICKS[ADVISORS[0].key]){$("bubble").innerHTML=`<button class="close" type="button" id="mClose" aria-label="關閉">✕</button><h3 id="mTitle">今天不抽個股</h3>${kycNote()}`;$("modal").hidden=false;$("mClose").focus();return}
+ const a=ADVISORS[Math.floor(Math.random()*ADVISORS.length)],top=PICKS[a.key][0],[lab]=LABEL(top.s);
  $("bubble").innerHTML=`<button class="close" type="button" id="mClose" aria-label="關閉">✕</button>
  <div class="avatar" style="background:${a.tape}" aria-hidden="true">${a.emoji}</div>
  <h3 id="mTitle">今天聽 ${a.name} 的！</h3><div class="muted" style="font-size:13px">${a.style}</div>
@@ -641,7 +657,7 @@ const INS=/*INSIDER*/;
     const exp=[...document.querySelectorAll('#quiz input[type=checkbox]:checked')].map(x=>x.value);
     store.set("kyc",L.name);
     $("qOut").innerHTML=`<div class="ins-alert ok"><b>${L.name}</b>（風險分數 ${sum} 分）・${esc(L.rr)}<br>${esc(L.tip)}${caps.length?`<br>⚠️ ${caps.map(esc).join("；")}`:""}<br>📚 投資經驗：${exp.length?exp.map(esc).join("、"):"沒有勾選"}。${esc(Q.exp_note||"")}</div>`;
-    if(state.c)render()};
+    renderPicks();if(state.c)render()};
 })();
 </script>
 <!--SITE-FOOT-->
