@@ -61,3 +61,17 @@ def test_charter_page_is_linked_and_lists_six_principles():
     assert "守風險 ＞ 有據 ＞ 依規則 ＞ 不保證 ＞ 透明 ＞ 易讀" in html
     assert build_site.SITE_URL + "charter.html" in out["about.html"]
     assert "charter.html" in build_site.sitemap([n for n in out if n not in build_site.UNLISTED], {k: "" for k in out})
+
+
+def test_corrections_page_lists_every_entry_with_source():
+    out, _ = build_site.pages()
+    data = json.loads((build_site.ROOT / "knowledge" / "corrections.zh.json").read_text(encoding="utf-8"))
+    ids = [e["id"] for e in data["items"]]
+    assert len(ids) == len(set(ids)), "勘誤編號重複"
+    assert ids == sorted(ids, reverse=True), "最新的勘誤要放最前面"
+    for e in data["items"]:
+        assert all(e.get(k) for k in ("found", "fixed", "page", "article", "wrong", "cause", "fix", "ref")), e["id"]
+        assert e["found"] <= e["fixed"], e["id"]
+        assert e["ref"].startswith("https://github.com/NINA-LIANG/advisor-roundtable/"), e["id"]
+        assert e["id"] in out["corrections.html"]
+    assert 'href="corrections.html"' in out["charter.html"]
