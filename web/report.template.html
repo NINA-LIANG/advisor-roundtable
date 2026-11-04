@@ -40,6 +40,11 @@ ul{margin:0;padding-left:1.3em}
 li{margin-bottom:4px}
 .ok{color:#3c7a3c;font-weight:700}.bad{color:#b23b55;font-weight:700}.na{color:var(--ink-soft)}
 .scroll{overflow-x:auto}.scroll table{min-width:620px}th{white-space:nowrap}
+.grid{min-width:0!important;border-collapse:separate;border-spacing:3px}.grid th{font-size:12px;font-weight:600}
+.grid td{padding:0}.grid tbody th,.grid thead th:first-child{position:sticky;left:0;background:#fffdf9;z-index:1;white-space:nowrap;padding-right:6px;text-align:left}.cellx{display:inline-flex;gap:2px;padding:4px 5px;border:1px solid #d8cfc4;border-radius:6px;background:#fff;cursor:pointer}
+.cellx.off{opacity:.35;cursor:default;width:44px;height:14px;vertical-align:middle}.cellx.sel{outline:2px solid #b07a2a}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%}.dot.g{background:#3c7a3c}.dot.r{background:#b23b55}.dot.n{background:#c9c2b8}
+.legend{font-size:13px}.legend .dot{width:9px;height:9px;margin:0 3px 0 10px}.detail{margin-top:10px}.detail .scroll table{min-width:0}
 td small{display:block;color:var(--ink-soft);font-size:12px}
 </style>
 
@@ -54,6 +59,14 @@ td small{display:block;color:var(--ink-soft);font-size:12px}
     <h2>今天的檢查（資料日 <span id="asof"></span>）</h2>
     <p class="muted">規則版本 <code id="sha"></code>。有任何 ✗ 時，系統會開 GitHub Issue 通知需求者，網站照常更新。</p>
     <div class="scroll"><table><thead><tr><th>理專</th><th>只用允許的欄位</th><th>分數在範圍內</th><th>沒有禁語</th><th>數字與證交所一致</th><th>重算結果相同</th><th>有紀錄</th></tr></thead><tbody id="today"></tbody></table></div>
+  </section>
+
+  <section class="box">
+    <h2>最近 30 天</h2>
+    <p class="muted">每一列是一位理專，每一格是一個交易日。格子裡的六個點依序是：只用允許欄位、分數在範圍內、沒有禁語、和證交所一致、重算相同、有紀錄。點一格看那天的明細。</p>
+    <p class="legend"><span class="dot g"></span>通過 <span class="dot r"></span>未通過 <span class="dot n"></span>無法判斷 <span class="cellx off"></span>那天沒有紀錄</p>
+    <div class="scroll"><table class="grid"><thead id="gh"></thead><tbody id="gb"></tbody></table></div>
+    <div id="gd" class="detail muted">點上面任一格，這裡會顯示那天的明細。</div>
   </section>
 
   <section class="box">
@@ -82,6 +95,23 @@ const advs=Object.values(L.advisors||{});
 $("wh").innerHTML=`<tr><th>股票</th>${advs.map(a=>`<th>${esc(a.name)}</th>`).join("")}</tr>`;
 $("wb").innerHTML=(L.watchlist||[]).map(c=>{const row=advs.map(a=>a.items.find(x=>x.c===c));if(!row[0])return "";
   return `<tr><td>${esc(c)} ${esc(row[0].n)}</td>${row.map(x=>x?`<td>${esc(x.label)}<small>${esc(x.used.filter(k=>k!=="c"&&k!=="n").join("、"))}</small></td>`:"<td>—</td>").join("")}</tr>`}).join("");
+// CR-004 格子圖：欄是交易日（舊到新），列是理專
+const CHK=["只用允許欄位","分數在範圍內","沒有禁語","和證交所一致","重算相同","有紀錄"];
+const gdays=[...R.days].reverse(), gadv=[...new Map(R.days.flatMap(x=>Object.entries(x.advisors))).entries()].map(([k,a])=>[k,a.name]);
+const dk=v=>v[0]==="✓"?"g":v[0]==="✗"?"r":"n";
+$("gh").innerHTML=`<tr><th></th>${gdays.map(x=>`<th>${esc(x.asof.slice(5).replace("-","/"))}</th>`).join("")}</tr>`;
+$("gb").innerHTML=gadv.map(([k,n])=>`<tr><th>${esc(n)}</th>${gdays.map((x,i)=>{const a=x.advisors[k];
+  return a?`<td><span class="cellx" data-d="${i}" data-k="${esc(k)}" title="${esc(x.asof)} ${esc(n)}">${KEYS.map(c=>`<span class="dot ${dk(a.checks[c]||"—")}"></span>`).join("")}</span></td>`
+          :`<td><span class="cellx off" title="${esc(x.asof)} 這天沒有紀錄"></span></td>`}).join("")}</tr>`).join("")||'<tr><td class="muted">還沒有紀錄</td></tr>';
+{const sc=$("gb").closest(".scroll");sc.scrollLeft=sc.scrollWidth;} // 預設捲到最新一天
+$("gb").addEventListener("click",e=>{const c=e.target.closest(".cellx[data-k]");if(!c)return;
+  document.querySelectorAll(".cellx.sel").forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
+  const x=gdays[c.dataset.d],a=x.advisors[c.dataset.k];
+  $("gd").classList.remove("muted");
+  $("gd").innerHTML=`<h3>${esc(a.name)}・${esc(x.asof)}</h3><p class="muted">規則版本 <code>${esc(x.engine_sha)}</code></p>
+   <ul>${KEYS.map((k,i)=>{const v=a.checks[k]||"—";return `<li><span class="${dk(v)==="g"?"ok":dk(v)==="r"?"bad":"na"}">${esc(v[0])}</span> ${CHK[i]}${v.length>1?`：${esc(v.slice(1).trim())}`:""}</li>`}).join("")}</ul>
+   ${a.w?.length?`<div class="scroll"><table><thead><tr><th>股票</th><th>看法</th><th>讀到的欄位</th></tr></thead><tbody>${a.w.map(([c,n,l,u])=>`<tr><td>${esc(c)} ${esc(n)}</td><td>${esc(l)}</td><td>${esc(u.join("、"))}</td></tr>`).join("")}</tbody></table></div>`:'<p class="muted">這天沒有存觀察清單的看法（CR-004 上線前的紀錄）。</p>'}`;
+});
 $("hist").innerHTML=R.days.map(x=>{const bad=Object.values(x.advisors).flatMap(a=>Object.values(a.checks)).filter(v=>v[0]==="✗").length;
   return `<tr><td>${esc(x.asof)}</td><td><code>${esc(x.engine_sha)}</code></td><td>${bad?`<span class="bad">✗ ${bad} 項</span>`:'<span class="ok">✓ 全部通過</span>'}</td></tr>`}).join("");
 </script>

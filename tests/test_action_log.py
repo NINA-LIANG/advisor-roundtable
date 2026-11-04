@@ -44,3 +44,13 @@ def test_real_advisors_pass_on_current_data():
     assert len(out) == 6
     for key, checks in out.items():
         assert not any(v.startswith("✗") for v in checks.values()), (key, checks)
+
+
+def test_morning_report_keeps_watchlist_summary_for_grid():
+    """CR-004：格子圖點開要看得到當天觀察清單的看法與讀到的欄位"""
+    import json
+    from pathlib import Path
+    r = json.loads((Path(__file__).resolve().parent.parent / "data" / "morning_report.json").read_text(encoding="utf-8"))
+    a = next(iter(r["days"][0]["advisors"].values()))
+    assert a["w"] and all(len(x) == 4 and x[2] and isinstance(x[3], list) for x in a["w"])
+    assert all("c" not in x[3] and "n" not in x[3] for x in a["w"])
