@@ -4,6 +4,7 @@ name: ci
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]   # edited：改 PR 說明補上 CR 編號後重新檢查
   push:
     branches: [main]
     paths-ignore: ["data/**", "web/*.html", "web/sitemap.xml"]
@@ -16,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 核心變更檢查要比對 base 分支
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -26,3 +29,9 @@ jobs:
         run: python scripts/validate_data.py
       - name: 建置網站
         run: python scripts/build_site.py
+      # 理專憲章「核心（實）」：改到資料計算、理專規則、KYC、免責文字、憲章或機器閘門，PR 說明要有 CR-nnn
+      - name: 核心變更要附變更單
+        if: always() && github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python scripts/core_guard.py "origin/${{ github.base_ref }}"
