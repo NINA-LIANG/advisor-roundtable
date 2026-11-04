@@ -82,3 +82,12 @@ def test_report_page_shows_morning_report():
     assert "/*REPORT*/" not in out["report.html"] and "/*ACTIONLOG*/" not in out["report.html"]
     assert 'href="report.html"' in out["charter.html"]
     assert "report.html" in build_site.sitemap([n for n in out if n not in build_site.UNLISTED], {k: "" for k in out})
+
+
+def test_report_page_hides_stock_opinions_for_conservative_kyc():
+    """理專憲章第四條：晨報頁也和首頁一樣，保守型使用者看不到個股意見"""
+    out, _ = build_site.pages()
+    html = out["report.html"]
+    assert 'const KYC_BLOCK="保守型"' in html and "不提供（保守型）" in html and 'class="kycnote"' in html
+    idx = (build_site.WEB / "index.template.html").read_text(encoding="utf-8")
+    assert 'const KYC_BLOCK="保守型"' in idx, "首頁與晨報的保守型判斷要一致"
