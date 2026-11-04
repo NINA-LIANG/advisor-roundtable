@@ -99,7 +99,9 @@ function main() {
     const bad = Object.values(checks).filter(v => v.startsWith("✗")).length;
     fails += bad;
     log.advisors[a.key] = { name: a.name, allowed, top: ranked, items };
-    day.advisors[a.key] = { name: a.name, checks, n: items.length };
+    // CR-004：格子圖點開時要看得到當天對觀察清單的看法與讀到的欄位，所以晨報也存一份摘要（保留 30 天）
+    const w = items.filter(x => cfg.watchlist.includes(x.c)).map(x => [x.c, x.n, x.label, x.used.filter(k => k !== "c" && k !== "n")]);
+    day.advisors[a.key] = { name: a.name, checks, n: items.length, w };
   }
   writeFileSync(new URL("data/action_log.json", ROOT), JSON.stringify(log));
   const rp = new URL("data/morning_report.json", ROOT);
