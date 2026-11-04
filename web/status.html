@@ -177,7 +177,7 @@ button,select,[role="button"],input[type="checkbox"],input[type="radio"]{min-hei
   <section class="box">
     <h2>怎麼更新</h2>
     <ul>
-      <li><b>自動</b>：每個交易日台灣時間 18:30 抓證交所、櫃買中心、央行資料，檢查通過才發佈。證交所公告的休市日（國定假日等）自動跳過。</li>
+      <li><b>自動</b>：每個交易日台灣時間 18:47 抓證交所、櫃買中心、央行資料，檢查通過才發佈（GitHub 的排程常會延後幾個小時，最晚可能到隔天凌晨；21:23 另有一次備援）。證交所公告的休市日（國定假日等）自動跳過。</li>
       <li><b>手動立即更新</b>：到 <a href="https://github.com/NINA-LIANG/advisor-roundtable/actions/workflows/daily-update.yml" target="_blank" rel="noopener">GitHub Actions 的 daily-update</a>，按「Run workflow」，可以選只更新某一份資料。手機 GitHub App 也能按。</li>
       <li><b>改內容</b>：理專背景、名詞、內行筆記在 <code>knowledge/</code> 資料夾，可以直接在 GitHub 網頁上改，或用 <a href="https://app.pagescms.org/" target="_blank" rel="noopener">Pages CMS</a> 的表單編輯。存檔後自動檢查格式，寫錯不會上線。</li>
       <li><b>出問題時</b>：抓取失敗或檢查沒過，會自動在 <a href="https://github.com/NINA-LIANG/advisor-roundtable/issues?q=label%3Adata-update" target="_blank" rel="noopener">Issues</a> 開一張單通知；下一次成功會自動關閉。</li>
