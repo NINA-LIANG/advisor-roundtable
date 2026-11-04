@@ -1,0 +1,84 @@
+{
+ "asof": "2026-11-03",
+ "keep_days": 30,
+ "days": [
+  {
+   "asof": "2026-11-03",
+   "engine_sha": "cf5dd1bea61a80cb",
+   "advisors": {
+    "tech": {
+     "name": "陳怡君",
+     "checks": {
+      "fields": "✓",
+      "range": "✓",
+      "words": "✓",
+      "data": "— 當天沒有比對紀錄",
+      "repeat": "✓",
+      "logged": "✓"
+     },
+     "n": 13
+    },
+    "macro": {
+     "name": "林思遠",
+     "checks": {
+      "fields": "✓",
+      "range": "✓",
+      "words": "✓",
+      "data": "— 當天沒有比對紀錄",
+      "repeat": "✓",
+      "logged": "✓"
+     },
+     "n": 13
+    },
+    "value": {
+     "name": "王建明",
+     "checks": {
+      "fields": "✓",
+      "range": "✓",
+      "words": "✓",
+      "data": "— 當天沒有比對紀錄",
+      "repeat": "✓",
+      "logged": "✓"
+     },
+     "n": 13
+    },
+    "mom": {
+     "name": "周以恆",
+     "checks": {
+      "fields": "✓",
+      "range": "✓",
+      "words": "✓",
+      "data": "— 當天沒有比對紀錄",
+      "repeat": "✓",
+      "logged": "✓"
+     },
+     "n": 13
+    },
+    "quant": {
+     "name": "張雅雯",
+     "checks": {
+      "fields": "✓",
+      "range": "✓",
+      "words": "✓",
+      "data": "— 當天沒有比對紀錄",
+      "repeat": "✓",
+      "logged": "✓"
+     },
+     "n": 13
+    },
+    "div": {
+     "name": "劉淑芬",
+     "checks": {
+      "fields": "✓",
+      "range": "✓",
+      "words": "✓",
+      "data": "— 當天沒有比對紀錄",
+      "repeat": "✓",
+      "logged": "✓"
+     },
+     "n": 13
+    }
+   }
+  }
+ ]
+}

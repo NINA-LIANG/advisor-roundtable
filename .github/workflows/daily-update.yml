@@ -97,6 +97,14 @@ jobs:
         run: python scripts/validate_data.py --status data/status.json
         env:
           STEPS: ${{ toJSON(steps) }}
+      # 理專憲章第六條「可檢驗」：六位理專的每日動作紀錄與晨報；有 ✗ 時照常發佈，由最後的通知步驟開 Issue
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: 理專動作紀錄與晨報
+        id: actionlog
+        run: node scripts/action_log.mjs
+        continue-on-error: true
       - name: 重建網站
         run: python scripts/build_site.py
         env:

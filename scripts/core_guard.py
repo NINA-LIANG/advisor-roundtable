@@ -32,6 +32,8 @@ CORE = [
     ("資料品質與證交所比對", "scripts/validate_data.py", None, None),
     ("資料品質與證交所比對", "scripts/crosscheck_twse.py", None, None),
     ("機器閘門", "scripts/core_guard.py", None, None),
+    ("每日動作紀錄與晨報", "scripts/action_log.mjs", None, None),
+    ("每日動作紀錄與晨報（觀察清單）", "knowledge/action_log.zh.json", None, None),
     ("機器閘門", "tests/test_charter.py", None, None),
     ("機器閘門", ".github/workflows/*.yml", None, None),
 ]
