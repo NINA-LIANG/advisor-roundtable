@@ -4,7 +4,10 @@ name: daily-update
 
 on:
   schedule:
-    - cron: "30 10 * * 1-5"   # 台灣時間 18:30（本益比、殖利率約 17:00 後才更新）
+    # 台灣時間 18:47（本益比、殖利率約 17:00 後才更新）；避開整點與半點，GitHub 排程在尖峰常延後數小時
+    - cron: "47 10 * * 1-5"
+    # 備援：台灣時間 21:23。前一次已經更新到當天資料就跳過（scripts/market_open.py）
+    - cron: "23 13 * * 1-5"
   workflow_dispatch:
     inputs:
       only:

@@ -40,7 +40,7 @@ python scripts/fetch_twse.py && python scripts/build_site.py
 
 - `data/tw.json` 的 `etfs` 收錄成交值超過 3000 萬元的上市 ETF，含類型與近一年配息；所有月收盤都已依除權息還原。
 - `knowledge/advisors.zh.json` 是六位理專的背景檔案：經歷、在意的風險、評判標準、盲點、適合客群，以及 `fields`（每位理專只拿得到的資料欄位）。網頁會依 `fields` 把資料切給各理專，模擬不同背景的資訊差異。
-- `.github/workflows/daily-update.yml` 每個交易日台灣時間 18:30 執行 `fetch_twse.py` 與 `build_site.py`，提交新資料並發佈到 GitHub Pages。啟用方式：repo 的 Settings → Pages → Source 選「GitHub Actions」。
+- `.github/workflows/daily-update.yml` 每個交易日台灣時間 18:47 執行（21:23 備援；GitHub 排程常延後數小時，開市日判斷見 `scripts/market_open.py`） `fetch_twse.py` 與 `build_site.py`，提交新資料並發佈到 GitHub Pages。啟用方式：repo 的 Settings → Pages → Source 選「GitHub Actions」。
 
 ## 上線必備設定（2026-10-23 新增）
 

@@ -28,3 +28,22 @@ def test_is_open():
     assert is_open(dt.date(2026, 1, 2), closed)
     assert not is_open(dt.date(2026, 10, 24), closed)  # 星期六
     assert is_open(dt.date(2026, 10, 23), closed)
+
+
+def test_trade_day_survives_late_schedule():
+    """GitHub 排程延後到隔天凌晨，仍算前一個交易日（10/30 星期五曾被誤判成週末）"""
+    from market_open import TPE, trade_day
+    assert trade_day(dt.datetime(2026, 10, 30, 18, 47, tzinfo=TPE)) == dt.date(2026, 10, 30)
+    assert trade_day(dt.datetime(2026, 10, 31, 0, 46, tzinfo=TPE)) == dt.date(2026, 10, 30)
+    assert trade_day(dt.datetime(2026, 11, 4, 4, 27, tzinfo=TPE)) == dt.date(2026, 11, 3)
+    assert trade_day(dt.datetime(2026, 10, 30, 10, 47, tzinfo=dt.timezone.utc)) == dt.date(2026, 10, 30)
+
+
+def test_backup_schedule_skips_when_already_updated(tmp_path):
+    import json
+    from market_open import already_done
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "tw.json").write_text(json.dumps({"asof": "2026-11-03"}), encoding="utf-8")
+    assert already_done(dt.date(2026, 11, 3), tmp_path)
+    assert not already_done(dt.date(2026, 11, 4), tmp_path)
+    assert not already_done(dt.date(2026, 11, 4), tmp_path / "missing")
