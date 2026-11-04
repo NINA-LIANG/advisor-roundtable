@@ -75,3 +75,10 @@ def test_corrections_page_lists_every_entry_with_source():
         assert e["ref"].startswith("https://github.com/NINA-LIANG/advisor-roundtable/"), e["id"]
         assert e["id"] in out["corrections.html"]
     assert 'href="corrections.html"' in out["charter.html"]
+
+
+def test_report_page_shows_morning_report():
+    out, _ = build_site.pages()
+    assert "/*REPORT*/" not in out["report.html"] and "/*ACTIONLOG*/" not in out["report.html"]
+    assert 'href="report.html"' in out["charter.html"]
+    assert "report.html" in build_site.sitemap([n for n in out if n not in build_site.UNLISTED], {k: "" for k in out})

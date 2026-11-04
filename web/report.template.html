@@ -1,0 +1,88 @@
+<title>理專晨報</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 理專晨報。今天六位理專各項檢查（表格）→ 觀察清單的意見與用到的欄位 → 最近 30 天紀錄。資料來自 data/morning_report.json 與 data/action_log.json。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --pink:#f7b7c5; --apricot:#ffd9a0; --matcha:#c5ddb0; --sky:#b5d8f2; --sky-deep:#3d6f94; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f4f0ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:22px;margin-bottom:8px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px}
+.muted{color:var(--ink-soft)}
+a{color:var(--sky-deep)}
+.lead{font-size:17px}
+.adv{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.adv>div{border:2px solid var(--line);border-radius:20px;padding:12px 14px;background:#fff;border-top:8px solid var(--tape)}
+.adv h3{font-size:18px}
+.adv small{display:block;color:var(--ink-soft);font-size:13px;margin-bottom:6px}
+.adv dl{margin:0;font-size:14px}
+.adv dt{font-weight:700;margin-top:6px}
+.adv dd{margin:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1.5px dashed var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--ink-soft)}
+.scroll{overflow-x:auto}
+ul{margin:0;padding-left:1.3em}
+li{margin-bottom:4px}
+.ok{color:#3c7a3c;font-weight:700}.bad{color:#b23b55;font-weight:700}.na{color:var(--ink-soft)}
+.scroll{overflow-x:auto}.scroll table{min-width:620px}th{white-space:nowrap}
+td small{display:block;color:var(--ink-soft);font-size:12px}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header>
+    <h1>理專晨報 📋</h1>
+    <p class="muted">依<a href="charter.html">理專憲章</a>第六條「可檢驗」：每位理專每天留下動作紀錄，晨報檢查他們是否依規則行事。這裡檢查的是「有沒有照規則」，不是「準不準、賺不賺」。</p>
+  </header>
+
+  <section class="box">
+    <h2>今天的檢查（資料日 <span id="asof"></span>）</h2>
+    <p class="muted">規則版本 <code id="sha"></code>。有任何 ✗ 時，系統會開 GitHub Issue 通知需求者，網站照常更新。</p>
+    <div class="scroll"><table><thead><tr><th>理專</th><th>只用允許的欄位</th><th>分數在範圍內</th><th>沒有禁語</th><th>數字與證交所一致</th><th>重算結果相同</th><th>有紀錄</th></tr></thead><tbody id="today"></tbody></table></div>
+  </section>
+
+  <section class="box">
+    <h2>觀察清單的意見與用到的資料</h2>
+    <p class="muted">總經條件使用預設值（景氣燈號 <span id="light"></span>、利率變動 <span id="rate"></span>、PMI <span id="pmi"></span>），不是最新公布值。每格顯示看法，下方是這位理專實際讀到的欄位。</p>
+    <div class="scroll"><table><thead id="wh"></thead><tbody id="wb"></tbody></table></div>
+  </section>
+
+  <section class="box">
+    <h2>最近的晨報</h2>
+    <div class="scroll"><table><thead><tr><th>資料日</th><th>規則版本</th><th>結果</th></tr></thead><tbody id="hist"></tbody></table></div>
+  </section>
+</div>
+
+<script>
+const R=/*REPORT*/, L=/*ACTIONLOG*/;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=id=>document.getElementById(id);
+const cell=v=>{const k=v[0]==="✓"?"ok":v[0]==="✗"?"bad":"na";return `<td><span class="${k}">${esc(v[0])}</span>${v.length>1?`<small>${esc(v.slice(1).trim())}</small>`:""}</td>`};
+const KEYS=["fields","range","words","data","repeat","logged"];
+const d=R.days[0]||{advisors:{}};
+$("asof").textContent=d.asof||"—";$("sha").textContent=d.engine_sha||"—";
+$("today").innerHTML=Object.values(d.advisors).map(a=>`<tr><td>${esc(a.name)}</td>${KEYS.map(k=>cell(a.checks[k]||"—")).join("")}</tr>`).join("")||'<tr><td colspan="7" class="muted">還沒有紀錄</td></tr>';
+$("light").textContent=L.macro?.light??"—";$("rate").textContent=L.macro?.rate??"—";$("pmi").textContent=L.macro?.pmi??"—";
+const advs=Object.values(L.advisors||{});
+$("wh").innerHTML=`<tr><th>股票</th>${advs.map(a=>`<th>${esc(a.name)}</th>`).join("")}</tr>`;
+$("wb").innerHTML=(L.watchlist||[]).map(c=>{const row=advs.map(a=>a.items.find(x=>x.c===c));if(!row[0])return "";
+  return `<tr><td>${esc(c)} ${esc(row[0].n)}</td>${row.map(x=>x?`<td>${esc(x.label)}<small>${esc(x.used.filter(k=>k!=="c"&&k!=="n").join("、"))}</small></td>`:"<td>—</td>").join("")}</tr>`}).join("");
+$("hist").innerHTML=R.days.map(x=>{const bad=Object.values(x.advisors).flatMap(a=>Object.values(a.checks)).filter(v=>v[0]==="✗").length;
+  return `<tr><td>${esc(x.asof)}</td><td><code>${esc(x.engine_sha)}</code></td><td>${bad?`<span class="bad">✗ ${bad} 項</span>`:'<span class="ok">✓ 全部通過</span>'}</td></tr>`}).join("");
+</script>
+<!--SITE-FOOT-->
