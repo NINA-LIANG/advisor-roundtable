@@ -1,9 +1,10 @@
-"""共用的網路請求：連不上、逾時或伺服器 5xx／429 時，等 2、4、8 秒再試，最多 4 次。
+"""共用的網路請求：連不上、逾時、下載到一半被切斷或伺服器 5xx／429 時，等 2、4、8 秒再試，最多 4 次。
 
 證交所、櫃買中心的 API 盤後偶爾很慢，一次失敗就放棄會少一天資料。
 4xx（網址錯、被拒）重試也沒用，直接丟出。
 """
 
+import http.client
 import sys
 import time
 import urllib.error
@@ -24,7 +25,8 @@ def fetch(url, data=None, headers=None, timeout=60, waits=WAITS):
             if wait is None or (e.code < 500 and e.code != 429):
                 raise
             err = e
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
+        # IncompleteRead：大檔（例如證交所 ISIN 清單約 5 MB）下載到一半連線被切斷，重抓通常就好
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead) as e:
             if wait is None:
                 raise
             err = e
