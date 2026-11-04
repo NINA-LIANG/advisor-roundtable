@@ -1,0 +1,76 @@
+<title>勘誤紀錄</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 勘誤紀錄。說明為什麼公開 → 每一筆錯誤一張卡（錯在哪、原因、怎麼修、修正紀錄）。資料來自 knowledge/corrections.zh.json。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --pink:#f7b7c5; --apricot:#ffd9a0; --matcha:#c5ddb0; --sky:#b5d8f2; --sky-deep:#3d6f94; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f4f0ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:22px;margin-bottom:8px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px}
+.muted{color:var(--ink-soft)}
+a{color:var(--sky-deep)}
+.lead{font-size:17px}
+.adv{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.adv>div{border:2px solid var(--line);border-radius:20px;padding:12px 14px;background:#fff;border-top:8px solid var(--tape)}
+.adv h3{font-size:18px}
+.adv small{display:block;color:var(--ink-soft);font-size:13px;margin-bottom:6px}
+.adv dl{margin:0;font-size:14px}
+.adv dt{font-weight:700;margin-top:6px}
+.adv dd{margin:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1.5px dashed var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--ink-soft)}
+.scroll{overflow-x:auto}
+ul{margin:0;padding-left:1.3em}
+li{margin-bottom:4px}
+.err{border:2px solid var(--line);border-radius:20px;padding:14px 16px;background:#fff;margin-top:12px}
+.err h3{font-size:18px}
+.err .meta{font-size:13px;color:var(--ink-soft);margin:2px 0 8px}
+.err dl{margin:0;font-size:14.5px}
+.err dt{font-weight:700;margin-top:6px}
+.err dd{margin:0}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header>
+    <h1>勘誤紀錄 🔍</h1>
+    <p class="muted">依<a href="charter.html">理專憲章</a>第六條「可檢驗」：錯誤與修正公開列出，讓信任建立在紀錄上。</p>
+  </header>
+
+  <section class="box">
+    <h2>為什麼要公開錯誤</h2>
+    <p>六位理專的意見是依規則與公開資料計算出來的，規則或資料一旦有錯，意見就跟著錯。我們不把錯誤悄悄改掉，而是在這裡寫明錯在哪裡、為什麼會錯、怎麼修正，以及修正的原始紀錄。看到數字或說法不對，歡迎到 <a href="https://github.com/NINA-LIANG/advisor-roundtable/issues" target="_blank" rel="noopener">GitHub</a> 告訴我們。</p>
+    <p class="muted">共 <span id="count"></span> 筆，最新的在最前面。</p>
+    <div id="list"></div>
+  </section>
+</div>
+
+<script>
+const C=/*CORRECTIONS*/;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+document.getElementById("count").textContent=C.items.length;
+document.getElementById("list").innerHTML=C.items.map(e=>`<article class="err">
+  <h3>${esc(e.id)}　${esc(e.page)}</h3>
+  <div class="meta">發現 ${esc(e.found)}・修正 ${esc(e.fixed)}・違反憲章${esc(e.article)}</div>
+  <dl><dt>錯在哪裡</dt><dd>${esc(e.wrong)}</dd>
+  <dt>原因</dt><dd>${esc(e.cause)}</dd>
+  <dt>怎麼修正</dt><dd>${esc(e.fix)}</dd>
+  <dt>修正紀錄</dt><dd><a href="${esc(e.ref)}" target="_blank" rel="noopener">${esc(e.ref.replace("https://github.com/NINA-LIANG/advisor-roundtable/",""))}</a></dd></dl></article>`).join("");
+</script>
+<!--SITE-FOOT-->
