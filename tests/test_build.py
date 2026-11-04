@@ -51,3 +51,13 @@ def test_study_is_unlisted_and_paused_until_ethics_review():
     cfg = json.loads((build_site.EXP / "config.json").read_text(encoding="utf-8"))["study"]
     if cfg.get("paused"):
         assert "研究暫停中" in out["study.html"]
+
+
+def test_charter_page_is_linked_and_lists_six_principles():
+    out, _ = build_site.pages()
+    html = out["charter.html"]
+    for word in ("有據", "依規則", "不保證", "守風險", "透明", "可檢驗"):
+        assert f"<b>{word}</b>" in html, word
+    assert "守風險 ＞ 有據 ＞ 依規則 ＞ 不保證 ＞ 透明 ＞ 易讀" in html
+    assert build_site.SITE_URL + "charter.html" in out["about.html"]
+    assert "charter.html" in build_site.sitemap([n for n in out if n not in build_site.UNLISTED], {k: "" for k in out})

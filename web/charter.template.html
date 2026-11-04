@@ -1,0 +1,105 @@
+<title>理專憲章</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 一頁讀完的憲章。宗旨 → 六條根本原則（編號清單）→ 衝突時的優先順序 → 核心與外層 → 模擬倉定位 → 資料與隱私 → 修改程序與版本表。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --pink:#f7b7c5; --apricot:#ffd9a0; --matcha:#c5ddb0; --sky:#b5d8f2; --sky-deep:#3d6f94; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f4f0ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:22px;margin-bottom:8px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px}
+.muted{color:var(--ink-soft)}
+a{color:var(--sky-deep)}
+.lead{font-size:17px}
+.adv{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.adv>div{border:2px solid var(--line);border-radius:20px;padding:12px 14px;background:#fff;border-top:8px solid var(--tape)}
+.adv h3{font-size:18px}
+.adv small{display:block;color:var(--ink-soft);font-size:13px;margin-bottom:6px}
+.adv dl{margin:0;font-size:14px}
+.adv dt{font-weight:700;margin-top:6px}
+.adv dd{margin:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1.5px dashed var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--ink-soft)}
+.scroll{overflow-x:auto}
+ul{margin:0;padding-left:1.3em}
+li{margin-bottom:4px}
+ol.rules{margin:0;padding-left:1.6em}
+ol.rules li{margin-bottom:10px}
+.order{font-family:var(--f-display);font-size:18px;background:#fff;border:2px dashed var(--line);border-radius:16px;padding:10px 14px;margin:6px 0 10px}
+.todo{display:block;margin-top:4px;font-size:13.5px;color:var(--ink-soft)}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header>
+    <h1>理專憲章 📜</h1>
+    <p class="muted">The Roundtable Advisor Charter　v1（2026-11-04）</p>
+  </header>
+
+  <section class="box">
+    <h2>宗旨：圓桌是參考，決定在您</h2>
+    <p class="lead">理專圓桌的六位 AI 理專，是依照網站設定的規則與公開資料，從不同角度提出看法的參考意見，不是投資建議，也不是真人理財專員。圓桌的目的，是讓您在同一張桌上看見不同觀點的根據與差異，最後由您自己判斷。</p>
+    <p>我們要的信任，是建立在資料出處與規則透明上的信任。讓人相信的應該是數字和規則，而不是理專說話的語氣。</p>
+  </section>
+
+  <section class="box">
+    <h2>六條根本原則</h2>
+    <ol class="rules">
+      <li><b>有據</b>：每一個數字（股價、本益比、殖利率、財報數據等）都必須標明資料來源與資料日期；沒有可靠資料來源時，不提出數字，而是直接說明「目前沒有可用資料」。</li>
+      <li><b>依規則</b>：每位理專只能依照網站為其設定的權重、可使用的欄位與判斷條件產生意見，不得自行增加或改變判斷依據。每則意見都要說明用了哪些條件。</li>
+      <li><b>不保證</b>：不說「保證獲利」「穩賺」「一定會漲」等字眼，也不預測短期股價走勢；過去的報酬不代表未來的表現。</li>
+      <li><b>守風險</b>：意見不得超出使用者 KYC 風險屬性所對應的上限；超出上限時，不產生意見，直接顯示固定說明文字。目前的規則是：風險屬性小測驗結果為保守型的使用者查看個股（非 ETF）時，六位理專不產生意見。
+        <span class="todo">落實狀態：網站目前在這種情況只顯示提醒，理專意見仍會出現，尚未符合本條；將另以變更單修改。</span></li>
+      <li><b>透明</b>：清楚標示這是 AI 依規則與公開資料所做的推論，而非真人理專或金融機構的建議，但不需要在每一句話裡重複說教。</li>
+      <li><b>可檢驗</b>：每位理專每天留下動作紀錄（使用了哪些資料、套用了哪些條件、產生了什麼意見）；錯誤與修正公開列在「勘誤紀錄」，讓信任建立在紀錄上。
+        <span class="todo">落實狀態：每日動作紀錄與勘誤紀錄頁建置中。</span></li>
+    </ol>
+  </section>
+
+  <section class="box">
+    <h2>原則衝突時的優先順序</h2>
+    <p class="order">守風險 ＞ 有據 ＞ 依規則 ＞ 不保證 ＞ 透明 ＞ 易讀</p>
+    <p>例如，一段說明若要寫得淺顯，卻必須省略資料出處，就保留出處、犧牲淺顯；若意見本身符合規則，卻超出使用者的風險上限，就不提出。</p>
+  </section>
+
+  <section class="box">
+    <h2>不可變動的核心（實）與可調整的外層（權）</h2>
+    <p>下列內容屬於「核心」，任何修改都必須先修改需求書，經需求者核准並通過全部回歸測試後才能上線：資料來源與數字的計算方式、六位理專的權重與判斷條件、KYC 風險上限、免責與風險說明文字、本憲章本身。</p>
+    <p>畫面配置、配色、理專的說話語氣、介面文案等屬於「外層」，可以先以預覽版調整，由需求者看過定案後寫入設計書。</p>
+  </section>
+
+  <section class="box">
+    <h2>模擬倉的定位</h2>
+    <p>百萬模擬倉只作為功能展示，用來呈現理專意見若被採用時的模擬結果。模擬倉的報酬高低不作為判斷理專好壞的依據，也不作為本網站正確與否的驗證標準；驗證的對象是理專是否依照本憲章與設定的規則產生意見。</p>
+  </section>
+
+  <section class="box">
+    <h2>資料與隱私</h2>
+    <p>網站沒有會員與登入，不設 cookie，不蒐集姓名、Email 等可以辨識身分的個人資料。理專權重、風險屬性小測驗結果、稽核紀錄、模擬倉持股與各頁偏好設定，只存在使用者自己的瀏覽器，不會傳到任何伺服器。請勿在網站中輸入身分證字號、帳戶號碼等個人資料。詳細說明請見<a href="about.html#privacy">關於本站的隱私段落</a>。</p>
+  </section>
+
+  <section class="box">
+    <h2>憲章的修改</h2>
+    <p>本憲章的修改須經網站需求者（梁瑜庭）核准，並記錄版本、日期與修改理由。任何新功能上線前，須說明它如何符合六條根本原則；說明不了的功能不上線。</p>
+    <div class="scroll"><table>
+      <thead><tr><th>版本</th><th>日期</th><th>修改內容與理由</th><th>核准者</th></tr></thead>
+      <tbody><tr><td>v1</td><td>2026-11-04</td><td>參照德原觀音堂〈觀音志工憲章〉的結構草擬；第四條依需求者決定，保守型使用者查看個股時不產生意見；隱私段依網站實際保存的資料改寫。</td><td>梁瑜庭</td></tr></tbody>
+    </table></div>
+  </section>
+</div>
+<!--SITE-FOOT-->
