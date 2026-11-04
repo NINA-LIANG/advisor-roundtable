@@ -142,6 +142,23 @@ def check_knowledge(root):
     return err
 
 
+def check_crosscheck(root, tw_asof):
+    """理專憲章第一條「有據」：crosscheck_twse.py 比對同一個資料日的結果有不符就是錯誤（不發佈）"""
+    path = root / "data" / "crosscheck.json"
+    if not path.exists():
+        return [], "還沒有比對紀錄"
+    c = json.loads(path.read_text(encoding="utf-8"))
+    if c.get("asof") != tw_asof:
+        return [], f"比對紀錄是 {c.get('asof')} 的，不是目前資料日 {tw_asof}"
+    if c.get("skipped"):
+        return [], f"{tw_asof} 沒有比對（{c['skipped']}）"
+    bad = c.get("mismatches", [])
+    if bad:
+        x = bad[0]
+        return [f"crosscheck.json：{len(bad)} 項和證交所 {tw_asof} 的公告不符，例如 {x['c']} {x['n']} {x['field']} 網站 {x['site']}、證交所 {x['twse']}"], ""
+    return [], f"{c.get('checked', 0)} 檔和證交所 {tw_asof} 的公告一致"
+
+
 def validate(root=ROOT, today=None, steps=None):
     """回傳 (錯誤清單, 警告清單, 狀態)"""
     today = today or dt.datetime.now(TPE).date()
@@ -175,9 +192,13 @@ def validate(root=ROOT, today=None, steps=None):
         rows.append(row)
     kb = check_knowledge(root)
     errors += kb
+    tw_asof = next((r["asof"] for r in rows if r["key"] == "tw"), "")
+    cc_err, cc_note = check_crosscheck(root, tw_asof) if tw_asof else ([], "")
+    errors += cc_err
     status = {
         "checked": dt.datetime.now(TPE).strftime("%Y-%m-%d %H:%M"),
         "ok": not errors, "datasets": rows, "knowledge": kb or ["全部通過"],
+        "crosscheck": cc_err[0] if cc_err else cc_note,
         "errors": errors, "warnings": warnings,
         "steps": {k: v.get("outcome", "") for k, v in steps.items()},
         "run": (f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
@@ -198,6 +219,8 @@ def main():
     for r in status["datasets"]:
         mark = {"ok": "ok  ", "warn": "warn", "error": "FAIL"}[r["state"]]
         print(f"{mark} {r['file']:<24} {r['asof'] or '-':<10} {r['count']:>5} 筆  {r['note']}")
+    if status.get("crosscheck"):
+        print(f"證交所比對：{status['crosscheck']}")
     for w in warnings:
         print(f"::warning::{w}")
     for e in errors:
