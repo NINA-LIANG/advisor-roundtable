@@ -5,3 +5,5 @@ web/data/
 experiment-private/
 .cache/
 web/study-key.json
+node_modules/
+smoke_report.md
