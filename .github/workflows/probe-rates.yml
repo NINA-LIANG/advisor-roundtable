@@ -19,6 +19,7 @@ jobs:
           p = Path("data/raw/cbc_rates.json")
           if p.exists():
               d = json.loads(p.read_text())
+              d = json.loads(d) if isinstance(d, str) else d
               print("keys", list(d)[:20])
               hs = d.get("headerSet", {})
               for k, v in hs.items():
@@ -27,4 +28,4 @@ jobs:
               print("html", str(d.get("htmlData"))[:1500])
           PY
           git diff --stat
-          python -c "import json;d=json.load(open('data/rates.json'));print(d['asof']);[print(json.dumps(b,ensure_ascii=False)) for b in d['banks'][:4]]"
+          python -c "import json;d=json.load(open('data/rates.json'));print(d['asof']);[print(json.dumps(b,ensure_ascii=False)) for b in d['banks']]"

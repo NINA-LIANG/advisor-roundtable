@@ -53,7 +53,9 @@ PUBLIC = {"臺灣銀行", "臺灣土地銀行", "合作金庫", "第一銀行", 
 def post(path, body):
     raw = fetch(f"{BASE}/{path}", data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
                 headers={"Content-Type": "application/json"})
-    return json.loads(raw.decode("utf-8"))
+    d = json.loads(raw.decode("utf-8"))
+    # Data/GetJsonFromArray 回的是「JSON 字串裡再包一層 JSON」，要再解一次
+    return json.loads(d) if isinstance(d, str) else d
 
 
 def num(x):
@@ -86,8 +88,8 @@ def query_range():
         raise ValueError("央行網站沒有回傳銀行名單")
     lv = options("銀行名稱", names)
     items, codes = lv.get("利率項目", []), lv.get("利率項目代碼", [])
-    # 只取新臺幣存款類（活期、活儲、薪轉、定存、定儲、郵局定儲金），不要放款、外幣
-    keep = [i for i, x in enumerate(items) if re.search(r"存款|儲金", x) and not re.search(r"放款|外幣|外匯", x)]
+    # 只取新臺幣存款類（活期、活儲、薪轉、定存、定儲、郵局定儲金）；證券戶、無實體存單另有利率，不混進一般牌告
+    keep = [i for i, x in enumerate(items) if re.search(r"存款|儲金", x) and not re.search(r"放款|外幣|外匯|證券|無實體", x)]
     if not keep:
         raise ValueError(f"利率項目裡沒有存款類：{items[:10]}")
     items, codes = [items[i] for i in keep], [codes[i] for i in keep if i < len(codes)]
