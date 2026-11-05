@@ -207,7 +207,8 @@ function blindLine(key, ctx, codes, D) {
   return null;
 }
 
-const nm = (ctx, c) => `${c} ${ctx.stockName(c)}`;
+// 掉出名單的股票可能不在今天的資料裡（成交值沒過門檻），這時只寫代號
+const nm = (ctx, c) => ctx.byCode[c] ? `${c} ${ctx.byCode[c].n}` : c;
 
 export function journal(key, ctx, D, prev, history, trades, acct, warned) {
   const v = VOICE.advisors[key], seed = D + key;
