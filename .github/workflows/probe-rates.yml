@@ -1,0 +1,30 @@
+# 暫時用：在分支上實測央行利率抓取，PR 前會刪掉
+name: probe-rates
+on:
+  push:
+    branches: [claude/project-thread-k65xrd]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/fetch_rates.py || true
+      - run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("data/raw/cbc_rates.json")
+          if p.exists():
+              d = json.loads(p.read_text())
+              print("keys", list(d)[:20])
+              hs = d.get("headerSet", {})
+              for k, v in hs.items():
+                  print(k, json.dumps(v, ensure_ascii=False)[:600])
+              print("data", json.dumps(d.get("data"), ensure_ascii=False)[:800])
+              print("html", str(d.get("htmlData"))[:1500])
+          PY
+          git diff --stat
+          python -c "import json;d=json.load(open('data/rates.json'));print(d['asof']);[print(json.dumps(b,ensure_ascii=False)) for b in d['banks'][:4]]"

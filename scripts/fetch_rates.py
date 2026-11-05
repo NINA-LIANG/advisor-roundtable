@@ -68,15 +68,37 @@ def short(name):
     return ALIAS.get(name, name)
 
 
-def bank_names():
-    body = {"range": {"values": [{"key": "銀行類別", "value": CATEGORIES}]}}
-    d = post("Range/GetJsonBirData", body)
-    # 回傳可能是 {"values": [...]} 或直接是名稱陣列，兩種都接受
-    vals = d.get("values", d) if isinstance(d, dict) else d
-    names = []
-    for v in vals if isinstance(vals, list) else []:
-        names.append(v if isinstance(v, str) else v.get("value") or v.get("data") or v.get("text"))
-    return [n for n in names if n]
+def options(key, values):
+    """模擬網頁上逐層點選：送出這一層選了什麼，回傳下一層的選項 {項目名稱: [選項]}。
+
+    回應格式是 {"values": [{"Key": 下一層名稱, "Value": [...]}, {"Key": "利率項目代碼", ...}]}
+    （鍵是大寫 Key/Value；2026-11 以前程式讀小寫 value，所以一直拿不到銀行名單）。
+    """
+    d = post("Range/GetJsonBirData", {"range": {"values": [{"key": key, "value": list(values)}]}})
+    vals = d.get("values", []) if isinstance(d, dict) else []
+    return {re.sub(r"[()（）\s]", "", str(v.get("Key", ""))): list(v.get("Value") or []) for v in vals if isinstance(v, dict)}
+
+
+def query_range():
+    """依網頁「現行牌告利率查詢」的順序：銀行類別 → 銀行名稱 → 利率項目 → 性質／存期／額度。"""
+    names = options("銀行類別", CATEGORIES).get("銀行名稱", [])
+    if not names:
+        raise ValueError("央行網站沒有回傳銀行名單")
+    lv = options("銀行名稱", names)
+    items, codes = lv.get("利率項目", []), lv.get("利率項目代碼", [])
+    # 只取新臺幣存款類（活期、活儲、薪轉、定存、定儲、郵局定儲金），不要放款、外幣
+    keep = [i for i, x in enumerate(items) if re.search(r"存款|儲金", x) and not re.search(r"放款|外幣|外匯", x)]
+    if not keep:
+        raise ValueError(f"利率項目裡沒有存款類：{items[:10]}")
+    items, codes = [items[i] for i in keep], [codes[i] for i in keep if i < len(codes)]
+    rest = options("利率項目", items)
+    rng = [{"key": "銀行名稱", "value": names}, {"key": "利率項目", "value": items},
+           {"key": "利率項目代碼", "value": codes}]
+    for k in ("性質", "存期", "額度"):
+        if rest.get(k):
+            rng.append({"key": k, "value": rest[k]})
+    print(f"note  銀行 {len(names)} 家、利率項目 {items}、" + "、".join(f"{x['key']} {len(x['value'])} 項" for x in rng[3:]))
+    return {"values": rng}
 
 
 def columns(header_set):
@@ -140,9 +162,7 @@ def parse(resp):
 def main():
     old = json.loads(OUT.read_text(encoding="utf-8"))
     try:
-        names = bank_names()
-        resp = post("Data/GetJsonFromArray", {"_range": {"values": [{"key": "銀行名稱", "value": names}]},
-                                              "BeginDate": None, "EndDate": None, "RateSort": None})
+        resp = post("Data/GetJsonFromArray", {"_range": query_range(), "BeginDate": None, "EndDate": None, "RateSort": None})
     except Exception as e:  # 網站改版或暫時連不上；結束碼 1 讓這一步顯示失敗並開 Issue，舊檔不動
         sys.exit(f"fail  央行牌告利率資訊網抓取失敗，沿用舊資料：{e}")
     RAW.parent.mkdir(parents=True, exist_ok=True)
