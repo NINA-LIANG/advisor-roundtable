@@ -1,5 +1,5 @@
 {
- "checked": "2026-11-05 15:54",
+ "checked": "2026-11-05 16:44",
  "ok": true,
  "datasets": [
   {
@@ -43,12 +43,12 @@
    "file": "data/rates.json",
    "name": "銀行牌告利率",
    "page": "存款利率",
-   "asof": "2026-10-22",
+   "asof": "2026-11-05",
    "count": 37,
-   "age": 14,
-   "state": "warn",
-   "note": "已經 14 天沒更新（超過 7 天；連假期間屬正常）；今天抓取失敗，沿用上一份資料",
-   "step": "failure"
+   "age": 0,
+   "state": "ok",
+   "note": "",
+   "step": "success"
   },
   {
    "key": "etf_holdings",
@@ -67,12 +67,12 @@
    "file": "data/financials.json",
    "name": "上市櫃財報與月營收",
    "page": "台股全覽",
-   "asof": "2026-10-29",
-   "count": 1982,
-   "age": 7,
-   "state": "warn",
-   "note": "今天抓取失敗，沿用上一份資料",
-   "step": "failure"
+   "asof": "2026-11-05",
+   "count": 1983,
+   "age": 0,
+   "state": "ok",
+   "note": "",
+   "step": "success"
   },
   {
    "key": "popular",
@@ -92,19 +92,15 @@
  ],
  "crosscheck": "423 檔和證交所 2026-11-05 的公告一致",
  "errors": [],
- "warnings": [
-  "rates.json：已經 14 天沒更新（超過 7 天；連假期間屬正常）",
-  "rates.json：今天抓取失敗，沿用上一份資料",
-  "financials.json：今天抓取失敗，沿用上一份資料"
- ],
+ "warnings": [],
  "steps": {
   "twse": "success",
   "crosscheck": "success",
-  "rates": "failure",
+  "rates": "success",
   "universe": "success",
   "dividends": "success",
   "holdings": "success",
-  "financials": "failure"
+  "financials": "success"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/41989233889"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/41995936034"
 }
