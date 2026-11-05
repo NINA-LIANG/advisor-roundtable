@@ -108,6 +108,11 @@ jobs:
         id: actionlog
         run: node scripts/action_log.mjs
         continue-on-error: true
+      # CR-010 理專辦公室：六位理專的工作日誌、圓桌對話、意見報表、各自的 100 萬虛擬帳戶
+      - name: 理專辦公室（日誌、對話、虛擬帳戶）
+        id: desk
+        run: node scripts/advisor_desk.mjs
+        continue-on-error: true
       - name: 重建網站
         run: python scripts/build_site.py
         env:
