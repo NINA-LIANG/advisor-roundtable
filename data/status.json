@@ -1,5 +1,5 @@
 {
- "checked": "2026-11-05 21:38",
+ "checked": "2026-11-05 22:02",
  "ok": true,
  "datasets": [
   {
@@ -48,7 +48,7 @@
    "age": 0,
    "state": "ok",
    "note": "",
-   "step": "skipped"
+   "step": "success"
   },
   {
    "key": "etf_holdings",
@@ -96,11 +96,11 @@
  "steps": {
   "twse": "skipped",
   "crosscheck": "skipped",
-  "rates": "skipped",
+  "rates": "success",
   "universe": "skipped",
   "dividends": "skipped",
   "holdings": "skipped",
   "financials": "skipped"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/42037463050"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/42041138753"
 }
