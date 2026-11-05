@@ -268,7 +268,7 @@ def pages():
     counts = {"learn.html": len(basics["terms"]), "news.html": "月刊",
               "market.html": f'{len(uni["stock"]) + len(uni["etf"]):,}',
               "dividend.html": sum(1 for e in div["up"] if e[0] >= div["asof"]),
-              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題", "study.html": "30 分鐘", "charter.html": "v1", "report.html": "每日", "corrections.html": len(json.loads(read(ROOT / "knowledge" / "corrections.zh.json"))["items"]),
+              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題", "study.html": "30 分鐘", "charter.html": "v1.1", "report.html": "每日", "corrections.html": len(json.loads(read(ROOT / "knowledge" / "corrections.zh.json"))["items"]),
               "status.html": {"ok": "✅", "warn": "⚠️", "error": "❌"}[worst(st)]}
     # 實驗頁不套導覽列與頁尾：受試者不該在作答中跑去看理專圓桌的其他頁面
     return {k: v if k == "study.html" else chrome(v, k, asof[k], basics, counts) for k, v in out.items()}, asof
