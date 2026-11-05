@@ -23,11 +23,11 @@ def parse():
 
 
 def test_parse_merges_tables_and_converts_units():
-    fin, mrev, q, m = parse()
+    fin, mrev, q, m, fq = parse()
     row = dict(zip(ff.COLS, fin["2330"]))
     assert row["rev"] == 15000 and row["np"] == 6000 and row["eps"] == 23.15  # 千元 → 億元，EPS 維持元
     assert row["assets"] == 70000 and row["bvps"] == 185.1
-    assert q == (2026, 2) and m == "2026-09"
+    assert q == (2026, 2) and m == "2026-09" and fq["2330"] == "2026 Q2"
     assert mrev["2330"] == ["2026-09", 3300.0, -2.3, 31.4, 28000.0, 36.0]
 
 
@@ -61,3 +61,38 @@ def test_raw_mode_writes_file(tmp_path, monkeypatch):
 def test_check_flags_too_few_companies():
     n, err = check_financials({"fin": {"2330": [None] * 14}, "cols": list(ff.COLS), "quarter": "2026 Q2"})
     assert n == 1 and err
+
+
+def test_partial_new_quarter_merges_per_company(tmp_path, monkeypatch):
+    """財報季中途只有部分公司公布新一季：新的換上、其他沿用舊季，不整檔放棄（2026-11-05 只有 198 家）"""
+    old_rows = {str(1000 + i): [1.0] * 14 for i in range(900)}
+    out = tmp_path / "financials.json"
+    out.write_text(json.dumps({"quarter": "2026 Q2", "cols": list(ff.COLS), "fin": old_rows,
+                               "mrev": {"1000": ["2026-09", 1, 0, 0, 1, 0]}}), encoding="utf-8")
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    q3 = [dict(CI[0], 公司代號=str(1000 + i), 季別="3") for i in range(200)]
+    (raw / "t187ap06_L_ci.json").write_text(json.dumps(q3, ensure_ascii=False), encoding="utf-8")
+    rev = [dict(REV[0], 公司代號="1000", 資料年月="11510")]
+    (raw / "t187ap05_L.json").write_text(json.dumps(rev, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(ff, "OUT", out)
+    monkeypatch.setattr("sys.argv", ["x", "--raw", str(raw)])
+    ff.main()
+    d = json.loads(out.read_text(encoding="utf-8"))
+    assert len(d["fin"]) == 900 and d["quarter"] == "2026 Q2"
+    assert d["q_by"]["1000"] == "2026 Q3" and "1500" not in d["q_by"] and len(d["q_by"]) == 200
+    assert d["fin"]["1000"][0] == 15000 and d["fin"]["1500"] == [1.0] * 14
+    assert d["mrev"]["1000"][0] == "2026-10"
+    assert check_financials(d) == (900, [])
+
+
+def test_older_quarter_never_overwrites_newer():
+    old = {"quarter": "2026 Q3", "fin": {"2330": [9.0] * 14}}
+    fin, qs, _ = ff.merge(old, {"2330": [1.0] * 14}, {}, (2026, 2), {"2330": "2026 Q2"})
+    assert fin["2330"] == [9.0] * 14 and qs["2330"] == "2026 Q3"
+
+
+def test_blank_row_does_not_erase_old_numbers():
+    old = {"quarter": "2026 Q2", "fin": {"6488": [2.0] * 14}}
+    fin, *_ = ff.merge(old, {"6488": [None] * 14}, {}, (2026, 2), {"6488": "2026 Q2"})
+    assert fin["6488"] == [2.0] * 14
