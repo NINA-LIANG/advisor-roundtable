@@ -229,6 +229,12 @@ const macro={light:"綠",rate:0,pmi:50.5};
 const view=(a,d)=>{const v={c:d.c,n:d.n};(PROFILES[a.key]?.fields||Object.keys(d)).forEach(k=>v[k]=d[k]);return v};
 function runA(a,d){const r=a.run(view(a,{...d,...macro}));if(!isETF(d)||!["槓桿反向","期貨商品"].includes(d.t))return r;return {...r,s:Math.min(r.s,-1),tb:-99}}
 function picksOf(a,U){return U.map(st=>({st,...runA(a,st)})).sort((x,y)=>y.s-x.s||y.tb-x.tb).slice(0,3).filter(r=>r.s>=0.5)}
+// 理專憲章第四條「守風險」：和首頁一樣，風險屬性小測驗結果為保守型的使用者，六位理專不對個股（非 ETF）提出意見。
+// 模擬倉裡理專會對個股給意見的地方有兩處：跟單下單選「個股」、理專選股回測。自己下單是使用者自己的決定，照常可用
+const KYC_BLOCK="保守型";
+const kycStock=(()=>{try{return JSON.parse(localStorage.getItem("kyc"))===KYC_BLOCK}catch(e){return false}})();
+const KYC_NOTE=`🛑 你的風險屬性小測驗結果是保守型。依<a href="charter.html">理專憲章</a>第四條「守風險」，個股（非 ETF）超出保守型的風險上限，六位理專不對個股提出意見。`;
+// 守風險：模擬倉結束
 const univ=u=>u==="etf"?ETFS2.filter(e=>!["槓桿反向","期貨商品"].includes(e.t)):TW.stocks;
 
 // 交易成本
@@ -269,6 +275,7 @@ $("asof").textContent=$("asof2").textContent=TW.asof;
 $("codeList").innerHTML=ALL2.map(s=>`<option value="${label(s)}">${isETF(s)?"ETF・"+s.t:indName(s.i)}</option>`).join("");
 $("advs").innerHTML=ADVISORS.map(a=>`<button class="chip" type="button" data-a="${a.key}">${a.emoji} ${a.name}</button>`).join("");
 $("fAmt").value=START;
+if(kycStock)$("fUni").value="etf";
 
 function renderSummary(){let mv=0;for(const c in S.pos)mv+=byCode(c).p*S.pos[c].sh;const tot=S.cash+mv,pl=tot-START;
  $("total").innerHTML=`<span class="${cls(pl)}">${money(tot)}</span>`;$("pnl").innerHTML=`<span class="${cls(pl)}">${signed(pl)} 元（${pctS(pl/START)}）</span>`;
@@ -281,12 +288,15 @@ function renderPos(){const rows=Object.entries(S.pos);
  $("posT").innerHTML=rows.length?rows.map(([c,p])=>{const s=byCode(c),mv=s.p*p.sh,pl=mv-p.cost*p.sh;return `<tr><td>${label(s)}<div class="muted" style="font-size:12px">${isETF(s)?"ETF・"+s.t:indName(s.i)}</div></td><td class="mono">${money(p.sh)}</td><td class="mono">${p.cost.toFixed(2)}</td><td class="mono">${fmt(s.p)}</td><td class="mono">${money(mv)}</td><td class="mono ${cls(pl)}">${signed(pl)}</td><td class="mono ${cls(pl)}">${pctS(pl/(p.cost*p.sh))}</td><td>${p.src||"自己下單"}</td><td><button class="mini" type="button" data-sellall="${c}">全部賣出</button></td></tr>`}).join(""):`<tr><td colspan="9" class="muted" style="text-align:left">還沒有持股。從上面選一位理專跟單，或自己輸入代號下單。</td></tr>`}
 function renderLog(){$("logT").innerHTML=S.log.length?S.log.map(x=>{const s=byCode(x.code);return `<tr><td class="mono">${x.t}</td><td class="${x.side==="buy"?"up":"down"}">${x.side==="buy"?"買進":"賣出"}</td><td>${s?label(s):x.code}</td><td class="mono">${money(x.sh)}</td><td class="mono">${fmt(x.px)}</td><td class="mono">${money(x.fee)}</td><td class="mono">${money(x.tax)}</td><td class="mono ${cls(x.amt)}">${signed(x.amt)}</td><td>${x.src||"自己下單"}</td></tr>`}).join(""):`<tr><td colspan="9" class="muted" style="text-align:left">還沒有交易。</td></tr>`}
 
-function followPlan(){const a=ADVISORS.find(x=>x.key===adv),U=univ($("fUni").value),ps=picksOf(a,U),amt=Math.min(+$("fAmt").value||0,S.cash);
+function followPlan(){const a=ADVISORS.find(x=>x.key===adv),amt=Math.min(+$("fAmt").value||0,S.cash);
+ if(kycStock&&$("fUni").value==="stock")return {a,ps:[],lines:[],amt,blocked:true};
+ const U=univ($("fUni").value),ps=picksOf(a,U);
  if(!ps.length)return {a,ps,lines:[],amt};const each=amt/ps.length;
  const lines=ps.map(r=>{let sh=Math.floor(each/(r.st.p*(1+FEE)));if(sh>=1000)sh=Math.floor(sh/1000)*1000+(sh%1000);return {r,sh,cost:r.st.p*sh+feeOf(r.st.p*sh,sh)}}).filter(l=>l.sh>0);
  return {a,ps,lines,amt}}
 function renderFollow(){$("advs").querySelectorAll("[data-a]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.a===adv));
- const {a,ps,lines,amt}=followPlan();
+ const {a,ps,lines,amt,blocked}=followPlan();
+ if(blocked){$("fPrev").innerHTML=`${KYC_NOTE}可以把「範圍」改成 ETF 跟單，或在右邊自己下單。`;$("fGo").disabled=true;return}
  if(a.key==="value"&&$("fUni").value==="etf"){$("fPrev").innerHTML="王建明不用本益比替 ETF 排名，請換一位理專或改選個股。";$("fGo").disabled=true;return}
  if(!lines.length){$("fPrev").innerHTML=ps.length?"金額太小，買不到任何一股。":`${a.name}目前沒有規則分數達「偏多」以上的標的。`;$("fGo").disabled=true;return}
  $("fGo").disabled=false;const tot=lines.reduce((t,l)=>t+l.cost,0);
@@ -301,7 +311,7 @@ function renderAll(){runDCA();renderSummary();renderPos();renderLog();renderFoll
 let toastT;function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2000)}
 $("advs").addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;adv=b.dataset.a;renderFollow()});
 $("fUni").addEventListener("change",renderFollow);$("fAmt").addEventListener("input",renderFollow);
-$("fGo").addEventListener("click",()=>{const {a,lines}=followPlan();let n=0,err=null;
+$("fGo").addEventListener("click",()=>{const {a,lines,blocked}=followPlan();if(blocked)return;let n=0,err=null;
  if(!S.log.length){S.since=TW.asof;S.b0050=byCode("0050").p}
  lines.forEach(l=>{const e=trade(l.r.st.c,"buy",l.sh,`跟 ${a.name}`);if(e)err=e;else n++});
  save();renderAll();$("fMsg").textContent=err?`部分沒成交：${err}`:"";toast(`已買進 ${n} 檔 ✨`)});
@@ -337,21 +347,22 @@ function benchmark(){const s=[...byCode("0050").m,byCode("0050").p],sh=Math.floo
  return {name:"0050 買進持有",emoji:"🧺",curve:s.slice(6).map(v=>cash+sh*v)}}
 const deposit={name:"銀行定存 1.7%",emoji:"🏦",curve:[0,1,2,3,4,5,6].map(i=>START*(1+DEPOSIT*i/12))};
 function maxDD(c){let pk=c[0],dd=0;c.forEach(v=>{pk=Math.max(pk,v);dd=Math.min(dd,v/pk-1)});return dd}
-function renderBT(){const runs=[backtest("tech"),backtest("mom"),backtest("quant")],all=[...runs,benchmark(),deposit];
- const colors=["var(--sky-deep)","var(--pink-deep)","#8a6bc8","var(--apricot-deep)","var(--ink-soft)"];
+function renderBT(){const runs=kycStock?[]:[backtest("tech"),backtest("mom"),backtest("quant")],all=[...runs,benchmark(),deposit],R=runs.length;
+ const colors=[...["var(--sky-deep)","var(--pink-deep)","#8a6bc8"].slice(0,R),"var(--apricot-deep)","var(--ink-soft)"];
  const M=TW.dates.slice(6).map(d=>`${d.slice(0,4)}/${+d.slice(4,6)}`);$("btFrom").textContent=`${TW.dates[6].slice(0,4)} 年 ${+TW.dates[6].slice(4,6)} 月`;
  const W=560,H=240,pl=8,pr=70,pt=12,pb=24,vals=all.flatMap(r=>r.curve),lo=Math.min(...vals)*0.98,hi=Math.max(...vals)*1.02;
  const x=i=>pl+(W-pl-pr)*i/6,y=v=>pt+(H-pt-pb)*(1-(v-lo)/(hi-lo));
  let g="";for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4;g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${W-pr+4}" y="${y(v)+3}">${(v/1e4).toFixed(0)} 萬</text>`}
  g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(START)}" y2="${y(START)}" stroke="var(--ink-soft)" stroke-dasharray="4 4"/>`;
  M.forEach((m,i)=>{if(i%2===0||i===6)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?"start":i===6?"end":"middle"}">${m}</text>`});
- all.forEach((r,j)=>{g+=`<path d="M${r.curve.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L")}" fill="none" stroke="${colors[j]}" stroke-width="${j<3?2.6:2}" ${j>=3?'stroke-dasharray="6 4"':""} stroke-linejoin="round"/><circle cx="${x(6)}" cy="${y(r.curve[6])}" r="4" fill="${colors[j]}"/>`});
+ all.forEach((r,j)=>{g+=`<path d="M${r.curve.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L")}" fill="none" stroke="${colors[j]}" stroke-width="${j<R?2.6:2}" ${j>=R?'stroke-dasharray="6 4"':""} stroke-linejoin="round"/><circle cx="${x(6)}" cy="${y(r.curve[6])}" r="4" fill="${colors[j]}"/>`});
  $("btChart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="回測資產走勢">${g}</svg>`;
- {const best=[...runs].sort((a,b)=>b.curve[6]-a.curve[6])[0],bench=all[3],r0=best.curve[6]/START-1,rb=bench.curve[6]/START-1;
+ if(kycStock)$("btSay").innerHTML=`${KYC_NOTE}這裡不做理專選股回測，只比較 0050 和定存。`;
+ else{const best=[...runs].sort((a,b)=>b.curve[6]-a.curve[6])[0],bench=all[3],r0=best.curve[6]/START-1,rb=bench.curve[6]/START-1;
   $("btSay").textContent=`這半年表現最好的是${best.name}（${pctS(r0)}），${r0>rb?"贏過":"沒贏過"}${bench.name}（${pctS(rb)}）。只有 6 個月，可能只是運氣。`}
  $("btLeg").innerHTML=all.map((r,j)=>`<span><i style="background:${colors[j]}"></i>${r.emoji} ${r.name}</span>`).join("");
  $("btT").innerHTML=all.map(r=>{const e=r.curve[6],ret=e/START-1;return `<tr><td>${r.emoji} ${r.name}</td><td class="mono">${money(e)}</td><td class="mono ${cls(ret)}">${pctS(ret)}</td><td class="mono">${(maxDD(r.curve)*100).toFixed(1)}%</td></tr>`}).join("");
- $("btPicks").innerHTML=M.slice(0,6).map((m,i)=>`<tr><td class="mono">${m}</td>${runs.map(r=>`<td style="text-align:left;white-space:normal">${r.picks[i].join("、")||"空手"}</td>`).join("")}</tr>`).join("")}
+ $("btPicks").innerHTML=kycStock?`<tr><td colspan="4" class="muted" style="text-align:left">不提供（保守型）</td></tr>`:M.slice(0,6).map((m,i)=>`<tr><td class="mono">${m}</td>${runs.map(r=>`<td style="text-align:left;white-space:normal">${r.picks[i].join("、")||"空手"}</td>`).join("")}</tr>`).join("")}
 
 // ---------- 主動型 ETF 練習區 ----------
 const histOf=c=>{const t=ETFS2.find(e=>e.c===c);return t&&t.m&&t.m.length?[...t.m,t.p]:null};

@@ -315,6 +315,12 @@ const dataOf=p=>p.f==="noop"?cleanOf(p):{...FAULTS[p.f].make(byCode(p.c),p),asof
 const view=(a,d)=>{const v={c:d.c,n:d.n};(PROFILES[a.key]?.fields||Object.keys(d)).forEach(k=>v[k]=d[k]);return v};
 const runA=(a,d)=>a.run(view(a,{...d,...MACRO}));
 const needsNull=(a,d)=>(PROFILES[a.key]?.fields||[]).some(k=>k in d&&d[k]==null);
+// 理專憲章第四條「守風險」：和首頁一樣，風險屬性小測驗結果為保守型的使用者，六位理專不對個股（非 ETF）提出意見。
+// 考場的題目都是個股，所以保守型時「六位理專怎麼說」工具不開放（人與 Claude 都一樣），波及範圍只列人數、不列各理專的判斷
+const KYC_BLOCK="保守型";
+const kycStock=store.get("kyc",null)===KYC_BLOCK;
+const KYC_NOTE=`🛑 你的風險屬性小測驗結果是保守型。依<a href="charter.html">理專憲章</a>第四條「守風險」，個股（非 ETF）超出保守型的風險上限，六位理專不對個股提出意見。`;
+// 守風險：考場結束
 function top3(a,d){const U=TW.stocks.map(s=>s.c===d.c?d:s);return U.map(st=>({c:st.c,...runA(a,st)})).sort((x,y)=>y.s-x.s||y.tb-x.tb).slice(0,3).map(r=>r.c)}
 
 // ---------- 查看工具（人和 Claude 用同一組） ----------
@@ -323,7 +329,7 @@ const TOOLS={
  quote:d=>({"資料日期":d.asof,"收盤價":d.p,"漲跌幅 %":d.chg,"成交值（億）":d.tv,"本月均價":d.ma}),
  history:d=>({"月份":MONTHS.slice(0,12),"月收盤":d.m,"今天收盤":d.p}),
  valuation:d=>({"產業":indName(d.i),"本益比":d.pe,"同業本益比中位數":+(IND_MED(d.c)||0).toFixed(1)||null,"股價淨值比":d.pb,"殖利率 %":d.dy}),
- advisors:d=>ADVISORS.map(a=>{const r=runA(a,d);return {"理專":`${a.name}（${a.style.split("・")[0]}）`,"判斷":LABEL(r.s),"理由":r.why[0]}}),
+ advisors:d=>kycStock?[]:ADVISORS.map(a=>{const r=runA(a,d);return {"理專":`${a.name}（${a.style.split("・")[0]}）`,"判斷":LABEL(r.s),"理由":r.why[0]}}),
 };
 const TOOLNAME={quote:"📄 今日報價",history:"📈 近一年月收盤",valuation:"🧮 估值數字",advisors:"🧑‍💼 六位理專怎麼說"};
 
@@ -377,7 +383,7 @@ function load(id){cur=POOL.find(p=>p.id===id);steps=0;crossUsed=false;trace=[];t
  renderHint();renderSteps()}
 function renderSteps(){$("stepN").textContent=steps;$("stepDots").innerHTML=Array.from({length:MAXSTEP},(_,i)=>`<i class="${i<steps?"on":""}"></i>`).join("");
  const left=MAXSTEP-steps;
- $("tools").querySelectorAll(".tool").forEach(b=>b.disabled=done||left<1);
+ $("tools").querySelectorAll(".tool").forEach(b=>b.disabled=done||left<1||(kycStock&&b.dataset.t==="advisors"));
  $("cross").querySelectorAll("[data-g]").forEach(b=>b.disabled=done||crossUsed||left<2);
  $("doneN").textContent=doneIds().size}
 function renderHint(){const show=mode==="on";$("agentHint").hidden=!show;if(!show)return;const d=dataOf(cur);
@@ -396,7 +402,7 @@ function show(kind,out,src2){
  li.innerHTML=`<div class="th"><span>${src2?"🔁 第二來源・":""}${TOOLNAME[kind]}</span><span>第 ${steps} 步・${((performance.now()-t0)/1000).toFixed(0)} 秒</span></div>${body}`;
  $("trace").prepend(li)}
 $("tools").addEventListener("click",e=>{const b=e.target.closest("[data-t]");if(!b||done||steps>=MAXSTEP)return;
- steps++;const k=b.dataset.t;trace.push(k);show(k,TOOLS[k](dataOf(cur)));renderSteps()});
+ const k=b.dataset.t;if(k==="advisors"&&kycStock)return;steps++;trace.push(k);show(k,TOOLS[k](dataOf(cur)));renderSteps()});
 $("cross").addEventListener("click",e=>{const b=e.target.closest("[data-g]");if(!b||done||crossUsed||steps>MAXSTEP-2)return;
  steps+=2;crossUsed=true;const k=b.dataset.g;trace.push("cross:"+k);show(k,TOOLS[k](cleanOf(cur)),true);renderSteps()});
 
@@ -420,7 +426,7 @@ function renderResult(ans,g,secs){const p=cur,F=FAULTS[p.f],bad=p.f!=="noop",d=d
   const changed=ADVISORS.map(a=>({a,r0:runA(a,clean),r1:runA(a,d)})).filter(x=>x.r0.s!==x.r1.s);
   const lost=ADVISORS.filter(a=>{const A=top3(a,clean),B=top3(a,d);return A.join()!==B.join()});
   h+=`<h3 style="margin-top:12px">💥 波及範圍</h3><p>沒人發現的話，<b>${changed.length}</b> 位理專的判斷會被帶偏，<b>${lost.length}</b> 位的前三名名單會變。${changed.length===0?"這個故障剛好沒有改變任何判斷，但資料仍然是錯的，下次可能就會。":""}</p>`;
-  h+=`<div class="blast">${ADVISORS.map(a=>{const x=changed.find(c=>c.a===a);return x?`<div class="hit">${a.emoji} ${a.name}<br>${LABEL(x.r0.s)} → <b>${LABEL(x.r1.s)}</b></div>`:`<div>${a.emoji} ${a.name}<br><span class="muted">沒受影響</span></div>`}).join("")}</div>`;
+  h+=kycStock?`<p class="muted">${KYC_NOTE}這裡只列人數，不列各位理專的判斷。</p>`:`<div class="blast">${ADVISORS.map(a=>{const x=changed.find(c=>c.a===a);return x?`<div class="hit">${a.emoji} ${a.name}<br>${LABEL(x.r0.s)} → <b>${LABEL(x.r1.s)}</b></div>`:`<div>${a.emoji} ${a.name}<br><span class="muted">沒受影響</span></div>`}).join("")}</div>`;
   if(ans.l1){const fr=applyFix(ans.l4,d,p),ok=fr.filter(x=>x.ok&&!x.abst).length,ab=fr.filter(x=>x.abst).length;
    h+=`<p style="margin-top:10px">🔧 照你選的「${esc(FIXES[ans.l4])}」處理後：${ok} 位理專回到正確判斷，${ab} 位棄權，${6-ok-ab} 位仍然被帶偏。${ans.l4==="suspend"&&p.f!=="swap"?"暫停整檔最安全，但這檔今天就沒有任何建議了，屬於過度處理。":""}</p>`}}
  h+=`<h3 style="margin-top:12px">其他作答者怎麼答這題</h3><table class="cmp"><thead><tr><th>作答者</th><th>答案</th><th>理由</th></tr></thead><tbody>${Object.values(AUTO).map(A=>{const r=A.run(d),gg=grade(r,p);
@@ -491,7 +497,7 @@ let ctl=null;
  $("aiStop").addEventListener("click",()=>ctl?.abort());
  $("aiGo").addEventListener("click",async()=>{const p=cur,d=dataOf(p),out=$("aiOut");let n=0,used=false;const tr=[];const t1=performance.now();
   const step=(k,c=1)=>{if(n+c>MAXSTEP)throw new Error("已達 8 步上限，請直接作答");n+=c;tr.push(k);out.innerHTML=`<p class="muted">第 ${n} 步：${esc(k)}</p>`};
-  const T=[["get_quote","今日報價：資料日期、收盤價、漲跌幅、成交值、本月均價。","quote"],["get_history","近一年 12 個月的月收盤與今天收盤。","history"],["get_valuation","本益比、同業本益比中位數、股價淨值比、殖利率。","valuation"],["get_advisors","六位理專用這筆資料做出的判斷與理由。","advisors"]]
+  const T=[["get_quote","今日報價：資料日期、收盤價、漲跌幅、成交值、本月均價。","quote"],["get_history","近一年 12 個月的月收盤與今天收盤。","history"],["get_valuation","本益比、同業本益比中位數、股價淨值比、殖利率。","valuation"],["get_advisors","六位理專用這筆資料做出的判斷與理由。","advisors"]].filter(t=>!(kycStock&&t[2]==="advisors"))
    .map(([name,description,k])=>({name,description:description+"算 1 步。",execute(){step(name);return TOOLS[k](d)}}));
   T.push({name:"cross_check",description:"從第二個資料來源查一組數字（quote、history 或 valuation），算 2 步，每題只能用一次。",
    inputSchema:{type:"object",properties:{group:{type:"string",enum:["quote","history","valuation"]}},required:["group"]},
@@ -516,6 +522,8 @@ fix：${Object.entries(FIXES).map(([k,v])=>`${k}=${v}`).join("；")}
   finally{$("aiGo").disabled=false;$("aiStop").hidden=true;ctl=null}})})();
 function renderResultAgain(){const last=runs.filter(r=>r.who==="you"&&r.pid===cur.id).slice(-1)[0];if(last)renderResult(last,last.g,last.secs)}
 
+if(kycStock){const b=document.querySelector('#tools [data-t="advisors"]');b.disabled=true;b.insertAdjacentHTML("beforeend","<small>・保守型不開放</small>");
+ $("tools").insertAdjacentHTML("afterend",`<p class="muted" style="font-size:13px;margin:6px 0 0">${KYC_NOTE}</p>`)}
 {const h=+location.hash.slice(1);load(POOL.some(p=>p.id===h)?h:nextId())}
 renderBoard();
 </script>
