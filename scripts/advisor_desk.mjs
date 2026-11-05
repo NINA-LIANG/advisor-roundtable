@@ -123,7 +123,7 @@ export function execute(acct, D, ctx, trades) {
       if (sh <= 0) continue;
       const amt = r2(sh * p), f = fee(amt);
       acct.cash = r2(acct.cash - amt - f);
-      acct.pos[c] = { sh, cost: r2((amt + f) / sh), since: D };
+      acct.pos[c] = { sh, cost: r2((amt + f) / sh), since: D, n: ctx.stockName(c) };
       trades.push({ d: D, c, n: ctx.stockName(c), side: "買", sh, p, fee: f, tax: 0, why: why[c] || "", decided: pend.decided });
     }
   }
