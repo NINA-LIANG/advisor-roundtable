@@ -25,7 +25,8 @@ jobs:
               for k, v in hs.items():
                   print(k, json.dumps(v, ensure_ascii=False)[:600])
               print("data", json.dumps(d.get("data"), ensure_ascii=False)[:800])
-              print("html", str(d.get("htmlData"))[:1500])
+              print("banks", sorted({r[0] for r in d.get("data") or []}))
+              print("items", sorted({(r[1].strip(), r[2], r[3]) for r in d.get("data") or []})[:80])
           PY
           git diff --stat
           python -c "import json;d=json.load(open('data/rates.json'));print(d['asof']);[print(json.dumps(b,ensure_ascii=False)) for b in d['banks']]"
