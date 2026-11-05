@@ -90,6 +90,7 @@ li{margin-bottom:4px}
     <div class="days" id="days" aria-label="選擇日期"></div>
     <p class="mood" id="mood"></p>
     <p class="muted" id="moodsub"></p>
+    <p class="notice" id="bfnote" hidden></p>
   </section>
   <section data-panel="office" class="box">
     <h2>今天的工作日誌</h2>
@@ -192,13 +193,16 @@ document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.cl
 
 // ---------- 辦公室 ----------
 let cur=0;
-$("days").innerHTML=days.map((d,i)=>`<button class="day" type="button" data-i="${i}">${esc(d.asof.slice(5).replace("-","/"))}</button>`).join("");
+$("days").innerHTML=days.map((d,i)=>`<button class="day" type="button" data-i="${i}">${esc(d.asof.slice(5).replace("-","/"))}${d.backfill?" 補記":""}</button>`).join("");
 $("days").addEventListener("click",e=>{const b=e.target.closest(".day");if(b){cur=+b.dataset.i;renderOffice();renderReport()}});
 const line=l=>hideLine(l)?`<p class="hidden-line">${HIDDEN}</p>`:`<p>${esc(l.t)}</p>`;
 const SEC=[["seen","今天看了什麼"],["view","我的看法"],["worry","我擔心的"],["trade","今天的交易"],["plan","明天要盯的"]];
 function renderOffice(){
   const d=days[cur];document.querySelectorAll(".day").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===cur));
   if(!d)return;
+  const bf=BOOKS?.backfill;
+  $("bfnote").hidden=!d.backfill;
+  if(d.backfill)$("bfnote").textContent=`這一天是補記：理專辦公室 ${bf?.to||""} 才上線，這篇是事後用 ${d.asof} 當天保存的資料重跑的，看到的資料和做的決定都和那天實際執行相同。保存的資料只有 ${(bf?.dates||[]).map(x=>x.slice(5).replace("-","/")).join("、")} 這幾個交易日，其他交易日每日更新沒有跑成，所以沒有日誌；前一天做的決定會在下一個有資料的交易日成交。`;
   const m=d.mood;
   $("mood").textContent=`${d.asof}：六位理專對 ${m.total/6} 檔股票的 ${m.total} 個看法裡，${m.bull} 個偏多、${m.bear} 個偏空。`;
   const top=d.report.rows[0];
@@ -269,7 +273,7 @@ function drawChart(){
   const B=BOOKS;if(!B||!B.nav){$("chart").innerHTML='<p class="muted">帳戶從第一次每日更新後開始。</p>';return}
   $("bstart").textContent=B.start;
   const dates=[...new Set(KEYS.flatMap(k=>(B.nav[k]||[]).map(x=>x[0])))].sort();
-  $("bsub").textContent=`${B.start} 開始，最新 ${B.asof}，共 ${dates.length} 個交易日。數字是總資產（現金加持股市值），起點都是 100 萬。`;
+  $("bsub").textContent=`${B.start} 開始，最新 ${B.asof}，共 ${dates.length} 個有資料的交易日。數字是總資產（現金加持股市值），起點都是 100 萬。`+(B.backfill?`${B.backfill.to} 以前是用當天保存的資料補記的；中間缺資料的交易日沒有點，橫軸是有資料的日子依序排列，不是等距的日曆。`:"");
   if(dates.length<2){$("chart").innerHTML='<p class="muted">要有兩個交易日以上的紀錄才畫得出走勢；第一筆成交在開始後的下一個交易日。</p>';$("legend").innerHTML="";return}
   const ref=B.ref||[],r0=ref[0]?.[1],series=KEYS.map(k=>({k,pts:(B.nav[k]||[]).map(([d,v])=>[dates.indexOf(d),v/1e6-1])}));
   if(r0)series.push({k:"ref",pts:ref.map(([d,p])=>[dates.indexOf(d),p/r0-1])});

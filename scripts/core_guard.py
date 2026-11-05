@@ -35,6 +35,7 @@ CORE = [
     ("每日動作紀錄與晨報", "scripts/action_log.mjs", None, None),
     ("每日動作紀錄與晨報（觀察清單）", "knowledge/action_log.zh.json", None, None),
     ("理專辦公室：日誌、互評對話與虛擬帳戶", "scripts/advisor_desk.mjs", None, None),
+    ("理專辦公室：補記", "scripts/backfill_desk.mjs", None, None),
     ("機器閘門", "tests/test_charter.py", None, None),
     ("機器閘門", ".github/workflows/*.yml", None, None),
 ]
