@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FILES = ("tw", "universe", "dividends", "rates", "action_log")
+FILES = ("tw", "universe", "dividends", "rates", "action_log", "desk", "advisor_books")
 
 
 def snapshot(dest, root=ROOT):

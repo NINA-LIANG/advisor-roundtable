@@ -91,3 +91,13 @@ def test_report_page_hides_stock_opinions_for_conservative_kyc():
     assert 'const KYC_BLOCK="保守型"' in html and "不提供（保守型）" in html and 'class="kycnote"' in html
     idx = (build_site.WEB / "index.template.html").read_text(encoding="utf-8")
     assert 'const KYC_BLOCK="保守型"' in idx, "首頁與晨報的保守型判斷要一致"
+
+
+def test_desk_page_builds_with_or_without_data():
+    """CR-010 理專辦公室：還沒有日誌時也能建置；保守型擋個股、帳戶頁註明不依報酬評判理專"""
+    out, _ = build_site.pages()
+    html = out["desk.html"]
+    assert "/*DESK*/" not in html and "/*BOOKS*/" not in html and "/*ADVISORS*/" not in html
+    assert 'const KYC_BLOCK="保守型"' in html and "hideLine" in html
+    assert "不代表" in html and "模擬倉的定位" in html
+    assert "desk.html" in build_site.sitemap([n for n in out if n not in build_site.UNLISTED], {k: "" for k in out})
