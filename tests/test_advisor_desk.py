@@ -144,3 +144,25 @@ def test_voice_has_no_banned_words():
     voice = (ROOT / "knowledge" / "desk_voice.zh.json").read_text(encoding="utf-8")
     for w in ("保證獲利", "穩賺", "一定會漲"):
         assert w not in voice
+
+
+
+def test_backfill_marks_past_days_and_matches_running_daily():
+    """CR-011：補記每天只用當天快照，結果和每天實際跑一次相同；今天以前的日誌標成補記"""
+    js = """import * as m from "./scripts/advisor_desk.mjs"; import * as b from "./scripts/backfill_desk.mjs"; import fs from "node:fs";
+      const base=JSON.parse(fs.readFileSync("data/tw.json","utf8"));
+      const f2=(a,f)=>a.map(s=>({...s,p:+(s.p*f).toFixed(2)}));
+      const day=(asof,f)=>({...base,asof,stocks:f2(base.stocks,f),etfs:f2(base.etfs,f)});
+      const snaps=[day("2026-10-22",1),day("2026-10-27",1.01),day("2026-10-29",0.98)];
+      const r=b.backfill(snaps,{days:[]},"2026-10-29");
+      let desk={days:[]},books=null;for(const t of snaps){const x=m.buildDay(t,desk,books,null);desk={days:[x.day,...desk.days]};books=x.books}
+      console.log(JSON.stringify({flags:r.desk.days.map(d=>[d.asof,!!d.backfill]),first:r.desk.days.at(-1).journals.tech.lines.seen[0].t,
+        bf:r.books.backfill,sameNav:JSON.stringify(r.books.nav)===JSON.stringify(books.nav),
+        sameTrades:JSON.stringify(r.books.trades)===JSON.stringify(books.trades),trades:r.books.trades.tech.length}))"""
+    p = subprocess.run(["node", "--input-type=module", "-e", js], cwd=ROOT, capture_output=True, text=True, timeout=120)
+    assert p.returncode == 0, p.stderr
+    out = json.loads(p.stdout.strip().splitlines()[-1])
+    assert out["flags"] == [["2026-10-29", False], ["2026-10-27", True], ["2026-10-22", True]]
+    assert out["first"].startswith("（補記") and "2026-10-22" in out["first"]
+    assert out["bf"] == {"from": "2026-10-22", "to": "2026-10-29", "dates": ["2026-10-22", "2026-10-27", "2026-10-29"]}
+    assert out["sameNav"] and out["sameTrades"] and out["trades"] > 0
