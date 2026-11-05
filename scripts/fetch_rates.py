@@ -11,8 +11,9 @@ rates.json 的格式：
      "ts": {月數: [固定, 機動]}}], 定期儲蓄存款
    "promos": [...]}                 優利專案（人工整理，不會被這支程式改動）
 
-央行網站的表頭是多層的（存款種類 × 存期 × 額度 × 固定/機動），這裡把每一欄的各層標題串起來，
-再用關鍵字對應到 d/td/ts。抓到的原始回應另存 data/raw/cbc_rates.json，對不上時可以拿來除錯。
+查詢方式照網頁「現行牌告利率查詢」：銀行類別 → 銀行名稱 → 利率項目 → 性質／存期／額度，最後送
+Data/GetJsonFromArray。回應每列是「銀行 × 利率項目 × 存期 × 額度」的固定與機動利率，以金融機構代號
+對回 rates.json 的銀行名稱。抓到的原始回應另存 data/raw/cbc_rates.json，對不上時可以拿來除錯。
 任何一步失敗都只印警告、保留舊資料，不讓每日更新整個中斷。
 """
 
@@ -29,23 +30,17 @@ OUT = ROOT / "data" / "rates.json"
 RAW = ROOT / "data" / "raw" / "cbc_rates.json"
 BASE = "https://cpx.cbc.gov.tw/BIRWEB"
 CATEGORIES = ["本國銀行", "外國及大陸銀行在台分行"]
-TERMS = {"一個月": "1", "1個月": "1", "三個月": "3", "3個月": "3", "六個月": "6", "6個月": "6",
-         "九個月": "9", "9個月": "9", "一年": "12", "1年": "12", "二年": "24", "2年": "24",
-         "三年": "36", "3年": "36"}
-# 央行名稱和網頁上用的簡稱不同時，以這張表對回 rates.json 的名稱
-ALIAS = {"臺灣銀行": "臺灣銀行", "臺灣土地銀行": "臺灣土地銀行", "合作金庫商業銀行": "合作金庫",
-         "第一商業銀行": "第一銀行", "華南商業銀行": "華南銀行", "彰化商業銀行": "彰化銀行",
-         "兆豐國際商業銀行": "兆豐銀行", "中華郵政": "中華郵政", "國泰世華商業銀行": "國泰世華",
-         "中國信託商業銀行": "中國信託", "台北富邦商業銀行": "台北富邦", "玉山商業銀行": "玉山銀行",
-         "台新國際商業銀行": "台新銀行", "連線商業銀行": "LINE Bank", "樂天國際商業銀行": "樂天銀行",
-         "將來商業銀行": "將來銀行", "陽信商業銀行": "陽信銀行", "新光商業銀行": "新光銀行",
-         "台中商業銀行": "台中商銀", "王道商業銀行": "王道銀行", "永豐商業銀行": "永豐銀行",
-         "臺灣中小企業銀行": "台灣企銀", "凱基商業銀行": "凱基銀行", "遠東國際商業銀行": "遠東銀行",
-         "三信商業銀行": "三信商銀", "上海商業儲蓄銀行": "上海銀行", "聯邦商業銀行": "聯邦銀行",
-         "華泰商業銀行": "華泰商銀", "星展(台灣)商業銀行": "星展銀行", "瑞興商業銀行": "瑞興商銀",
-         "安泰商業銀行": "安泰銀行", "板信商業銀行": "板信商銀", "元大商業銀行": "元大銀行",
-         "高雄銀行": "高雄銀行", "全國農業金庫": "農業金庫", "滙豐(台灣)商業銀行": "匯豐銀行",
-         "渣打國際商業銀行": "渣打銀行"}
+TERM_KEYS = {"1", "3", "6", "9", "12", "24", "36"}  # rates.json 只收這幾個期別（月）
+# 央行回應的銀行欄是「代號＋簡稱」（例如「004臺　銀」），以金融機構代號對回 rates.json 的名稱
+CODES = {"004": "臺灣銀行", "005": "臺灣土地銀行", "006": "合作金庫", "007": "第一銀行", "008": "華南銀行",
+         "009": "彰化銀行", "011": "上海銀行", "012": "台北富邦", "013": "國泰世華", "016": "高雄銀行",
+         "017": "兆豐銀行", "018": "農業金庫", "048": "王道銀行", "050": "台灣企銀", "052": "渣打銀行",
+         "053": "台中商銀", "081": "匯豐銀行", "101": "瑞興商銀", "102": "華泰商銀", "103": "新光銀行",
+         "108": "陽信銀行", "118": "板信商銀", "147": "三信商銀", "700": "中華郵政", "803": "聯邦銀行",
+         "805": "遠東銀行", "806": "元大銀行", "807": "永豐銀行", "808": "玉山銀行", "809": "凱基銀行",
+         "810": "星展銀行", "812": "台新銀行", "816": "安泰銀行", "822": "中國信託", "823": "將來銀行",
+         "824": "LINE Bank", "826": "樂天銀行"}
+DEMAND = {"活期存款": "活期", "活期儲蓄存款": "活儲", "薪資轉帳活期儲蓄存款": "薪轉"}
 PUBLIC = {"臺灣銀行", "臺灣土地銀行", "合作金庫", "第一銀行", "華南銀行", "彰化銀行", "兆豐銀行",
           "台灣企銀", "高雄銀行", "農業金庫"}
 
@@ -63,11 +58,6 @@ def num(x):
         return float(re.sub(r"<[^>]+>|,", "", str(x)).strip())
     except ValueError:
         return None
-
-
-def short(name):
-    name = re.sub(r"股份有限公司|<[^>]+>", "", name).strip()
-    return ALIAS.get(name, name)
 
 
 def options(key, values):
@@ -103,61 +93,44 @@ def query_range():
     return {"values": rng}
 
 
-def columns(header_set):
-    """把多層表頭展開成每一欄的完整標題，例如「定期存款 一年 一般 機動利率(%)」。"""
-    levels = [[c["data"] for c in header_set[k]] for k in header_set if k.startswith("Table")]
-    cols = [""]
-    for level in levels:
-        cols = [f"{c} {x}".strip() for c in cols for x in level]
-    return cols
-
-
-def classify(label):
-    """欄位標題 → (區塊, 鍵, 固定0/機動1)；不需要的欄回傳 None。"""
-    if re.search(r"大額|300萬|500萬|五百萬|三百萬|證券|外資|支票", label):
+def term(label):
+    """「1月」「6月」「1年」「3年」→ 月數字串；活期的「--」回傳 None"""
+    m = re.fullmatch(r"(\d+)\s*(月|個月|年)", label)
+    if not m:
         return None
-    if re.search(r"一般|^[^額]*$", label) is None:
-        return None
-    rate = 1 if "機動" in label else 0 if "固定" in label else 1
-    if "薪" in label:
-        return ("d", "薪轉", 1)
-    if "活期儲蓄" in label:
-        return ("d", "活儲", 1)
-    if "活期存款" in label:
-        return ("d", "活期", 1)
-    term = next((m for t, m in TERMS.items() if t in label), None)
-    if term is None:
-        return None
-    if "定期儲蓄" in label:
-        return ("ts", term, rate)
-    if "定期存款" in label or "定期儲金" in label:
-        return ("td", term, rate)
-    return None
+    return str(int(m.group(1)) * (12 if m.group(2) == "年" else 1))
 
 
 def parse(resp):
-    cols = columns(resp.get("headerSet", {}))
-    rows = resp.get("data") or []
-    if not rows and resp.get("htmlData"):
-        rows = [re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", tr, re.S)
-                for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", resp["htmlData"], re.S)]
-    found = {}
-    for row in rows:
-        cells = list(row.values()) if isinstance(row, dict) else list(row)
-        # 第一格是列標題（銀行名稱），其餘依序對應展開後的欄位
-        name, vals = short(str(cells[0])), cells[1:]
-        if len(vals) != len(cols):
-            vals = cells[-len(cols):] if len(cells) >= len(cols) else vals
+    """央行回應：headerSet.Table1 是欄名（銀行名稱、利率項目、存期、額度、固定利率(%)、機動利率(%)），
+    data 每列一個「銀行 × 項目 × 存期 × 額度」。只收額度「一般」、rates.json 用得到的期別。"""
+    head = [h.get("data") for h in resp.get("headerSet", {}).get("Table1", [])]
+    need = ("銀行名稱", "利率項目", "存期", "額度", "固定利率(%)", "機動利率(%)")
+    if any(h not in head for h in need):
+        raise ValueError(f"欄位對不上：{head}")
+    ix = {h: head.index(h) for h in need}
+    found, unknown = {}, set()
+    for row in resp.get("data") or []:
+        get = lambda h: re.sub(r"\s|\u3000", "", str(row[ix[h]]))
+        if get("額度") != "一般":
+            continue
+        code = get("銀行名稱")[:3]
+        name = CODES.get(code)
+        if name is None:
+            unknown.add(get("銀行名稱"))
+            continue
+        item, fixed, flt = get("利率項目"), num(get("固定利率(%)")), num(get("機動利率(%)"))
         b = found.setdefault(name, {"d": {}, "td": {}, "ts": {}})
-        for label, v in zip(cols, vals):
-            hit, x = classify(label), num(v)
-            if hit is None or x is None:
-                continue
-            part, key, i = hit
-            if part == "d":
-                b["d"][key] = x
-            else:
-                b[part].setdefault(key, [None, None])[i] = x
+        if item in DEMAND:
+            if flt is not None:
+                b["d"][DEMAND[item]] = flt
+            continue
+        part = {"定期存款": "td", "定期儲蓄存款": "ts"}.get(item)
+        t = term(get("存期"))
+        if part and t in TERM_KEYS and (fixed is not None or flt is not None):
+            b[part][t] = [fixed, flt]
+    if unknown:
+        print(f"note  不在對照表、略過的銀行：{'、'.join(sorted(unknown))}", file=sys.stderr)
     return {k: v for k, v in found.items() if v["d"] or v["td"] or v["ts"]}
 
 
@@ -175,7 +148,7 @@ def main():
     banks = {b["n"]: b for b in old["banks"]}
     for name, r in fresh.items():
         b = banks.setdefault(name, {"n": name, "k": "公股" if name in PUBLIC else "民營", "d": {}, "td": {}, "ts": {}})
-        b["src"] = f"{BASE}/"
+        b["src"] = f"{BASE}/Range/RangeSelect"
         if b.get("note", "").startswith("只有部分期別"):
             del b["note"]
         b["d"].update(r["d"])
