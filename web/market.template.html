@@ -219,7 +219,7 @@ function finBlock(code){
   const ratio=(a,b)=>a==null||!b?"—":(a/b*100).toFixed(1)+"%";
   const yi=x=>x==null?"—":fmt(x,x>=100||x<=-100?0:2)+" 億";
   const sg=x=>x==null?"—":`<span class="${x>0?"up":x<0?"down":""}">${x>0?"+":""}${x.toFixed(1)}%</span>`;
-  const [y,q]=(FIN.quarter||"").split(" Q");
+  const [y,q]=(FIN.q_by?.[code]||FIN.quarter||"").split(" Q");  // 財報季各公司公布時間不同，逐家標季別
   return `<h3>財務報表 <small class="muted">${y?`${y} 年第 1～${q} 季累計`:""}</small></h3>
     ${r?`<div class="kv"><div><small>${v.gp==null&&v.ca==null?"淨收益":"營收"}</small><b>${yi(v.rev)}</b></div><div><small>毛利率</small><b>${ratio(v.gp,v.rev)}</b></div><div><small>營業利益率</small><b>${ratio(v.op,v.rev)}</b></div>
     <div><small>稅後淨利</small><b>${yi(v.np??v.net)}</b></div><div><small>EPS</small><b>${v.eps==null?"—":fmt(v.eps)+" 元"}</b></div><div><small>ROE（累計）</small><b>${ratio(v.np??v.net,v.eqp??v.eq)}</b></div>

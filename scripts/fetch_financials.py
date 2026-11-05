@@ -86,8 +86,8 @@ def yi(v, field):
 
 
 def parse(tables):
-    """tables: [(表名, 種類 is/bs/rev, 資料列)] → (fin, mrev, 季別, 月份)"""
-    fin, mrev, quarters, months = {}, {}, Counter(), Counter()
+    """tables: [(表名, 種類 is/bs/rev, 資料列)] → (fin, mrev, 季別, 月份, 各公司季別)"""
+    fin, mrev, quarters, months, fq = {}, {}, Counter(), Counter(), {}
     for _, kind, rows in tables:
         for r in rows:
             code = str(pick(r, "code") or "").strip()
@@ -105,6 +105,7 @@ def parse(tables):
             y, q = num(pick(r, "year")), num(pick(r, "q"))
             if y and q:
                 quarters[(int(y) + 1911, int(q))] += 1
+                fq[code] = f"{int(y) + 1911} Q{int(q)}"
             row = fin.setdefault(code, [None] * len(COLS))
             for f in IS_COLS if kind == "is" else BS_COLS:
                 v = yi(pick(r, f), f)
@@ -112,7 +113,39 @@ def parse(tables):
                     row[COLS.index(f)] = v
     q = quarters.most_common(1)[0][0] if quarters else None
     m = months.most_common(1)[0][0] if months else None
-    return fin, mrev, q, m
+    return fin, mrev, q, m, fq
+
+
+def qkey(s):
+    """"2026 Q3" → (2026, 3)；格式不對回傳 (0, 0)"""
+    try:
+        y, q = s.split(" Q")
+        return int(y), int(q)
+    except (AttributeError, ValueError):
+        return 0, 0
+
+
+def merge(old, fin, mrev, q, fq):
+    """新抓到的和舊檔逐家合併，每家公司各留自己最新的一季。
+
+    財報季（5/15、8/14、11/14、3/31 前）各公司陸續公布新的一季，彙總表在這段期間只列已公布的公司，
+    例如 2026-11-05 只有 198 家公布第三季。整檔換掉會讓其他一千多家消失，所以逐家比較：
+    新資料的季別不比舊的舊、而且至少有一個數字，才換掉那一家。月營收同理，比資料年月。
+    回傳 (fin, 各公司季別, mrev)。
+    """
+    old_fin, old_q = old.get("fin", {}), old.get("quarter", "")
+    qs = {c: old.get("q_by", {}).get(c, old_q) for c in old_fin}
+    out = dict(old_fin)
+    default = f"{q[0]} Q{q[1]}" if q else old_q
+    for c, row in fin.items():
+        nq = fq.get(c, default)
+        if any(v is not None for v in row) and qkey(nq) >= qkey(qs.get(c, "")):
+            out[c], qs[c] = row, nq
+    rev = dict(old.get("mrev", {}))
+    for c, r in mrev.items():
+        if c not in rev or r[0] >= rev[c][0]:
+            rev[c] = r
+    return out, qs, rev
 
 
 def main():
@@ -126,17 +159,32 @@ def main():
             continue
         if isinstance(rows, list):
             tables.append((name, kind, rows))
-    fin, mrev, q, m = parse(tables)
+    fin, mrev, q, m, fq = parse(tables)
     for x in missing:
         print(f"skip  {x}", file=sys.stderr)
-    if len(fin) < 500:
-        print(f"財報只有 {len(fin)} 家，沿用舊檔", file=sys.stderr)
+    if not fin and not mrev:
+        print("財報與月營收都沒抓到，沿用舊檔", file=sys.stderr)
         sys.exit(1)
-    out = {"asof": dt.date.today().isoformat(), "quarter": f"{q[0]} Q{q[1]}" if q else "", "rev_month": m or "",
+    try:
+        old = json.loads(OUT.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        old = {}
+    if old.get("pending") or old.get("cols") != list(COLS):
+        old = {}
+    fin_all, qs, rev_all = merge(old, fin, mrev, q, fq)
+    if len(fin_all) < 500:
+        print(f"財報只有 {len(fin_all)} 家（今天抓到 {len(fin)} 家），沿用舊檔", file=sys.stderr)
+        sys.exit(1)
+    quarter = Counter(qs.values()).most_common(1)[0][0]
+    month = Counter(r[0] for r in rev_all.values()).most_common(1)[0][0] if rev_all else ""
+    out = {"asof": dt.date.today().isoformat(), "quarter": quarter, "rev_month": month,
            "cols": list(COLS), "rev_cols": list(REV_COLS), "unit": "億元（EPS、每股淨值為元）",
-           "fin": fin, "mrev": mrev, "missing": [x.split("（")[0] for x in missing]}
+           "fin": fin_all, "q_by": {c: x for c, x in sorted(qs.items()) if x != quarter},
+           "mrev": rev_all, "missing": [x.split("（")[0] for x in missing]}
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"ok  {OUT}：財報 {len(fin)} 家（{out['quarter']} 累計）、月營收 {len(mrev)} 家（{m}）")
+    newer = len(out["q_by"])
+    print(f"ok  {OUT}：財報 {len(fin_all)} 家（多數為 {quarter} 累計，{newer} 家季別不同；今天抓到 {len(fin)} 家）、"
+          f"月營收 {len(rev_all)} 家（多數為 {month}）")
 
 
 if __name__ == "__main__":
