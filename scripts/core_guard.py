@@ -24,6 +24,8 @@ CORE = [
     ("六位理專的規則與資料", "web/index.template.html", "// ---------- 台股資料", "const TABS="),
     ("理專互評條件", "web/index.template.html", "const REVIEWER=", "function health("),
     ("KYC 風險上限（首頁擋意見）", "web/index.template.html", "// 理專憲章第四條「守風險」", "function renderBlocked("),
+    ("KYC 風險上限（模擬倉擋個股跟單與回測）", "web/sim.template.html", "// 理專憲章第四條「守風險」", "// 守風險：模擬倉結束"),
+    ("KYC 風險上限（考場擋理專意見）", "web/lab.template.html", "// 理專憲章第四條「守風險」", "// 守風險：考場結束"),
     ("六位理專的背景與可用欄位", "knowledge/advisors.zh.json", None, None),
     ("KYC 風險屬性測驗與上限", "knowledge/insider.zh.json", "json:quiz", None),
     ("免責聲明", "scripts/build_site.py", "DISCLAIMER = (", "SITE_NAME ="),

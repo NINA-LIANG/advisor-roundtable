@@ -3,6 +3,7 @@
 第三條「不保證」：禁語清單直接從憲章頁讀，改憲章就會改到這裡的檢查。
 """
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,3 +61,31 @@ def test_conservative_kyc_blocks_stock_opinions_on_homepage():
     assert 'uni==="stock"&&store.get("kyc",null)===KYC_BLOCK' in picks
     levels = [l["name"] for l in __import__("json").loads((ROOT / "knowledge" / "insider.zh.json").read_text(encoding="utf-8"))["quiz"]["levels"]]
     assert "保守型" in levels, "KYC 等級名稱改了，KYC_BLOCK 要跟著改"
+
+
+def test_conservative_kyc_blocks_stock_opinions_on_sim_and_lab():
+    """第四條「守風險」（CR-009）：模擬倉不能跟理專買個股、不做理專選股回測；考場不開放「六位理專怎麼說」，波及範圍不列各理專判斷"""
+    sim = (ROOT / "web" / "sim.template.html").read_text(encoding="utf-8")
+    lab = (ROOT / "web" / "lab.template.html").read_text(encoding="utf-8")
+    for src in (sim, lab):
+        assert 'const KYC_BLOCK="保守型"' in src, "和首頁用同一個保守型判斷"
+        assert "// 理專憲章第四條「守風險」" in src, "核心閘門靠這行找區段"
+    plan = sim[sim.index("function followPlan(){"):][:260]
+    assert plan.index('kycStock&&$("fUni").value==="stock"') < plan.index("picksOf("), "要在算理專選股之前先擋"
+    bt = sim[sim.index("function renderBT(){"):][:120]
+    assert "kycStock?[]:" in bt, "保守型不跑理專回測"
+    assert "advisors:d=>kycStock?[]:" in lab
+    assert '(kycStock&&b.dataset.t==="advisors")' in lab, "每題重設工具按鈕時也要保持關閉"
+    assert '.filter(t=>!(kycStock&&t[2]==="advisors"))' in lab, "Claude 代理也拿不到理專意見"
+    assert 'h+=kycStock?' in lab[lab.index("function renderResult("):], "波及範圍不列各理專判斷"
+
+
+def test_core_guard_covers_sim_and_lab_kyc():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import core_guard
+    for f in ("web/sim.template.html", "web/lab.template.html"):
+        hit = [c for c in core_guard.CORE if c[1] == f]
+        assert hit, f
+        text = (ROOT / f).read_text(encoding="utf-8")
+        assert core_guard.part(text, hit[0][2], hit[0][3]), f"{f} 找不到守風險區段"
+        assert hit[0][3] in text, f"{f} 少了區段結束標記"
