@@ -1,0 +1,57 @@
+# 上線後冒煙測試：每日更新發佈完成後，用真的瀏覽器打開正式站每一頁（手機與電腦寬度），確認使用者看到的網站沒壞
+# 檢查項目見 scripts/smoke_live.mjs；沒過就開 Issue（標籤 site-smoke，GitHub 會寄信），之後通過一次就自動關閉
+# 手動執行：Actions → smoke → Run workflow（例如合併 PR 並重新發佈後，想立刻確認一次）
+name: smoke
+
+on:
+  workflow_run:
+    workflows: [daily-update]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  smoke:
+    # 每日更新沒有發佈（休市跳過或失敗）時不用檢查；失敗已經由每日更新自己開 Issue
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: 安裝瀏覽器
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: 等 GitHub Pages 換上新版
+        run: sleep 90
+      - name: 打開每一頁檢查
+        id: smoke
+        run: node scripts/smoke_live.mjs
+      - name: 通知
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -f smoke_report.md ] || echo "## 上線後冒煙測試沒有跑完，請看執行紀錄" > smoke_report.md
+          echo "" >> smoke_report.md; echo "執行紀錄：$RUN_URL" >> smoke_report.md
+          cat smoke_report.md >> "$GITHUB_STEP_SUMMARY"
+          open=$(gh issue list --label site-smoke --state open --json number -q '.[0].number' 2>/dev/null || true)
+          if [ "${{ steps.smoke.outcome }}" != "success" ]; then
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --body-file smoke_report.md
+            else
+              gh label create site-smoke --color d73a4a --description "上線後網站檢查沒過" --force
+              gh issue create --title "上線網站檢查沒過（$(date -u +%F)）" --label site-smoke --body-file smoke_report.md
+            fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "✅ $(date -u +%F) 上線檢查全部通過，自動關閉。$RUN_URL"
+          fi
