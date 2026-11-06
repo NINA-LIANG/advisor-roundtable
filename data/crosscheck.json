@@ -1,6 +1,6 @@
 {
- "asof": "2026-11-05",
- "checked_at": "2026-11-05 16:40",
+ "asof": "2026-11-06",
+ "checked_at": "2026-11-07 01:43",
  "source": [
   "https://www.twse.com.tw/exchangeReport/MI_INDEX",
   "https://www.twse.com.tw/exchangeReport/BWIBBU_d"
@@ -11,6 +11,6 @@
   "dy": 0.01,
   "pb": 0.01
  },
- "checked": 423,
+ "checked": 498,
  "mismatches": []
 }
