@@ -54,3 +54,40 @@ def test_morning_report_keeps_watchlist_summary_for_grid():
     a = next(iter(r["days"][0]["advisors"].values()))
     assert a["w"] and all(len(x) == 4 and x[2] and isinstance(x[3], list) for x in a["w"])
     assert all("c" not in x[3] and "n" not in x[3] for x in a["w"])
+
+
+# ---- CR-013：每一項晨報檢查都要「真的會失敗」（2026-11-05 健康檢查發現其中三項在設計上不會出現 ✗）----
+
+def test_banned_list_is_read_from_charter():
+    """禁語清單讀自憲章第三條；讀不到（清單空白）時不能讓所有理專都顯示通過"""
+    out = node("m.BANNED")
+    assert "穩賺" in out and len(out) >= 3
+
+
+def test_words_fails_when_banned_list_missing():
+    out = node("""(()=>{const a={key:"tech"};const items=[{c:"1",s:1,why:["這檔穩賺"],entry:""}];
+      return m.checkAdvisor(a,items,items,true,{banned:[]})})()""")
+    assert out["words"].startswith("✗") and "禁語清單" in out["words"]
+
+
+def test_data_fails_without_crosscheck_record():
+    """沒有當天和證交所比對的紀錄＝沒有證據，不能顯示成通過或灰點"""
+    out = node("""(()=>{const a={key:"tech"};const items=[{c:"1",s:1,why:[],entry:""}];
+      return m.checkAdvisor(a,items,items,null)})()""")
+    assert out["data"].startswith("✗")
+
+
+def test_logged_fails_when_watchlist_stock_has_no_record():
+    out = node("""(()=>{const a={key:"tech"};const items=[{c:"2330",s:1,why:[],entry:""}];
+      return m.checkAdvisor(a,items,items,true,{expected:["2330","0050"]})})()""")
+    assert out["logged"].startswith("✗") and "0050" in out["logged"]
+    out = node("""(()=>{const a={key:"tech"};return m.checkAdvisor(a,[],[],true)})()""")
+    assert out["logged"].startswith("✗")
+
+
+def test_morning_report_applies_homepage_etf_rule():
+    """首頁對槓桿反向、期貨型 ETF 一律最多給 −1；晨報要用同一份規則，不能出現首頁偏空、晨報偏多"""
+    out = node("""(()=>{const {ADVISORS,runA}=m.loadAdvisors();const a={...ADVISORS[0],run:()=>({s:2,why:["假設規則給滿分"],entry:""})};
+      const d={c:"00632R",n:"反向ETF",i:"ETF",t:"槓桿反向",p:10};
+      return [m.runOne(a,d,["p"],runA).s, m.runOne(a,{...d,t:"市值型"},["p"],runA).s]})()""")
+    assert out == [-1, 2]

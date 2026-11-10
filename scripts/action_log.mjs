@@ -7,9 +7,11 @@
 //   fields   只讀了允許的欄位（advisors.zh.json 的 fields，加上代號、名稱）
 //   range    分數是有限數字，且在 −2～+2
 //   words    理由與進場說明沒有憲章第三條禁語
-//   data     當天輸入數字已和證交所公告比對一致（data/crosscheck.json）
+//   data     當天輸入數字已和證交所公告比對一致（data/crosscheck.json）；沒有當天的比對紀錄也算 ✗（CR-013：沒有證據不能算有據）
 //   repeat   同一份資料重算一次，結果完全相同
-//   logged   今天有這位理專的紀錄
+//   logged   觀察清單每一檔都有這位理專的紀錄（CR-013：清單裡的股票從資料消失也要抓得到）
+// CR-013（2026-11-10）：每一項檢查都要「真的會失敗」。禁語清單讀不到時 words 為 ✗，不再因清單空白而全部通過；
+// 意見改用首頁同一份 runA（含槓桿反向、期貨型 ETF 一律偏空的強制規則），晨報與首頁不再不一致。
 // 輸出：data/action_log.json（今天的完整紀錄）、data/morning_report.json（最近 N 天的晨報）
 // 有任何 ✗ → 結束碼 1：每日更新照常發佈，但會開 Issue 通知（需求者 2026-11-04 決定）
 // 用法：node scripts/action_log.mjs
@@ -30,14 +32,18 @@ const banned = [...(charter.match(/<b>不保證<\/b>：不說((?:「[^」]+」)+
 export const LABEL = s => s >= 1.5 ? "規則強烈偏多" : s >= 0.5 ? "規則偏多" : s > -0.5 ? "規則中性" : "規則偏空";
 
 // 在沙盒裡建立 ADVISORS（和首頁同一份程式），回傳 { ADVISORS, isETF }
+// CR-013：首頁的 runA（每位理專只看自己的欄位＋槓桿反向與期貨型 ETF 的強制規則）也直接從首頁模板切出來
+const runASrc = src.slice(src.indexOf("const view=(a,d)=>"), src.indexOf("let uni=store.get"));
+export const BANNED = banned;
+
 export function loadAdvisors(twData = tw) {
   const code = shared.replace("/*TW*/", JSON.stringify(twData)).replace("/*PROFILES*/", JSON.stringify(profiles))
-    .replace("/*SHELF*/", read("knowledge/bookshelf.zh.json")) + ";({ADVISORS,isETF})";
+    .replace("/*SHELF*/", read("knowledge/bookshelf.zh.json")) + ";" + runASrc + ";({ADVISORS,isETF,runA})";
   return vm.runInNewContext(code, {}, { timeout: 30000 });
 }
 
-// 跑一位理專一檔股票，記錄實際讀到的欄位
-export function runOne(a, d, allowed) {
+// 跑一位理專一檔股票，記錄實際讀到的欄位；有 runA 時套用首頁同一份強制規則
+export function runOne(a, d, allowed, runA) {
   const v = { c: d.c, n: d.n };
   allowed.forEach(k => { if (k in d) v[k] = d[k]; });
   const used = new Set();
@@ -45,28 +51,29 @@ export function runOne(a, d, allowed) {
   const full = { ...d };
   const proxy = new Proxy(v, { get(t, k) { if (typeof k === "string") used.add(k); return k in t ? t[k] : undefined; },
                                has(t, k) { if (typeof k === "string") used.add(k); return k in t; } });
-  const r = a.run(proxy);
+  const r = runA ? runA({ ...a, run: () => a.run(proxy) }, full) : a.run(proxy);
   const inputs = {};
   [...used].filter(k => k in full && typeof full[k] !== "object").forEach(k => inputs[k] = full[k]);
   return { used: [...used].sort(), inputs, s: r.s, label: Number.isFinite(r.s) ? LABEL(r.s) : "無法判斷",
            why: r.why, entry: r.entry };
 }
 
-export function checkAdvisor(a, items, rerun, crosscheckOk) {
+export function checkAdvisor(a, items, rerun, crosscheckOk, { banned: words = banned, expected = null } = {}) {
   const allowed = new Set(["c", "n", ...(profiles[a.key]?.fields || [])]);
   const extra = [...new Set(items.flatMap(x => x.used))].filter(k => !allowed.has(k) && k !== "then" && k !== "toJSON");
   const badRange = items.filter(x => !Number.isFinite(x.s) || Math.abs(x.s) > 2);
   const text = items.flatMap(x => [...(x.why || []), x.entry || ""]).join("\n");
-  const hitWords = banned.filter(w => text.includes(w));
+  const hitWords = words.filter(w => text.includes(w));
+  const missing = expected ? expected.filter(c => !items.some(x => x.c === c)) : [];
   const same = JSON.stringify(items.map(({ s, why, entry }) => [s, why, entry])) ===
                JSON.stringify(rerun.map(({ s, why, entry }) => [s, why, entry]));
   return {
     fields: extra.length ? `✗ 讀了不允許的欄位：${extra.join("、")}` : "✓",
     range: badRange.length ? `✗ ${badRange.map(x => `${x.c} 分數 ${x.s}`).join("、")}` : "✓",
-    words: hitWords.length ? `✗ 出現禁語：${hitWords.join("、")}` : "✓",
-    data: crosscheckOk === true ? "✓" : crosscheckOk === false ? "✗ 當天數字和證交所公告不符" : "— 當天沒有比對紀錄",
+    words: !words.length ? "✗ 讀不到憲章第三條的禁語清單，無法檢查" : hitWords.length ? `✗ 出現禁語：${hitWords.join("、")}` : "✓",
+    data: crosscheckOk === true ? "✓" : crosscheckOk === false ? "✗ 當天數字和證交所公告不符" : "✗ 當天沒有和證交所比對的紀錄",
     repeat: same ? "✓" : "✗ 同樣資料重算結果不同",
-    logged: items.length ? "✓" : "✗ 今天沒有紀錄",
+    logged: !items.length ? "✗ 今天沒有紀錄" : missing.length ? `✗ 觀察清單缺少紀錄：${missing.join("、")}` : "✓",
   };
 }
 
@@ -79,7 +86,7 @@ function crosscheckStatus() {
 }
 
 function main() {
-  const { ADVISORS, isETF } = loadAdvisors();
+  const { ADVISORS, runA } = loadAdvisors();
   const byCode = Object.fromEntries([...tw.stocks, ...tw.etfs].map(s => [s.c, s]));
   const withMacro = s => ({ ...s, ...cfg.macro });
   const cc = crosscheckStatus();
@@ -88,14 +95,14 @@ function main() {
   let fails = 0;
   for (const a of ADVISORS) {
     const allowed = profiles[a.key]?.fields || [];
-    const run = codes => codes.map(c => ({ c, n: byCode[c].n, ...runOne(a, withMacro(byCode[c]), allowed) }));
+    const run = codes => codes.map(c => ({ c, n: byCode[c].n, ...runOne(a, withMacro(byCode[c]), allowed, runA) }));
     // 當天個股前三名（和首頁「理專選股」同樣用全部個股、同樣的排序）
     const ranked = tw.stocks.map(s => ({ c: s.c, ...a.run((() => { const d = withMacro(s), v = { c: d.c, n: d.n };
       allowed.forEach(k => { if (k in d) v[k] = d[k]; }); return v; })()) }))
       .sort((x, y) => y.s - x.s || y.tb - x.tb).slice(0, cfg.top_n).map(x => x.c);
     const codes = [...new Set([...cfg.watchlist.filter(c => byCode[c]), ...ranked])];
     const items = run(codes);
-    const checks = checkAdvisor(a, items, run(codes), cc);
+    const checks = checkAdvisor(a, items, run(codes), cc, { expected: cfg.watchlist });
     const bad = Object.values(checks).filter(v => v.startsWith("✗")).length;
     fails += bad;
     log.advisors[a.key] = { name: a.name, allowed, top: ranked, items };
