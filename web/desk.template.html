@@ -137,7 +137,7 @@ li{margin-bottom:4px}
       <p class="muted" id="wsub"></p>
       <div class="scroll"><table><thead><tr><th>理專</th><th>前三名換了幾次</th><th>看法變化</th><th>被同事提醒</th><th>本週最常出現在前三名</th></tr></thead><tbody id="wadv"></tbody></table></div>
       <h2 style="margin-top:16px">本週分歧最多的股票</h2>
-      <div class="scroll"><table><thead><tr><th>股票</th><th>出現天數</th><th>平均 σ</th><th>最常看多</th><th>最常看空</th></tr></thead><tbody id="wstk"></tbody></table></div>
+      <div class="scroll"><table><thead><tr><th>股票</th><th>出現天數</th><th>平均分歧度（σ）</th><th>最常看好</th><th>最常不看好</th></tr></thead><tbody id="wstk"></tbody></table></div>
     </div>
   </section>
 
@@ -151,7 +151,7 @@ li{margin-bottom:4px}
     <details style="margin-top:10px"><summary>帳戶規則</summary>
       <ul class="muted">
         <li>每人 100 萬元，從 <span id="bstart"></span> 開始，不回補過去的績效。</li>
-        <li>每週第一個交易日決定「本週前三名」，平均分配買進；平日持股被自己的規則判成「規則偏空」就決定賣出，賣出的錢留現金到下週。</li>
+        <li>每週第一個交易日決定「本週前三名」，平均分配買進；平日持股被自己的規則判成「不看好」就決定賣出，賣出的錢留現金到下週。</li>
         <li>收盤後做決定，用<b>下一個交易日的收盤價</b>成交（避免用已經知道的價格）。可買零股。</li>
         <li>手續費 0.1425%（每筆最低 20 元），賣出時證交稅個股 0.3%、ETF 0.1%。不計股利與除權息調整。</li>
         <li>0050 只是參考線，不是比賽的對手。</li>
@@ -165,7 +165,9 @@ li{margin-bottom:4px}
 </div>
 
 <script>
-const DESK=/*DESK*/, BOOKS=/*BOOKS*/, ADV=/*ADVISORS*/;
+// CR-014：舊紀錄裡的「規則強烈偏多／規則偏多／規則中性／規則偏空」顯示時換成白話（很看好／有點看好／不好不壞／不看好）
+const PLAIN={"規則強烈偏多":"很看好","規則偏多":"有點看好","規則中性":"不好不壞","規則偏空":"不看好"},plainAll=x=>JSON.parse(JSON.stringify(x).replace(/規則強烈偏多|規則偏多|規則中性|規則偏空/g,m=>PLAIN[m]));
+const DESK=plainAll(/*DESK*/), BOOKS=/*BOOKS*/, ADV=/*ADVISORS*/;
 const KEYS=ADV.map(a=>a.key), A=Object.fromEntries(ADV.map(a=>[a.key,a]));
 // 理專憲章第四條「守風險」：和首頁、晨報一樣，保守型使用者看不到個股（非 ETF）的意見與交易
 const KYC_BLOCK="保守型";
@@ -204,9 +206,9 @@ function renderOffice(){
   $("bfnote").hidden=!d.backfill;
   if(d.backfill)$("bfnote").textContent=`這一天是補記：理專辦公室 ${bf?.to||""} 才上線，這篇是事後用 ${d.asof} 當天保存的資料重跑的，看到的資料和做的決定都和那天實際執行相同。保存的資料只有 ${(bf?.dates||[]).map(x=>x.slice(5).replace("-","/")).join("、")} 這幾個交易日，其他交易日每日更新沒有跑成，所以沒有日誌；前一天做的決定會在下一個有資料的交易日成交。`;
   const m=d.mood;
-  $("mood").textContent=`${d.asof}：六位理專對 ${m.total/6} 檔股票的 ${m.total} 個看法裡，${m.bull} 個偏多、${m.bear} 個偏空。`;
+  $("mood").textContent=`${d.asof}：六位理專對 ${m.total/6} 檔股票的 ${m.total} 個看法裡，${m.bull} 個看好、${m.bear} 個不看好。`;
   const top=d.report.rows[0];
-  $("moodsub").textContent=top?(hideC(top.c)?"":`今天分歧最大的是 ${top.c} ${top.n}（σ ${top.sd}），${top.bull} 人看多、${top.bear} 人看空。`)+`資料：臺灣證券交易所 ${d.asof} 收盤。`:"";
+  $("moodsub").textContent=top?(hideC(top.c)?"":`今天分歧最大的是 ${top.c} ${top.n}（σ ${top.sd}），${top.bull} 人看好、${top.bear} 人不看好。`)+`資料：臺灣證券交易所 ${d.asof} 收盤。`:"";
   $("cards").innerHTML=KEYS.map(k=>{const j=d.journals[k];if(!j)return "";const a=A[k];
     const short=[...j.lines.view.filter(l=>!/^今天的前三名/.test(l.t)),...j.lines.worry].slice(0,3);
     return `<article class="card" style="--tape:${a.tape}"><header><span class="av" aria-hidden="true">${a.emoji}</span><div><h3>${esc(a.name)}</h3><small>${esc(a.style)}</small></div></header>
@@ -226,11 +228,11 @@ const sc=s=>Number.isFinite(s)?`<span class="sc ${s>=0.5?"bull":s<=-0.5?"bear":"
 function renderReport(){
   const d=days[cur];if(!d)return;const r=d.report;
   $("rasof").textContent=rmode==="day"?`資料日 ${d.asof}`:"";
-  $("rh").innerHTML=`<tr><th>股票</th>${KEYS.map(k=>`<th>${A[k].emoji} ${esc(A[k].name)}</th>`).join("")}<th>看多</th><th>看空</th><th>σ</th></tr>`;
+  $("rh").innerHTML=`<tr><th>股票</th>${KEYS.map(k=>`<th>${A[k].emoji} ${esc(A[k].name)}</th>`).join("")}<th>看好</th><th>不看好</th><th>分歧度（σ）</th></tr>`;
   $("rb").innerHTML=r.rows.map(x=>hideC(x.c)?`<tr><td>${esc(x.c)} ${esc(x.n)}</td><td colspan="${KEYS.length+3}" class="muted">${HIDDEN}</td></tr>`
     :`<tr><td>${esc(x.c)} ${esc(x.n)}${x.etf?' <span class="pill">ETF</span>':""}</td>${KEYS.map(k=>`<td>${sc(x.s[k])}</td>`).join("")}<td>${x.bull}</td><td>${x.bear}</td><td class="sc">${x.sd}</td></tr>`).join("");
   const un=r.unanimous.filter(c=>!hideC(c));
-  $("unan").innerHTML=un.length?`<p>${un.map(c=>{const x=r.rows.find(y=>y.c===c);return `${esc(c)} ${esc(x?.n)}（六人都${x?.bull===6?"偏多":"偏空"}）`}).join("、")}</p><p class="muted">提醒：六種方法同時一致，不等於結論比較可靠，也可能是大家共用的資料出了問題。</p>`:'<p class="muted">今天沒有六人看法完全一致的股票。</p>';
+  $("unan").innerHTML=un.length?`<p>${un.map(c=>{const x=r.rows.find(y=>y.c===c);return `${esc(c)} ${esc(x?.n)}（六人都${x?.bull===6?"看好":"不看好"}）`}).join("、")}</p><p class="muted">提醒：六種方法同時一致，不等於結論比較可靠，也可能是大家共用的資料出了問題。</p>`:'<p class="muted">今天沒有六人看法完全一致的股票。</p>';
   const ch=r.changes.filter(l=>!hideLine(l));
   $("chg").innerHTML=ch.length?`<ul>${ch.map(l=>`<li>${A[l.who].emoji} ${esc(A[l.who].name)}：${esc(l.t)}</li>`).join("")}</ul>`:'<p class="muted">和前一個交易日相比，沒有理專改變看法（或今天是第一天）。</p>';
   const rk=Object.entries(r.risks);
@@ -262,7 +264,7 @@ document.querySelector(".toolbar").addEventListener("click",e=>{const b=e.target
   document.querySelectorAll("[data-r]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.r===rmode));
   $("rday").hidden=rmode!=="day";$("rweek").hidden=rmode!=="week";renderReport()});
 $("csv").addEventListener("click",()=>{const d=days[cur];if(!d)return;
-  const rows=[["資料日","代號","名稱",...KEYS.map(k=>A[k].name),"看多","看空","σ"],
+  const rows=[["資料日","代號","名稱",...KEYS.map(k=>A[k].name),"看好","不看好","分歧度σ"],
     ...d.report.rows.filter(x=>!hideC(x.c)).map(x=>[d.asof,x.c,x.n,...KEYS.map(k=>x.s[k]??""),x.bull,x.bear,x.sd])];
   const csv="﻿"+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=`理專意見報表_${d.asof}.csv`;a.click();URL.revokeObjectURL(a.href)});

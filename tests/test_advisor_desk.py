@@ -62,7 +62,7 @@ def test_books_decide_today_trade_next_day_and_keep_the_money_right():
     assert out["same"]
     sell = [t for t in out["trades"] if t["side"] == "賣"]
     assert sell[0]["c"] == "C" and sell[0]["d"] == "2026-11-09" and sell[0]["p"] == 25
-    assert sell[0]["tax"] == round(sell[0]["sh"] * 25 * 0.003) and "偏空" in sell[0]["why"]
+    assert sell[0]["tax"] == round(sell[0]["sh"] * 25 * 0.003) and "不看好" in sell[0]["why"]
     # 週一決定換股（A、D、B），還沒成交
     assert out["state"]["pending"]["kind"] == "rebalance" and out["state"]["pending"]["target"] == ["A", "D", "B"]
     # 淨值＝現金＋持股市值

@@ -84,7 +84,9 @@ td small{display:block;color:var(--ink-soft);font-size:12px}
 </div>
 
 <script>
-const R=/*REPORT*/, L=/*ACTIONLOG*/;
+// CR-014：舊紀錄裡的「規則強烈偏多／規則偏多／規則中性／規則偏空」顯示時換成白話（很看好／有點看好／不好不壞／不看好）
+const PLAIN={"規則強烈偏多":"很看好","規則偏多":"有點看好","規則中性":"不好不壞","規則偏空":"不看好"},plainAll=x=>JSON.parse(JSON.stringify(x).replace(/規則強烈偏多|規則偏多|規則中性|規則偏空/g,m=>PLAIN[m]));
+const R=plainAll(/*REPORT*/), L=plainAll(/*ACTIONLOG*/);
 // 理專憲章第四條「守風險」：和首頁一樣，風險屬性小測驗結果為保守型的使用者，個股（非 ETF，代號不是 00 開頭）不顯示理專意見
 const KYC_BLOCK="保守型";
 const kyc=(()=>{try{return JSON.parse(localStorage.getItem("kyc"))}catch(e){return null}})();

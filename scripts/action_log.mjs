@@ -29,7 +29,10 @@ const profiles = JSON.parse(read("knowledge/advisors.zh.json"));
 const charter = read("web/charter.template.html");
 const banned = [...(charter.match(/<b>不保證<\/b>：不說((?:「[^」]+」)+)/)?.[1] || "").matchAll(/「([^」]+)」/g)].map(m => m[1]);
 
-export const LABEL = s => s >= 1.5 ? "規則強烈偏多" : s >= 0.5 ? "規則偏多" : s > -0.5 ? "規則中性" : "規則偏空";
+// CR-014（2026-11-11）：標籤改成白話，分數門檻不變。舊紀錄裡的舊說法用 PLAIN 換成新說法再比較或顯示
+export const LABEL = s => s >= 1.5 ? "很看好" : s >= 0.5 ? "有點看好" : s > -0.5 ? "不好不壞" : "不看好";
+export const PLAIN = { "規則強烈偏多": "很看好", "規則偏多": "有點看好", "規則中性": "不好不壞", "規則偏空": "不看好" };
+export const plain = t => typeof t === "string" ? t.replace(/規則強烈偏多|規則偏多|規則中性|規則偏空/g, m => PLAIN[m]) : t;
 
 // 在沙盒裡建立 ADVISORS（和首頁同一份程式），回傳 { ADVISORS, isETF }
 // CR-013：首頁的 runA（每位理專只看自己的欄位＋槓桿反向與期貨型 ETF 的強制規則）也直接從首頁模板切出來
