@@ -34,6 +34,9 @@
     for(const n of new Set(names))if(n.length>=2)T.push([n,t]);
   }
   T.sort((a,b)=>b[0].length-a[0].length);
+  // CR-014：首頁的名詞解釋區列出「本站用語」（內容和入門教室的名詞小抄是同一份）
+  const box=document.getElementById("site-gloss");
+  if(box)GL.terms.filter(t=>t.g==="本站用語").forEach(t=>{const w=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=t.k;dd.textContent=t.d;w.append(dt,dd);box.append(w)});
   const SEL="th,.stats small,.kv small,.fact>span,.eyebrow,[data-gl]";
   function wrap(el){
     if(el.dataset.gld)return;el.dataset.gld=1;

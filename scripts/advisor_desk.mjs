@@ -9,7 +9,7 @@
 //
 // 虛擬帳戶（憲章「模擬倉的定位」：報酬不作為評判理專好壞的依據）：
 //   每人 100 萬，從第一次執行那天開始，不回補過去。
-//   每週第一個交易日決定「本週前三名」，等權買進；平日持股被自己的規則判成偏空就決定賣出。
+//   每週第一個交易日決定「本週前三名」，等權買進；平日持股被自己的規則判成「不看好」就決定賣出。
 //   今天收盤後做的決定，用下一個交易日的收盤價成交，避免用已知的價格。
 //   手續費 0.1425%（最低 20 元），賣出證交稅個股 0.3%、ETF 0.1%；可買零股。
 //
@@ -36,7 +36,10 @@ export const START_CASH = 1_000_000, FEE = 0.001425, FEE_MIN = 20, TAX_STOCK = 0
 export const fee = amt => amt > 0 ? Math.max(FEE_MIN, Math.round(amt * FEE)) : 0;
 export const tax = (amt, etf) => Math.round(amt * (etf ? TAX_ETF : TAX_STOCK));
 const r2 = x => Math.round(x * 100) / 100;
-export const LABEL = s => s >= 1.5 ? "規則強烈偏多" : s >= 0.5 ? "規則偏多" : s > -0.5 ? "規則中性" : "規則偏空";
+// CR-014（2026-11-11）：標籤改成白話，分數門檻不變。舊紀錄裡的舊說法用 PLAIN 換成新說法再比較或顯示
+export const LABEL = s => s >= 1.5 ? "很看好" : s >= 0.5 ? "有點看好" : s > -0.5 ? "不好不壞" : "不看好";
+export const PLAIN = { "規則強烈偏多": "很看好", "規則偏多": "有點看好", "規則中性": "不好不壞", "規則偏空": "不看好" };
+export const plain = t => typeof t === "string" ? t.replace(/規則強烈偏多|規則偏多|規則中性|規則偏空/g, m => PLAIN[m]) : t;
 export const bucket = s => s >= 0.5 ? 1 : s <= -0.5 ? -1 : 0;
 const strip = t => String(t ?? "").replace(/<[^>]+>/g, "");
 const fill = (t, o) => t.replace(/\{(\w+)\}/g, (m, k) => (k in o ? String(o[k]) : m));
@@ -146,7 +149,7 @@ export function decide(acct, D, ctx, key) {
     return;
   }
   const sell = Object.keys(acct.pos).filter(c => { const o = ctx.opinion(key, c); return o && o.s <= -0.5; });
-  sell.forEach(c => { why[c] = `規則轉為偏空：${ctx.opinion(key, c).why[0] || ""}`; });
+  sell.forEach(c => { why[c] = `轉為不看好：${ctx.opinion(key, c).why[0] || ""}`; });
   const all = [...new Set([...(acct.pending?.sell || []), ...sell])];
   acct.pending = all.length ? { sell: all, why, decided: D, kind: "sell" } : null;
 }
@@ -228,8 +231,8 @@ export function journal(key, ctx, D, prev, history, trades, acct, warned) {
     if (inn.length) view.push(L(`前三名換了：${inn.map(c => nm(ctx, c)).join("、")} 進來${out.length ? `，${out.map(c => nm(ctx, c)).join("、")} 掉出去` : ""}。`, [...inn, ...out]));
     else view.push(L(pick(v.same, seed + "same")));
     view.push(L(`今天的前三名：${topTxt}。`, top));
-    const changed = codes.filter(c => prev.labels[c] && prev.labels[c] !== labels[c]);
-    changed.forEach(c => view.push(L(`${nm(ctx, c)}：昨天「${prev.labels[c]}」，今天「${labels[c]}」，${ctx.opinion(key, c).why[0] || ""}。`, [c])));
+    const changed = codes.filter(c => prev.labels[c] && plain(prev.labels[c]) !== labels[c]);
+    changed.forEach(c => view.push(L(`${nm(ctx, c)}：昨天「${plain(prev.labels[c])}」，今天「${labels[c]}」，${ctx.opinion(key, c).why[0] || ""}。`, [c])));
     let streak = 1;
     for (const h of history) { if (h.journals?.[key]?.top?.[0] === top[0]) streak++; else break; }
     if (streak >= 3) view.push(L(`${nm(ctx, top[0])} 已經連續 ${streak} 天排第一。`, [top[0]]));
@@ -241,7 +244,7 @@ export function journal(key, ctx, D, prev, history, trades, acct, warned) {
   if (!trades.length) trade.push(L("今天帳戶沒有成交。"));
   const pend = acct.pending;
   if (pend?.kind === "rebalance") trade.push(L(`本週換股：下一個交易日收盤買進 ${pend.target.map(c => nm(ctx, c)).join("、")}${Object.keys(acct.pos).filter(c => !pend.target.includes(c)).length ? `，賣出 ${Object.keys(acct.pos).filter(c => !pend.target.includes(c)).map(c => nm(ctx, c)).join("、")}` : ""}。`, [...pend.target, ...Object.keys(acct.pos)]));
-  else if (pend?.sell?.length) trade.push(L(`下一個交易日收盤賣出 ${pend.sell.map(c => nm(ctx, c)).join("、")}，規則已轉為偏空。`, pend.sell));
+  else if (pend?.sell?.length) trade.push(L(`下一個交易日收盤賣出 ${pend.sell.map(c => nm(ctx, c)).join("、")}，規則已轉為不看好。`, pend.sell));
   const plan = [];
   for (const c of top) { if (plan.length >= 2) break; const e = ctx.opinion(key, c).entry; if (e) plan.push(L(`${nm(ctx, c)}：${e.replace(/^規則條件：/, "")}`, [c])); }
   warned.forEach(w => plan.push(L(`同事提醒的 ${nm(ctx, w.c)}：${w.msg}`, [w.c])));
@@ -273,7 +276,7 @@ export function roundtable(ctx, D) {
     }
     talks.push(thread);
   }
-  // 分歧最大的 3 檔（最高分和最低分差 2 分以上），看多和看空的各說一次
+  // 分歧最大的 3 檔（最高分和最低分差 2 分以上），看好和不看好的各說一次
   const pool = [...new Set([...cfg.watchlist.filter(c => ctx.byCode[c]), ...ctx.keys.flatMap(k => ctx.top(k))])];
   const spread = pool.map(c => { const R = ctx.R(c), ks = ctx.keys.filter(k => Number.isFinite(R[k]?.s));
     const hi = ks.reduce((a, k) => R[k].s > R[a].s ? k : a, ks[0]), lo = ks.reduce((a, k) => R[k].s < R[a].s ? k : a, ks[0]);

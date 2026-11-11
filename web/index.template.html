@@ -93,6 +93,13 @@ svg text{font-family:ui-monospace,Menlo,monospace;font-size:10px;fill:var(--ink-
 .pill.buy,.pill.add{background:var(--matcha);color:#3d6a2b}
 .pill.wait{background:var(--apricot);color:#7a5414}
 .pill.avoid{background:var(--pink);color:#8a2f45}
+/* CR-014 名詞解釋區 */
+.legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:10px 0 0;padding:0;list-style:none}
+.legend li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.6}
+.legend .pill{flex:none}
+.gloss{margin-top:12px}.gloss summary{cursor:pointer;font-weight:700;font-size:14px}
+.gloss dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin:10px 0 0}
+.gloss dl>div{background:var(--bg-a);border:1px solid var(--line);border-radius:14px;padding:10px 12px}.gloss dt{font-weight:700}.gloss dd{margin:2px 0 0;font-size:13.5px;line-height:1.6}
 .style{font-size:12.5px;color:var(--sky-deep);font-weight:500}
 .entry{background:#fff6ea;border-radius:18px;padding:10px 13px;font-size:14px}
 .entry b{color:var(--ink)}
@@ -251,14 +258,26 @@ footer{font-size:12px;color:var(--ink-soft);max-width:80ch;margin:0 auto;text-al
     <div class="picks" id="picks"></div>
   </section>
 
+  <section class="box" aria-labelledby="h-gloss" id="gloss">
+    <h2 id="h-gloss">📖 名詞解釋：理專的看法怎麼讀？</h2>
+    <p class="muted" style="margin:6px 0 0;max-width:75ch;font-size:13.5px">每位理專依自己的固定規則，把一檔股票算成 −2 到 +2 的分數，再換成下面四種說法。這只是規則算出來的結果，不是叫你買或賣。網站上有虛線底線的字，點一下也能看解釋。</p>
+    <ul class="legend">
+      <li><span class="pill buy">很看好 ✨</span><span>分數 +1.5 以上：非常符合這位理專的方法要找的條件。</span></li>
+      <li><span class="pill add">有點看好 🍀</span><span>分數 +0.5 到 +1.5：多數條件符合，但還不到最理想。</span></li>
+      <li><span class="pill wait">不好不壞 ⏳</span><span>分數 −0.5 到 +0.5：沒有明顯的優點，也沒有明顯的警訊。</span></li>
+      <li><span class="pill avoid">不看好 🙅</span><span>分數低於 −0.5：出現這位理專會在意的警訊，例如趨勢向下或比同業貴。</span></li>
+    </ul>
+    <details class="gloss"><summary>更多名詞解釋（加權共識、分歧度、互評、規則條件…）</summary><dl id="site-gloss"></dl></details>
+  </section>
+
   <section class="duo">
     <div class="box" aria-label="共識">
       <div class="eyebrow">🍰 加權共識</div>
       <div class="verdict" id="verdict">—</div>
-      <div class="muted num" id="score" style="font-size:13px"></div>
+      <div class="muted num" id="score" style="font-size:13px" data-gl></div>
       <div class="bar" id="bar"></div>
-      <div class="counts" id="counts"></div>
-      <div class="muted" id="spread" style="font-size:13px;margin-top:8px"></div>
+      <div class="counts" id="counts" data-gl></div>
+      <div class="muted" id="spread" style="font-size:13px;margin-top:8px" data-gl></div>
     </div>
     <div class="box" aria-label="人氣排行榜">
       <div class="eyebrow">👑 人氣理專排行榜</div>
@@ -378,7 +397,7 @@ const ADVISORS=[
   run(d){const ma=d.ma,ma3=mean(d.m.slice(-3)),dev=d.p/ma-1;let s=0,why=[];
    if(ma>ma3){s+=1;why.push(`月均價 ${fmt(ma)} 高於近三個月均價 ${fmt(ma3)}，趨勢向上`)}else{s-=1;why.push(`月均價 ${fmt(ma)} 低於近三個月均價 ${fmt(ma3)}，趨勢向下`)}
    if(dev>0.08){s-=1;why.push(`股價高於月均價 ${pct(dev)}，乖離過大，追價風險高`)}else if(ma>ma3&&dev>-0.04&&dev<0.03){s+=1;why.push(`股價拉回到月均價附近（${pct(dev)}），多頭中的買點`)}else why.push(`股價與月均價乖離 ${pct(dev)}`);
-   const entry=ma>ma3?`規則條件：月均價 <b>${fmt(ma)}</b> 高於三個月均價；跌破三個月均價 ${fmt(ma3)} 時規則轉為偏空`:`規則條件：月均價重新站上三個月均價（約 <b>${fmt(ma3)}</b>）才轉為偏多`;
+   const entry=ma>ma3?`規則條件：月均價 <b>${fmt(ma)}</b> 高於三個月均價；跌破三個月均價 ${fmt(ma3)} 時轉為不看好`:`規則條件：月均價重新站上三個月均價（約 <b>${fmt(ma3)}</b>）才轉為看好`;
    return {s:clamp(s,-2,2),why,entry,tb:-Math.abs(dev),metrics:{"月線乖離":pct(dev),"月均價":fmt(ma)}}},
   critique:"價值派王建明：均線是落後指標，等趨勢確認時便宜的價格通常已經過了。"},
  {key:"macro",name:"林思遠",emoji:"🌏",tape:"var(--matcha)",horizon:"long",school:"海外大學 經濟學系",bg:"前央行研究員・總經策略",style:"總體經濟循環・長期（1–2 年）",quip:"先看天氣，再決定要不要出門。",
@@ -388,7 +407,7 @@ const ADVISORS=[
    if(fav){s+=1;why.push(`${catOf(d)}是這個階段偏好的類型`)}else{s-=1;why.push(`${catOf(d)}不在這個階段的偏好類型`)}
    if(d.rate<0){s+=1;why.push("降息循環，資金成本下降有利估值")}else if(d.rate>0){s-=1;why.push("升息循環，壓抑估值")}
    if(d.pmi>=50&&L<=0){s+=0.5;why.push(`PMI ${d.pmi} 站上 50，景氣有回升跡象`)}else if(d.pmi<50)why.push(`PMI ${d.pmi} 低於 50，製造業仍在收縮`);
-   const entry=s>=1?"規則條件：景氣與利率條件有利，規則偏多":"規則條件：景氣燈號或利率方向改變，規則才會轉為偏多";
+   const entry=s>=1?"規則條件：景氣與利率條件有利，所以看好":"規則條件：景氣燈號或利率方向改變，才會轉為看好";
    return {s:clamp(s,-2,2),why,entry,tb:fav?-(d.pb||9):-99,metrics:{"產業":catOf(d),"燈號":d.light}}},
   critique:"技術派陳怡君：總經訊號可能提早一年以上，股價在這段時間可能再跌 30%。"},
  {key:"value",name:"王建明",emoji:"📒",tape:"var(--apricot)",horizon:"long",school:"國內大學 會計學系",bg:"投信研究員 12 年・基本面",style:"價值投資・長期（1–3 年）",quip:"好公司也要有好價格，耐心是我的超能力。",
@@ -404,14 +423,14 @@ const ADVISORS=[
   run(d){const ret=d.p/d.m[6]-1,hi=Math.max(...d.m,d.p),dist=d.p/hi-1,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s=0,why=[];
    if(ret>1.5){why.push(`近 6 個月上漲 ${pct(ret)}，漲幅過大，波動風險高，不加分`)}else if(ret>0.2){s+=1;why.push(`近 6 個月上漲 ${pct(ret)}，動能強`)}else if(ret<-0.1){s-=1;why.push(`近 6 個月下跌 ${pct(ret)}，動能弱`)}else why.push(`近 6 個月 ${pct(ret)}，動能普通`);
    if(dist>-0.05){s+=1;why.push("貼近一年高點，強者恆強")}else if(dist<-0.25){s-=1;why.push(`距一年高點 ${pct(dist)}，趨勢已破`)}else why.push(`距一年高點 ${pct(dist)}`);
-   const entry=s>=1?`規則條件：趨勢成立；跌破 <b>${fmt(hi*0.9)}</b>（高點回落 10%）時規則轉為偏空`:`規則條件：股價突破一年高點 <b>${fmt(hi)}</b> 才轉為偏多`;
+   const entry=s>=1?`規則條件：趨勢成立；跌破 <b>${fmt(hi*0.9)}</b>（高點回落 10%）時轉為不看好`:`規則條件：股價突破一年高點 <b>${fmt(hi)}</b> 才轉為看好`;
    return {s:clamp(s,-2,2),why,entry,tb:ret/(vol+0.05),metrics:{"6月報酬":pct(ret),"距高點":pct(dist)}}},
   critique:"存股派劉淑芬：追高需要紀律停損，一般投資人很難做到，常常買在最高點。"},
  {key:"quant",name:"張雅雯",emoji:"🎲",tape:"var(--lilac)",horizon:"short",school:"國內大學 統計研究所",bg:"金控量化交易員・統計套利",style:"均值回歸・中短期（1–3 個月）",quip:"我不猜，我只算機率。",
   run(d){const mu=mean(d.m),sd=std(d.m),z=(d.p-mu)/sd;let s,why=[];
    why.push(`現價相對一年月收盤平均 ${fmt(mu)} 的 z 分數為 ${z.toFixed(2)}`);
    if(z<-1.5&&(d.pe>0||isETF(d))){s=2;why.push("明顯低於一年均值，且仍有獲利或為分散的 ETF，統計上有回歸空間")}else if(z<-0.8){s=1;why.push("低於均值，偏便宜")}else if(z>1.8){s=-2;why.push("遠高於一年均值，過度延伸")}else if(z>1){s=-1;why.push("偏高，不追")}else{s=0;why.push("在正常範圍內，沒有統計優勢")}
-   return {s,why,entry:`規則條件：低於 <b>${fmt(mu-sd)}</b>（均值減一個標準差）時規則偏多，回到均值 ${fmt(mu)} 時回到中性`,tb:-z,metrics:{"z":z.toFixed(2),"一年均值":fmt(mu)}}},
+   return {s,why,entry:`規則條件：低於 <b>${fmt(mu-sd)}</b>（均值減一個標準差）時看好，回到均值 ${fmt(mu)} 時回到不好不壞`,tb:-z,metrics:{"z":z.toFixed(2),"一年均值":fmt(mu)}}},
   critique:"動能派周以恆：在強趨勢裡，「過度延伸」可以持續好幾個月，逆勢放空會受傷。"},
  {key:"div",name:"劉淑芬",emoji:"🍵",tape:"#ffe0c4",horizon:"long",school:"國內科技大學 財務管理系",bg:"銀行理專 20 年・存股教練",style:"存股・定期定額（5 年以上）",quip:"慢慢來比較快，喝杯茶再說。",
   run(d){const y=d.dy||0,vol=std(d.m.slice(1).map((v,i)=>v/d.m[i]-1));let s,why=[];
@@ -476,8 +495,9 @@ function drawChart(d){const p=[...d.m,d.p],W=Math.round(Math.max(280,Math.min(52
 
 // ---------- 輸出 ----------
 // 標籤描述規則分數的方向，不是買賣指令（避免對真實個股給出推介建議）
-const LABEL=s=>s>=1.5?["規則強烈偏多 ✨","buy"]:s>=0.5?["規則偏多 🍀","add"]:s>-0.5?["規則中性 ⏳","wait"]:["規則偏空 🙅","avoid"];
-const COL={buy:"var(--matcha-deep)",add:"var(--matcha)",wait:"var(--apricot)",avoid:"var(--pink)"},NM={buy:"強烈偏多",add:"偏多",wait:"中性",avoid:"偏空"};
+// 2026-11-11 CR-014：改成一般人看得懂的白話（原「規則強烈偏多／規則偏多／規則中性／規則偏空」），分數門檻不變
+const LABEL=s=>s>=1.5?["很看好 ✨","buy"]:s>=0.5?["有點看好 🍀","add"]:s>-0.5?["不好不壞 ⏳","wait"]:["不看好 🙅","avoid"];
+const COL={buy:"var(--matcha-deep)",add:"var(--matcha)",wait:"var(--apricot)",avoid:"var(--pink)"},NM={buy:"很看好",add:"有點看好",wait:"不好不壞",avoid:"不看好"};
 {let cw=0;addEventListener("resize",()=>{const w=$("chart").clientWidth;if(w!==cw){cw=w;drawChart(state)}})}
 // 理專憲章第四條「守風險」：風險屬性小測驗結果為保守型的使用者查看個股（非 ETF）時，六位理專不產生意見，只顯示固定說明
 const KYC_BLOCK="保守型";
@@ -524,10 +544,10 @@ document.addEventListener("click",e=>{const b=e.target.closest(".linkbtn[data-c]
 const REVIEWER={tech:"value",macro:"tech",value:"mom",mom:"div",quant:"mom",div:"macro"};
 // 每組審查的專屬檢查：回傳警示文字或 null
 const CHECKS={
- tech:(R,d)=>R.tech.s>=1&&R.value.s<=-1?`技術面看多，但本益比是同業的 ${R.value.metrics["同業比"]}，追價空間有限`:null,
- macro:(R,d)=>R.macro.s>=1&&R.tech.s<=-1?"總經看多，但這檔的趨勢仍向下，進場時機可能太早":null,
+ tech:(R,d)=>R.tech.s>=1&&R.value.s<=-1?`技術面看好，但本益比是同業的 ${R.value.metrics["同業比"]}，追價空間有限`:null,
+ macro:(R,d)=>R.macro.s>=1&&R.tech.s<=-1?"總經看好，但這檔的趨勢仍向下，進場時機可能太早":null,
  value:(R,d)=>R.value.s>=1&&parseFloat(R.mom.metrics["6月報酬"])<-10?`估值便宜，但近 6 個月跌了 ${R.mom.metrics["6月報酬"]}，小心價值陷阱`:null,
- mom:(R,d)=>R.mom.s>=1&&parseFloat(R.tech.metrics["月線乖離"])>8?`動能看多，但股價高於月均價 ${R.tech.metrics["月線乖離"]}，追高風險高`:null,
+ mom:(R,d)=>R.mom.s>=1&&parseFloat(R.tech.metrics["月線乖離"])>8?`動能看好，但股價高於月均價 ${R.tech.metrics["月線乖離"]}，追高風險高`:null,
  quant:(R,d)=>R.quant.s>=1&&R.mom.s<=-1?"均值回歸想接，但趨勢仍向下，可能是接刀":null,
  div:(R,d)=>R.div.s>=1&&["紅","黃紅"].includes(d.light)?`殖利率吸引人，但景氣在「${d.light}燈」，高峰期股利可能縮水`:null
 };
@@ -570,9 +590,9 @@ renderLog();
 function renderCards(){if(kycBlocked(state)){$("cards").innerHTML=kycNote();return}
  $("cards").innerHTML=lastRes.filter(r=>tab==="all"||r.a.horizon===tab).map(({a,s,why,entry,metrics})=>{const [lab,cls]=LABEL(s);return `<article class="card" style="--tape:${a.tape}">
   <div class="card-head"><div class="who"><div class="avatar" aria-hidden="true">${a.emoji}</div><div style="min-width:0"><div class="name">${a.name}</div><div class="bg">🎓 ${a.school}</div><div class="bg">💼 ${a.bg}</div></div></div>
-  <span class="pill ${cls}">${lab}</span></div>
-  <div class="style">${a.style} · 分數 <span class="num">${s>0?"+":""}${s.toFixed(1)}</span></div>
-  <div class="entry">🎯 ${entry}</div>
+  <span class="pill ${cls}" title="依這位理專的規則算出來的看法，不是買賣建議">${lab}</span></div>
+  <div class="style" data-gl>${a.style} · 分數 <span class="num">${s>0?"+":""}${s.toFixed(1)}</span></div>
+  <div class="entry" data-gl>🎯 ${entry}</div>
   <ul class="why">${why.map(w=>`<li>${w}</li>`).join("")}</ul>
   <div class="metrics">${Object.entries(metrics).map(([k,v])=>`<span>${k} <b class="num">${v}</b></span>`).join("")}</div>
   <div class="weight"><label for="w_${a.key}" style="margin:0">⚖️ 採信權重</label><input id="w_${a.key}" type="range" min="0" max="3" step="0.5" value="${weights[a.key]}" data-k="${a.key}"><span class="num" id="wv_${a.key}">${weights[a.key]}×</span></div>
@@ -589,7 +609,7 @@ function renderConsensus(){const res=lastRes;
  const groups={buy:0,add:0,wait:0,avoid:0};res.forEach(r=>{if(weights[r.a.key]>0)groups[LABEL(r.s)[1]]+=weights[r.a.key]});
  $("bar").innerHTML=Object.entries(groups).map(([k,v])=>`<span style="width:${v/tw*100}%;background:${COL[k]}" title="${NM[k]}"></span>`).join("");
  $("counts").innerHTML=Object.keys(groups).map(k=>`<span><span class="dot" style="background:${COL[k]}"></span> ${NM[k]} <b class="num">${res.filter(r=>weights[r.a.key]>0&&LABEL(r.s)[1]===k).length}</b> 位</span>`).join("");
- $("spread").textContent=`分歧度 σ = ${sp.toFixed(2)}　${sp>1.2?"🌪️ 意見嚴重分歧，建議你親自看看各方理由再決定。":sp>0.7?"🌤️ 意見有落差，留意不同時間尺度的差異。":"☀️ 多數理專看法接近。"}`}
+ $("spread").textContent=`分歧度（σ）${sp.toFixed(2)}　${sp>1.2?"🌪️ 意見嚴重分歧，建議你親自看看各方理由再決定。":sp>0.7?"🌤️ 意見有落差，留意不同時間尺度的差異。":"☀️ 多數理專看法接近。"}`}
 function renderRank(){const top=ADVISORS.map(a=>({a,v:votesOf(a.key)})).sort((x,y)=>y.v-x.v).slice(0,3),m=["🥇","🥈","🥉"];
  $("rank").innerHTML=top.map(({a,v},i)=>`<li><span class="medal">${i===0?"👑":""}${m[i]}</span><span class="who"><b>${a.emoji} ${a.name}</b><span>${a.style}</span></span><span class="num"><b>${v}</b> 票</span></li>`).join("")}
 
