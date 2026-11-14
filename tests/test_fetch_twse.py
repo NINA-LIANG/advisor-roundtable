@@ -93,3 +93,12 @@ def test_openapi_down_and_site_empty_raises(monkeypatch):
     except RuntimeError:
         return
     raise AssertionError("應該要失敗，讓步驟顯示紅燈")
+
+
+def test_trading_day_near_spans_lunar_new_year(monkeypatch):
+    """CR-015：2026 年農曆年封關超過一週，往回抓 9 個月前的收盤時不可因此整支失敗"""
+    open_day = dt.date(2026, 2, 23)
+    monkeypatch.setattr(fetch_twse, "month_close", lambda d: {"2330": 1800.0} if d >= open_day else {})
+    monkeypatch.setattr(fetch_twse.time, "sleep", lambda s: None)
+    d, closes = fetch_twse.trading_day_near(dt.date(2026, 2, 12))
+    assert d == open_day and closes == {"2330": 1800.0}

@@ -209,8 +209,12 @@ def latest_day_all(today=None):
 
 
 def trading_day_near(day):
-    """從 day 往後找第一個有收盤資料的交易日。"""
-    for ahead in range(7):
+    """從 day 往後找第一個有收盤資料的交易日。
+
+    CR-015（2026-11-14）：原本只往後找 7 天，遇到農曆年封關（2026 年 2 月 12 日起休市超過一週）
+    會找不到而整支程式失敗，11/12 起網站股價因此停在 11/11。改為往後找 15 天。
+    """
+    for ahead in range(15):
         d = day + dt.timedelta(days=ahead)
         closes = month_close(d)
         time.sleep(3)  # 證交所網站有頻率限制
