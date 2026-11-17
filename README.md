@@ -139,7 +139,7 @@ python scripts/validate_data.py --status data/status.json && python scripts/buil
 | `knowledge/*.zh.json` 的 `code` 欄位 | 每條知識的唯一代號（類別－主題－流水號），例如 `INS-LAW-01`。新增條目要給下一個流水號 |
 | `knowledge/governance/taxonomy.json` | 分類與命名規則（論文表 3-3） |
 | `knowledge/governance/roles.json` | 角色（外部使用者、業務分區人員、管理者）與權限，預設拒絕（論文表 3-4） |
-| `knowledge/governance/catalog.json` | 文件庫目錄，`scripts/build_catalog.py` 自動產生：225 個單元，每個附類別、出處、資料日期、版本與狀態、適用角色、敏感等級 |
+| `knowledge/governance/catalog.json` | 文件庫目錄，`scripts/build_catalog.py` 自動產生：227 個單元，每個附類別、出處、資料日期、版本與狀態、適用角色、敏感等級 |
 | `docs/憲章版本/` | 憲章舊版全文存檔（v1，已被 v1.1 取代） |
 | `scripts/kb_gate.py` | 權限過濾與出處驗證閘門（條件三） |
 | `scripts/export_corpus.py` | 凍結文件庫：匯出三個條件的文件庫與 SHA-256 清單 |
