@@ -129,3 +129,25 @@ python scripts/validate_data.py --status data/status.json && python scripts/buil
 - 新增 `tests/test_advisor_sanity.py`：檢查理專輸出是否合乎常理（分數範圍、比較基準落在同業最小值與最大值之間、規則參考價與現價的倍數），並重現 P09 的兩檔汽車股情境。
 - 風險屬性小測驗：投資經驗改為複選、不計分；資金一年內要用或占資產七成以上時，結果最高只到保守型；RR 對應改為示意並註明各機構不同。結果為保守型時，看個股會出現「需要你介入」的適合度提醒。
 - 論文實驗：暫停收資料、拿掉導覽列入口；同意書的儲存位置改由 `config.json` 的 `storage` 決定，中途退出的說明和程式行為一致；問卷與分析計畫改為 1.2.0（見 `analysis/ANALYSIS_PLAN.md` 開頭）。
+
+## 文件庫與資料治理（2026-11-17 新增，CR-016）
+
+論文改為研究「資料治理機制對生成式 AI 知識查詢之正確性與資料隔離之影響」，網站累積的文件就是實驗文件庫。這次把網站整理成有治理的文件庫：
+
+| 檔案 | 內容 |
+| --- | --- |
+| `knowledge/*.zh.json` 的 `code` 欄位 | 每條知識的唯一代號（類別－主題－流水號），例如 `INS-LAW-01`。新增條目要給下一個流水號 |
+| `knowledge/governance/taxonomy.json` | 分類與命名規則（論文表 3-3） |
+| `knowledge/governance/roles.json` | 角色（外部使用者、業務分區人員、管理者）與權限，預設拒絕（論文表 3-4） |
+| `knowledge/governance/catalog.json` | 文件庫目錄，`scripts/build_catalog.py` 自動產生：225 個單元，每個附類別、出處、資料日期、版本與狀態、適用角色、敏感等級 |
+| `docs/憲章版本/` | 憲章舊版全文存檔（v1，已被 v1.1 取代） |
+| `scripts/kb_gate.py` | 權限過濾與出處驗證閘門（條件三） |
+| `scripts/export_corpus.py` | 凍結文件庫：匯出三個條件的文件庫與 SHA-256 清單 |
+| `scripts/validate_qbank.py`、`research/` | 題庫格式、範例與檢查；正式題庫與受限文件放研究者電腦的 `kb-private/`（不進 git） |
+| `web/kb.template.html` | 網站「文件庫」頁 |
+
+改了 `knowledge/` 的內容後要重建目錄，否則 CI 的「文件庫目錄與原始檔案一致」會變紅：
+
+```bash
+python scripts/build_catalog.py && python scripts/build_site.py
+```

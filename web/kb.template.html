@@ -1,0 +1,141 @@
+<title>文件庫</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>
+/* Layout: 文件庫（CR-016）。這是什麼與論文用途 → 三層與數量 → 命名規則 → 角色與權限 → 出處驗證閘門 → 可篩選的知識單元目錄。資料來自 knowledge/governance/catalog.json。只做淺色主題。 */
+:root{
+  color-scheme:light;
+  --bg:#fff7ef; --card:#fffdfa; --ink:#4a3b32; --ink-soft:#7a675a; --line:#f1e2d6;
+  --pink:#f7b7c5; --apricot:#ffd9a0; --matcha:#c5ddb0; --sky:#b5d8f2; --sky-deep:#3d6f94; --lilac:#d9cdf2;
+  --shadow:0 6px 0 rgba(74,59,50,.06),0 12px 28px rgba(217,112,138,.12);
+  --f-display:"Huninn","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(175deg,var(--bg) 0%,#f4f0ff 70%,#fff4e4 100%);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 56px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:22px;margin-bottom:8px}
+p{margin:0 0 8px}
+.box{background:var(--card);border:2px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px}
+.muted{color:var(--ink-soft)}
+a{color:var(--sky-deep)}
+.lead{font-size:17px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 8px;text-align:left;border-bottom:1.5px dashed var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--ink-soft)}
+.scroll{overflow-x:auto}
+ul{margin:0;padding-left:1.3em}
+li{margin-bottom:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chips button{font:inherit;font-size:14px;border:2px solid var(--line);background:#fff;border-radius:999px;padding:3px 12px;cursor:pointer;color:var(--ink)}
+.chips button[aria-pressed="true"]{background:var(--sky);border-color:var(--sky)}
+input[type=search]{font:inherit;width:100%;border:2px solid var(--line);border-radius:14px;padding:8px 12px;background:#fff}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.layers>div{border:2px solid var(--line);border-radius:18px;padding:10px 14px;background:#fff}
+.layers b{font-family:var(--f-display);font-size:26px;font-weight:400}
+.u{border:2px solid var(--line);border-radius:18px;padding:10px 14px;background:#fff;margin-top:10px}
+.u h3{font-size:16.5px;font-family:var(--f-body);font-weight:700}
+.u .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--apricot);border-radius:8px;padding:1px 7px;margin-right:6px}
+.u .meta{font-size:13px;color:var(--ink-soft);margin:2px 0 4px}
+.u .tag{display:inline-block;font-size:12px;border-radius:8px;padding:0 7px;margin-left:4px;background:var(--matcha)}
+.u .tag.in{background:var(--pink)}
+.u .tag.old{background:var(--lilac)}
+.u details{font-size:14.5px}
+.u summary{cursor:pointer;color:var(--sky-deep)}
+.u p{white-space:pre-line;margin:6px 0 0}
+.gate{font-family:var(--f-display);background:#fff;border:2px dashed var(--line);border-radius:16px;padding:10px 14px;margin:6px 0 10px}
+</style>
+
+<div class="wrap">
+  <!--SITE-NAV-->
+  <header>
+    <h1>文件庫 📚</h1>
+    <p class="muted">把這個網站的規章、變更紀錄、法規重點與業務知識，整理成每一條都有代號、出處、日期、版本與權限的文件庫。資料日期至 <span id="asof"></span>，共 <span id="count"></span> 條。</p>
+  </header>
+
+  <section class="box">
+    <h2>為什麼要把網站整理成文件庫</h2>
+    <p class="lead">理專圓桌是依指導教授構想建置的示範與研究用網站。網站運作一段時間後，累積了組織常見的各種文件：有新舊版本的憲章、記錄誰在何時核准了什麼的變更單、須遵循的法規與業內規範，以及業務知識。這正是組織把內部文件交給生成式 AI 查詢時最常出問題的地方：版本混在一起、出處說不清楚、不該給的人也查得到。</p>
+    <p>因此這個網站也是一份碩士論文的研究場域。論文想回答的是：組織自己能決定的治理設計，能讓 AI 的回答正確多少、洩漏少多少，又要付出多少代價。</p>
+    <ul>
+      <li><b>研究問題一</b>：文件經過分類、命名並附上詮釋資料後，AI 回答的答對率與引用來源正確率是否提高？</li>
+      <li><b>研究問題二</b>：再加上角色權限與出處驗證閘門後，資料洩漏率與拒答正確率如何？是否以犧牲答對率為代價？</li>
+      <li><b>研究問題三</b>：非技術背景的使用者用治理後的查詢系統，和自己翻文件相比，花的時間、正確率與使用意願有何不同？</li>
+    </ul>
+    <p class="muted">實驗尚未進行，本頁沒有任何研究結果。研究的題目與設計仍待指導教授確認。網站內容仍是示範與教育用途，非投資建議。</p>
+  </section>
+
+  <section class="box">
+    <h2>三層文件</h2>
+    <div class="layers" id="layers"></div>
+    <p class="muted" style="margin-top:8px">另有研究用的虛構「受限文件」（六個分區的內部工作筆記、管理者稽核紀錄），只用來量測資料會不會被洩漏，不放在網站與公開儲存庫。</p>
+  </section>
+
+  <section class="box">
+    <h2>命名規則與詮釋資料</h2>
+    <p>每一條知識單元都有一個唯一代號，格式是「類別－主題－流水號」，例如 <code>INS-LAW-01</code> 是理專內行筆記／法規底線／第 1 條。代號刪除後不再重複使用。每條另外記錄：類別、標題、出處、資料日期、版本與狀態（現行、已被取代、已核准、待核准、初稿）、適用角色、敏感等級。</p>
+    <div class="scroll"><table><thead><tr><th>類別代碼</th><th>類別</th><th>層次</th><th>主題代碼</th></tr></thead><tbody id="taxo"></tbody></table></div>
+  </section>
+
+  <section class="box">
+    <h2>角色與權限</h2>
+    <p>網站本身是公開的；下表的「內部」「分區」限制是研究用的設定，用來模擬組織裡「不同人能看的文件不同」。規則是<b>預設拒絕</b>：一條文件沒有明列可以給哪個角色，就一律不給。</p>
+    <div class="scroll"><table><thead><tr><th>敏感等級</th><th>例子</th><th>外部使用者</th><th>業務分區人員</th><th>管理者</th></tr></thead><tbody id="matrix"></tbody></table></div>
+  </section>
+
+  <section class="box">
+    <h2>出處驗證閘門</h2>
+    <p>AI 回答之後，由程式（不是由 AI 自己）檢查三件事：回答有沒有附上至少一個代號；附上的代號是不是真的在這次查到的文件裡；提問的人有沒有權限看那些文件。三項都通過才把回答給使用者，否則一律改成：</p>
+    <p class="gate" id="refusal"></p>
+    <p class="muted">這延續<a href="charter.html">理專憲章</a>第一條「有據」：沒有可靠出處時，不提出答案。閘門只檢查出處，不判斷內容對不對。</p>
+  </section>
+
+  <section class="box">
+    <h2>目錄</h2>
+    <input type="search" id="q" placeholder="搜尋代號、標題或內文，例如 KYC、CR-010、INS-RUL" aria-label="搜尋文件庫">
+    <div class="chips" id="cats" role="group" aria-label="依類別篩選"></div>
+    <p class="muted" id="shown"></p>
+    <div id="list"></div>
+  </section>
+</div>
+
+<script>
+const C=/*CATALOG*/, T=/*TAXONOMY*/;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const RN=Object.fromEntries(C.roles.map(r=>[r.id,r.name]));
+document.getElementById("asof").textContent=C.asof;
+document.getElementById("count").textContent=C.count;
+document.getElementById("refusal").textContent="「"+C.refusal+"」";
+document.getElementById("layers").innerHTML=["1","2","3"].map(l=>`<div><b>${C.by_layer[l]}</b> 條<br>第${"一二三"[l-1]}層　${esc(C.layers[l])}</div>`).join("");
+document.getElementById("taxo").innerHTML=T.categories.map(c=>`<tr><td><code>${esc(c.code)}</code></td><td>${esc(c.name)}</td><td>${c.layer==="R"?"受限":"第"+"一二三"[c.layer-1]+"層"}</td><td>${esc(c.topics)}</td></tr>`).join("");
+document.getElementById("matrix").innerHTML=C.sensitivity.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.examples)}</td>${["external","staff","admin"].map(r=>`<td>${s.roles.includes(r)?(s.partitioned&&r==="staff"?"僅限自己的分區":"可"):"不可"}</td>`).join("")}</tr>`).join("");
+const cats=[...new Set(C.units.map(u=>u.category))];
+let cur="", q="";
+function src(u){return typeof u.source==="string"?esc(u.source):u.source.map(([n,h])=>`<a href="${esc(h)}" target="_blank" rel="noopener">${esc(n)}</a>`).join("、");}
+function card(u){
+  const tags=(u.sensitivity!=="公開"?`<span class="tag in">研究設定：${esc(u.sensitivity)}</span>`:"")+(u.status==="已被取代"?`<span class="tag old">已被取代</span>`:"");
+  return `<article class="u" id="${esc(u.code)}"><h3><span class="code">${esc(u.code)}</span>${esc(u.title)}${tags}</h3>
+  <div class="meta">${esc(u.category)}・資料日期 ${esc(u.date)}${u.version?`・版本 ${esc(u.version)}`:""}・狀態 ${esc(u.status)}・可取得：${u.roles.map(r=>esc(RN[r])).join("、")}</div>
+  <div class="meta">出處：${src(u)}${u.date_note?`（${esc(u.date_note)}）`:""}</div>
+  <details><summary>看內文</summary><p>${esc(u.text)}</p></details></article>`;
+}
+function render(){
+  const k=q.trim().toLowerCase();
+  const list=C.units.filter(u=>(!cur||u.category===cur)&&(!k||(u.code+u.title+u.text).toLowerCase().includes(k)));
+  document.getElementById("shown").textContent=`顯示 ${list.length} 條`;
+  document.getElementById("list").innerHTML=list.slice(0,80).map(card).join("")+(list.length>80?`<p class="muted">只列前 80 條，請用搜尋或類別縮小範圍。</p>`:"");
+  document.querySelectorAll("#cats button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cur)));
+}
+document.getElementById("cats").innerHTML=[`<button data-c="">全部</button>`,...cats.map(c=>`<button data-c="${esc(c)}">${esc(c)}</button>`)].join("");
+document.getElementById("cats").addEventListener("click",e=>{const b=e.target.closest("button");if(b){cur=b.dataset.c;render();}});
+document.getElementById("q").addEventListener("input",e=>{q=e.target.value;render();});
+const h=decodeURIComponent(location.hash.slice(1));
+if(h&&C.units.some(u=>u.code===h)){q=h;document.getElementById("q").value=h;}
+render();
+</script>
+<!--SITE-FOOT-->

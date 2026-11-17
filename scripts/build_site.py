@@ -38,6 +38,8 @@ ARTIFACT_URLS[SITE_URL + "study.html"] = "study.html"
 ARTIFACT_URLS[SITE_URL + "charter.html"] = "charter.html"
 ARTIFACT_URLS[SITE_URL + "corrections.html"] = "corrections.html"
 ARTIFACT_URLS[SITE_URL + "report.html"] = "report.html"
+# 文件庫（CR-016）只在 GitHub Pages 上
+ARTIFACT_URLS[SITE_URL + "kb.html"] = "kb.html"
 # 理專辦公室（CR-010）讀每日更新產生的日誌與帳戶，只在 GitHub Pages 上
 ARTIFACT_URLS[SITE_URL + "desk.html"] = "desk.html"
 PAGE_URL = {rel: url for url, rel in ARTIFACT_URLS.items()}
@@ -52,7 +54,7 @@ DRAWER = [("學", "打好基本功", [("learn.html", "🌱", "入門教室"), ("
                              ("rates.html", "🏦", "存款利率")]),
           ("做", "練習自己判斷", [("index.html", "✨", "理專圓桌"), ("desk.html", "🗂️", "理專辦公室"), ("sim.html", "🐷", "百萬模擬倉"),
                              ("lab.html", "🧪", "理專考場")]),
-          ("站", "認識這個網站", [("about.html", "📖", "關於本站"), ("charter.html", "📜", "理專憲章"), ("corrections.html", "🔍", "勘誤紀錄"), ("report.html", "📋", "理專晨報"),
+          ("站", "認識這個網站", [("about.html", "📖", "關於本站"), ("charter.html", "📜", "理專憲章"), ("corrections.html", "🔍", "勘誤紀錄"), ("kb.html", "📚", "文件庫"), ("report.html", "📋", "理專晨報"),
                                  ("status.html", "🩺", "資料狀態")])]
 DISCLAIMER = ("示範與教育用途，非投資建議。資料來自證交所、櫃買中心等公開資料（盤後快照，非即時）。"
               "理專皆為虛構角色，選股是固定規則的計算結果，不保證準確。本站不收費、不收廣告、不提供個人化推介；"
@@ -73,6 +75,7 @@ META = {
     "report.html": ("理專晨報｜理專圓桌", "六位 AI 理專每天的動作紀錄與晨報：是否只用允許的資料、分數是否在範圍內、有沒有禁語、數字是否和證交所一致。"),
     "corrections.html": ("勘誤紀錄｜理專圓桌", "理專圓桌公開的錯誤與修正紀錄：錯在哪裡、為什麼會錯、怎麼修正，以及原始修正紀錄。"),
     "charter.html": ("理專憲章｜理專圓桌", "六位 AI 理專必須遵守的宗旨、六條根本原則與衝突時的優先順序，以及資料隱私與憲章的修改程序。"),
+    "kb.html": ("文件庫｜理專圓桌", "理專圓桌的規章、變更紀錄、法規重點與業務知識，整理成有代號、出處、日期、版本與權限的文件庫；也是一份資料治理與生成式 AI 知識查詢論文的研究場域。"),
     "lab.html": ("理專考場｜理專圓桌", "參考 AIOpsLab 的故障注入評測：在台股資料裡埋入 48 種錯誤，看 AI 理專與看門狗能不能抓出來。"),
     "status.html": ("資料狀態｜理專圓桌", "理專圓桌每份資料的日期、筆數與更新狀態，以及公開資料下載與歷史快照。"),
     "404.html": ("找不到這一頁｜理專圓桌", "這個網址沒有內容，從這裡回到理專圓桌的各個頁面。"),
@@ -258,7 +261,7 @@ def pages():
             "news.html": "",
             "learn.html": "", "market.html": uni["asof"],
             "dividend.html": json.loads(read(ROOT / "data" / "dividends.json"))["asof"], "about.html": "", "lab.html": json.loads(tw)["asof"],
-            "status.html": "", "404.html": "", "study.html": "", "charter.html": "", "corrections.html": "", "report.html": json.loads(read(ROOT / "data" / "morning_report.json"))["asof"] if (ROOT / "data" / "morning_report.json").exists() else "",
+            "status.html": "", "404.html": "", "study.html": "", "charter.html": "", "corrections.html": "", "kb.html": json.loads(read(ROOT / "knowledge" / "governance" / "catalog.json"))["asof"], "report.html": json.loads(read(ROOT / "data" / "morning_report.json"))["asof"] if (ROOT / "data" / "morning_report.json").exists() else "",
             "desk.html": json.loads(read(ROOT / "data" / "desk.json"))["asof"] if (ROOT / "data" / "desk.json").exists() else ""}
     out = {"study.html": study(), "index.html": index, "sim.html": sim, "rates.html": rates, "news.html": news, "learn.html": learn,
            "market.html": market, "dividend.html": dividend, "about.html": about, "lab.html": lab,
@@ -266,6 +269,9 @@ def pages():
            "charter.html": read(WEB / "charter.template.html"),
            "corrections.html": read(WEB / "corrections.template.html").replace("/*CORRECTIONS*/", json.dumps(
                json.loads(read(ROOT / "knowledge" / "corrections.zh.json")), ensure_ascii=False, separators=(",", ":"))),
+           "kb.html": read(WEB / "kb.template.html").replace("/*CATALOG*/", json.dumps(
+               json.loads(read(ROOT / "knowledge" / "governance" / "catalog.json")), ensure_ascii=False, separators=(",", ":")))
+                          .replace("/*TAXONOMY*/", json.dumps(json.loads(read(ROOT / "knowledge" / "governance" / "taxonomy.json")), ensure_ascii=False, separators=(",", ":"))),
            "report.html": read(WEB / "report.template.html").replace("/*REPORT*/", optional_json("morning_report.json", {"days": []}))
                           .replace("/*ACTIONLOG*/", optional_json("action_log.json", {})),
            "desk.html": read(WEB / "desk.template.html").replace("/*DESK*/", optional_json("desk.json", {"days": []}))
@@ -274,7 +280,7 @@ def pages():
     counts = {"learn.html": len(basics["terms"]), "news.html": "月刊",
               "market.html": f'{len(uni["stock"]) + len(uni["etf"]):,}',
               "dividend.html": sum(1 for e in div["up"] if e[0] >= div["asof"]),
-              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題", "study.html": "30 分鐘", "charter.html": "v1.1", "report.html": "每日", "desk.html": "每日", "corrections.html": len(json.loads(read(ROOT / "knowledge" / "corrections.zh.json"))["items"]),
+              "rates.html": len(json.loads(read(ROOT / "data" / "rates.json"))["banks"]), "index.html": 6, "sim.html": "100萬", "lab.html": "48 題", "study.html": "30 分鐘", "charter.html": "v1.1", "kb.html": json.loads(read(ROOT / "knowledge" / "governance" / "catalog.json"))["count"], "report.html": "每日", "desk.html": "每日", "corrections.html": len(json.loads(read(ROOT / "knowledge" / "corrections.zh.json"))["items"]),
               "status.html": {"ok": "✅", "warn": "⚠️", "error": "❌"}[worst(st)]}
     # 實驗頁不套導覽列與頁尾：受試者不該在作答中跑去看理專圓桌的其他頁面
     return {k: v if k == "study.html" else chrome(v, k, asof[k], basics, counts) for k, v in out.items()}, asof
@@ -318,7 +324,7 @@ def main():
     if len(sys.argv) == 3 and sys.argv[1] == "--bare":
         dest = Path(sys.argv[2])
         for name, html in out.items():
-            if name in ("404.html", "status.html", "study.html", "charter.html", "corrections.html", "report.html", "desk.html"):
+            if name in ("404.html", "status.html", "study.html", "charter.html", "corrections.html", "report.html", "desk.html", "kb.html"):
                 continue
             (dest / name).write_text(html, encoding="utf-8")
             print(f"ok  {dest / name}")

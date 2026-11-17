@@ -1,0 +1,27 @@
+{
+ "_note": "文件庫的分類與命名規則（CR-016，對應論文表 3-3）。代號格式：類別代碼－主題代碼－流水號，全庫唯一、刪除後不重複使用。新增知識條目時，在原始檔案裡給它下一個流水號的 code；scripts/build_catalog.py 會檢查代號是否唯一、格式是否正確。",
+ "pattern": "^[A-Z]{3}-[A-Z0-9]{2,3}-[A-Z0-9]{1,3}$",
+ "layers": {
+  "1": "營運治理文件（相當於組織的規章、決策紀錄、作業規範）",
+  "2": "外部法規與業內規範（相當於組織須遵循的外部規範）",
+  "3": "業務知識（相當於組織的業務手冊）",
+  "R": "受限文件（研究用虛構文件，只在研究者電腦，不進公開儲存庫）"
+ },
+ "categories": [
+  {"code": "CHT", "name": "網站規範：理專憲章", "layer": "1", "file": "web/charter.template.html、docs/憲章版本/", "topics": "V11 = v1.1 現行版；V10 = v1 舊版；流水號 = 憲章第幾段"},
+  {"code": "GOV", "name": "營運治理：變更單與變更分級", "layer": "1", "file": "docs/變更紀錄.md、docs/變更分級與柱子地圖.md", "topics": "CR = 變更單（流水號 = 變更單號碼）；LVL = 變更等級 A–E；PIL = 柱子地圖"},
+  {"code": "QLT", "name": "品質紀錄：勘誤", "layer": "1", "file": "knowledge/corrections.zh.json", "topics": "ERR = 勘誤（流水號 = 勘誤編號）"},
+  {"code": "SRC", "name": "資料授權：來源清單", "layer": "1", "file": "knowledge/sources.json", "topics": "ING = 可放進 AI 的公有領域來源；RO = 只給人讀、不可放進 AI 的教材"},
+  {"code": "INS", "name": "法規與業內規範：理專內行筆記", "layer": "2", "file": "knowledge/insider.zh.json", "topics": "LAW 法規底線、RR 商品風險等級、RUL 理專十誡、RED 警訊、MNY 利益衝突、LIC 證照、MKT 台股常識、PER 同類網站"},
+  {"code": "BAS", "name": "業務知識：投資入門教室", "layer": "3", "file": "knowledge/basics.zh.json", "topics": "PRN 原則、STP 入門步驟、TRM 名詞、CST 成本、MYT 迷思"},
+  {"code": "ADV", "name": "業務知識：理專背景與方法", "layer": "3", "file": "knowledge/advisors.zh.json", "topics": "MAC 總經、VAL 價值、TEC 技術、MOM 動能、QNT 量化、DIV 存股"},
+  {"code": "CON", "name": "業務知識：概念卡", "layer": "3", "file": "knowledge/concepts.zh.json", "topics": "主題代碼同 ADV"},
+  {"code": "BKS", "name": "業務知識：理專課外書架", "layer": "3", "file": "knowledge/bookshelf.zh.json", "topics": "主題代碼同 ADV"},
+  {"code": "RST", "name": "受限文件（研究用虛構）", "layer": "R", "file": "kb-private/（不進 git）", "topics": "主題代碼同 ADV = 該分區工作筆記；AUD = 管理者稽核紀錄"}
+ ],
+ "fields": {
+  "code": "代號", "layer": "層次", "category": "類別", "title": "標題", "text": "內文", "source": "出處（官方或原始出處；無外部出處者為「本站自撰」）",
+  "date": "資料日期（內容核對或最後更新之日期）", "version": "版本", "status": "狀態（現行、已被取代、已核准、待核准、初稿）",
+  "roles": "適用角色", "sensitivity": "敏感等級", "partition": "分區（分區限定文件才有）", "file": "原始檔案"
+ }
+}

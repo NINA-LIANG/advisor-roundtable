@@ -2,6 +2,7 @@
  "_note": "理專圓桌勘誤紀錄（憲章第六條「可檢驗」）。每發現一個數字錯誤、規則錯誤或違反憲章的文字，修正後在這裡新增一筆，最新的放最前面。欄位：id 編號、found 發現日期、fixed 修正合併日期（以 GitHub 合併紀錄為準）、page 出錯的頁面、article 違反的憲章條文、wrong 錯在哪裡、cause 原因、fix 怎麼修正、ref 修正紀錄連結。",
  "items": [
   {
+   "code": "QLT-ERR-002",
    "id": "ERR-002",
    "found": "2026-11-04",
    "fixed": "2026-11-04",
@@ -13,6 +14,7 @@
    "ref": "https://github.com/NINA-LIANG/advisor-roundtable/pull/26"
   },
   {
+   "code": "QLT-ERR-001",
    "id": "ERR-001",
    "found": "2026-10-22",
    "fixed": "2026-10-26",

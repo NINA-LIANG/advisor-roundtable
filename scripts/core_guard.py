@@ -40,6 +40,13 @@ CORE = [
     ("理專辦公室：補記", "scripts/backfill_desk.mjs", None, None),
     ("機器閘門", "tests/test_charter.py", None, None),
     ("機器閘門", ".github/workflows/*.yml", None, None),
+    # CR-016 文件庫：論文實驗的治理條件，改了會改變研究設計
+    ("文件庫：角色與權限", "knowledge/governance/roles.json", None, None),
+    ("文件庫：分類與命名規則", "knowledge/governance/taxonomy.json", None, None),
+    ("文件庫：目錄產生", "scripts/build_catalog.py", None, None),
+    ("文件庫：目錄產生", "scripts/kb_text.py", None, None),
+    ("文件庫：權限過濾與出處驗證閘門", "scripts/kb_gate.py", None, None),
+    ("文件庫：實驗文件庫匯出", "scripts/export_corpus.py", None, None),
 ]
 
 
