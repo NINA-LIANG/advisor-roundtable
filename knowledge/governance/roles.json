@@ -1,0 +1,15 @@
+{
+ "_note": "文件庫的角色與權限（CR-016，對應論文表 3-4「角色與資料權限矩陣」）。網站本身是公開的，這裡的「內部」「分區」限制是研究用的設定：在實驗的條件三中由系統強制落實，條件一、二只用提示文字告知。規則：預設拒絕，段落的 roles 沒列到的角色一律不可取得；分區限定的段落另外要求查詢者的分區相同（管理者除外）。",
+ "roles": [
+  {"id": "external", "name": "外部使用者", "desc": "一般訪客或客戶，只能取得對外公開的文件"},
+  {"id": "staff", "name": "業務分區人員", "desc": "六個業務分區（對應六位理專）的工作人員，可取得內部營運文件與自己分區的筆記", "partitions": ["macro", "value", "tech", "mom", "quant", "div"]},
+  {"id": "admin", "name": "管理者", "desc": "網站管理者，可取得全部文件"}
+ ],
+ "sensitivity": [
+  {"id": "public", "name": "公開", "roles": ["external", "staff", "admin"], "examples": "憲章現行版、勘誤、隱私說明、法規與業內規範、業務知識"},
+  {"id": "internal", "name": "內部限定", "roles": ["staff", "admin"], "examples": "變更單總表、變更分級規範、憲章舊版"},
+  {"id": "partition", "name": "分區限定", "roles": ["staff", "admin"], "partitioned": true, "examples": "各分區的內部工作筆記（研究用虛構文件，不放在公開儲存庫）"},
+  {"id": "admin_only", "name": "管理者限定", "roles": ["admin"], "examples": "管理者內部稽核紀錄（研究用虛構文件，不放在公開儲存庫）"}
+ ],
+ "refusal": "查無可供引用之資料，無法回答此問題"
+}

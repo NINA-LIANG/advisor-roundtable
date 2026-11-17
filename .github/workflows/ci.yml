@@ -27,6 +27,9 @@ jobs:
         run: python -m pytest -q
       - name: 資料與知識庫檢查
         run: python scripts/validate_data.py
+      # CR-016：知識檔案改了，文件庫目錄要一起重建；代號要唯一、欄位要齊全
+      - name: 文件庫目錄與原始檔案一致
+        run: python scripts/build_catalog.py --check
       - name: 建置網站
         run: python scripts/build_site.py
       # 理專憲章「核心（實）」：改到資料計算、理專規則、KYC、免責文字、憲章或機器閘門，PR 說明要有 CR-nnn
