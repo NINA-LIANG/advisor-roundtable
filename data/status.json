@@ -1,5 +1,5 @@
 {
- "checked": "2026-11-20 03:14",
+ "checked": "2026-11-21 02:55",
  "ok": true,
  "datasets": [
   {
@@ -7,8 +7,8 @@
    "file": "data/tw.json",
    "name": "上市股票與 ETF 收盤",
    "page": "理專圓桌、模擬倉、考場",
-   "asof": "2026-11-19",
-   "count": 423,
+   "asof": "2026-11-20",
+   "count": 455,
    "age": 1,
    "state": "ok",
    "note": "",
@@ -19,7 +19,7 @@
    "file": "data/universe.json",
    "name": "上市櫃全部股票與 ETF",
    "page": "台股全覽",
-   "asof": "2026-11-19",
+   "asof": "2026-11-20",
    "count": 2364,
    "age": 1,
    "state": "ok",
@@ -31,8 +31,8 @@
    "file": "data/dividends.json",
    "name": "除權息與殖利率",
    "page": "除權息行事曆",
-   "asof": "2026-11-19",
-   "count": 2063,
+   "asof": "2026-11-20",
+   "count": 2046,
    "age": 1,
    "state": "ok",
    "note": "",
@@ -43,7 +43,7 @@
    "file": "data/rates.json",
    "name": "銀行牌告利率",
    "page": "存款利率",
-   "asof": "2026-11-19",
+   "asof": "2026-11-20",
    "count": 37,
    "age": 1,
    "state": "ok",
@@ -57,7 +57,7 @@
    "page": "台股全覽",
    "asof": "2026-11-16",
    "count": 320,
-   "age": 4,
+   "age": 5,
    "state": "ok",
    "note": "",
    "step": "success"
@@ -67,7 +67,7 @@
    "file": "data/financials.json",
    "name": "上市櫃財報與月營收",
    "page": "台股全覽",
-   "asof": "2026-11-19",
+   "asof": "2026-11-20",
    "count": 1986,
    "age": 1,
    "state": "ok",
@@ -81,7 +81,7 @@
    "page": "人氣小報",
    "asof": "2026-10-22",
    "count": 20,
-   "age": 29,
+   "age": 30,
    "state": "ok",
    "note": "",
    "step": ""
@@ -90,7 +90,7 @@
  "knowledge": [
   "全部通過"
  ],
- "crosscheck": "423 檔和證交所 2026-11-19 的公告一致",
+ "crosscheck": "455 檔和證交所 2026-11-20 的公告一致",
  "errors": [],
  "warnings": [],
  "steps": {
@@ -102,5 +102,5 @@
   "holdings": "success",
   "financials": "success"
  },
- "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/44595493835"
+ "run": "https://github.com/NINA-LIANG/advisor-roundtable/actions/runs/44796606977"
 }
